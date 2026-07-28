@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { FeedbackLink } from "@/components/FeedbackLink";
 import { ThemeInit } from "@/components/ThemeInit";
-import { AuthInit } from "@/components/AuthInit";
-import { PendingSaveSync } from "@/components/PendingSaveSync";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,8 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-body bg-felt text-parchment">
         <ThemeInit />
-        <AuthInit />
-        <PendingSaveSync />
         {children}
         <FeedbackLink />
       </body>

@@ -62,6 +62,13 @@ check("white text on trump-red (trump card)", [255, 255, 255], trump.red, 4.5);
 check("ink text on trump-yellow (trump card)", ink, trump.yellow, 4.5);
 check("paper text on ink (selected pills)", paper, ink, 4.5);
 check("trump-red text on paper (validation messages)", trump.red, paper, 4.5);
+check("trump-red text on white (dev-mode warning badges/messages)", trump.red, [255, 255, 255], 4.5);
+check(
+  "swatch ring (white/70) on selected ink pill — was ring-black/15, invisible",
+  blend([255, 255, 255], ink, 0.7),
+  ink,
+  3.0
+);
 
 console.log("\n--- Theme-reactive: parchment text on felt, every mode\u00d7accent combo ---");
 for (const t of THEMES) {

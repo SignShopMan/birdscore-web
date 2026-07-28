@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { SettingsScreen } from "@/components/SettingsScreen";
 import { GameScreen } from "@/components/GameScreen";
@@ -17,7 +17,25 @@ export default function Home() {
   const [hasStartedGame, setHasStartedGame] = useState(false);
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
-  const { gameOver, rounds, updateRound, deleteRound, addAdjustment } = useGameStore();
+  const { hasHydrated, gameOver, rounds, trump, bid, bidTeam, shootMoon, updateRound, deleteRound, addAdjustment } =
+    useGameStore();
+
+  // Resume a game already in progress after a reload — an interrupted game
+  // used to just vanish back to Settings, since screen state lived only in
+  // memory even though the game data itself is now persisted (localStorage,
+  // see game-store.ts). This is the fix for that: once the persisted state
+  // is actually readable, check whether there's a game to resume.
+  useEffect(() => {
+    if (!hasHydrated) return;
+    const gameInProgress =
+      rounds.length > 0 || !!trump || !!bidTeam || bid != null || shootMoon || gameOver;
+    if (gameInProgress) {
+      setHasStartedGame(true);
+      setScreen("game");
+    }
+    // Only ever needs to run once, right after rehydration completes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasHydrated]);
 
   const openSettings = (mode: SettingsMode) => {
     setSettingsMode(mode);
@@ -27,6 +45,12 @@ export default function Home() {
     setHasStartedGame(true);
     setScreen("game");
   };
+
+  // Brief, deliberately blank — avoids a flash of the Settings screen before
+  // flipping to Game the instant rehydration completes.
+  if (!hasHydrated) {
+    return <div className="min-h-dvh bg-felt" />;
+  }
 
   // gameOver takes over the whole screen normally, but yields to Settings when
   // someone backs out to fix the rules before the next game.

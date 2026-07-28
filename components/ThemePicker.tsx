@@ -56,7 +56,9 @@ export function ThemePicker() {
             }`}
           >
             <span
-              className="h-5 w-5 shrink-0 rounded-full ring-1 ring-black/15"
+              className={`h-5 w-5 shrink-0 rounded-full ring-1 ${
+                accent === key ? "ring-white/70" : "ring-black/15"
+              }`}
               style={{ backgroundColor: THEME_PALETTE[resolved][key] }}
               aria-hidden
             />

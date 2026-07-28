@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
-import { useAuthStore } from "@/lib/auth-store";
-import { canSaveHistory } from "@/lib/entitlements";
 import { ScoreTotals } from "./ScoreTotals";
 import { Scoreboard } from "./Scoreboard";
-import { SaveGamePrompt } from "./SaveGamePrompt";
 
 export function GameOverScreen({
   onNewGame,
@@ -15,28 +11,7 @@ export function GameOverScreen({
   onNewGame: () => void;
   onOpenSettings: () => void;
 }) {
-  const { settings, rounds, winner, newGame, updateRound, deleteRound } = useGameStore();
-  const { tier } = useAuthStore();
-  const entitled = canSaveHistory(tier);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
-    "idle"
-  );
-  const savedRef = useRef(false);
-
-  // Already-entitled accounts save automatically, no prompt needed — the
-  // prompt below is specifically the free-tier conversion moment.
-  useEffect(() => {
-    if (!entitled || savedRef.current) return;
-    savedRef.current = true;
-    setAutoSaveStatus("saving");
-    fetch("/api/games", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ settings, rounds, winner }),
-    })
-      .then((res) => setAutoSaveStatus(res.ok ? "saved" : "error"))
-      .catch(() => setAutoSaveStatus("error"));
-  }, [entitled, settings, rounds, winner]);
+  const { rounds, winner, newGame, updateRound, deleteRound } = useGameStore();
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 text-center lg:max-w-lg lg:py-14">
@@ -47,7 +22,6 @@ export function GameOverScreen({
         </h1>
         <p className="mt-3 font-body text-sm text-parchment/75">
           Nicely played — here&rsquo;s the final tally.
-          {entitled && autoSaveStatus === "saved" && " Saved to your history."}
         </p>
 
         <div className="mt-8">
@@ -66,12 +40,6 @@ export function GameOverScreen({
           hideTotals
         />
       </div>
-
-      {!entitled && (
-        <div className="mt-6 text-left">
-          <SaveGamePrompt settings={settings} rounds={rounds} winner={winner} />
-        </div>
-      )}
 
       <button
         onClick={() => {

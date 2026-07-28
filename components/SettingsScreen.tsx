@@ -10,6 +10,8 @@ import {
 import { useGameStore } from "@/lib/game-store";
 import { ThemePicker } from "./ThemePicker";
 import { CollapsibleCard } from "./CollapsibleCard";
+import { BackendStatusBadge } from "./BackendStatusBadge";
+import { AccountCard } from "./AccountCard";
 
 export function SettingsScreen({
   mode = "new",
@@ -62,6 +64,7 @@ export function SettingsScreen({
           <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
             Beta
           </span>
+          <BackendStatusBadge />
         </div>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">
@@ -142,6 +145,10 @@ export function SettingsScreen({
                 )}
               </div>
             )}
+          </CollapsibleCard>
+
+          <CollapsibleCard title="Account" subtitle="Sign in to save history and unlock more.">
+            <AccountCard />
           </CollapsibleCard>
 
           <CollapsibleCard title="Appearance" subtitle="Theme and table felt color.">
