@@ -7,7 +7,7 @@ export function ScoreTotals({ us, them }: { us: number; them: number }) {
     <div className="grid grid-cols-2 gap-3">
       <div
         className={`rounded-card p-4 text-center ${
-          usLeads ? "bg-brass/25 ring-1 ring-brass" : "bg-parchment-dim"
+          usLeads ? "bg-brass/25 ring-1 ring-brass" : "bg-paper-dim"
         }`}
       >
         <div className="font-body text-xs uppercase tracking-[0.2em] text-ink/60">Us</div>
@@ -15,7 +15,7 @@ export function ScoreTotals({ us, them }: { us: number; them: number }) {
       </div>
       <div
         className={`rounded-card p-4 text-center ${
-          themLeads ? "bg-brass/25 ring-1 ring-brass" : "bg-parchment-dim"
+          themLeads ? "bg-brass/25 ring-1 ring-brass" : "bg-paper-dim"
         }`}
       >
         <div className="font-body text-xs uppercase tracking-[0.2em] text-ink/60">Them</div>

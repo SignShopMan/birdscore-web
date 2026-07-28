@@ -2,6 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme system: dark/light mode x felt accent (green/blue/mono), applied via
+ * data-mode and data-accent attributes on <html> (see lib/theme-store.ts and
+ * components/ThemeInit.tsx). Values are space-separated RGB triplets so
+ * Tailwind's rgb(var(--x) / <alpha-value>) pattern still supports opacity
+ * modifiers like bg-parchment/10, used extensively for on-felt chrome.
+ *
+ * Deliberately NOT themed: paper/paper-dim, ink, brass, and all trump.*
+ * colors (see tailwind.config.ts) — the scorepad surface and the four trump
+ * colors are constants, not preferences, since trump has to match the
+ * physical Rook deck regardless of which theme someone's chosen.
+ */
+
+:root {
+  /* dark + green is the default/fallback, matching the original design */
+  --felt: 23 60 49;
+  --felt-dark: 14 39 31;
+  --parchment: 245 239 222;
+  --felt-texture: 255 255 255;
+}
+
+[data-mode="dark"][data-accent="green"] {
+  --felt: 23 60 49;
+  --felt-dark: 14 39 31;
+  --parchment: 245 239 222;
+  --felt-texture: 255 255 255;
+}
+[data-mode="dark"][data-accent="blue"] {
+  --felt: 21 50 74;
+  --felt-dark: 12 32 50;
+  --parchment: 245 239 222;
+  --felt-texture: 255 255 255;
+}
+[data-mode="dark"][data-accent="mono"] {
+  --felt: 43 43 42;
+  --felt-dark: 26 26 25;
+  --parchment: 245 239 222;
+  --felt-texture: 255 255 255;
+}
+
+[data-mode="light"][data-accent="green"] {
+  --felt: 233 241 234;
+  --felt-dark: 211 228 214;
+  --parchment: 27 42 58;
+  --felt-texture: 0 0 0;
+}
+[data-mode="light"][data-accent="blue"] {
+  --felt: 231 239 246;
+  --felt-dark: 207 224 238;
+  --parchment: 27 42 58;
+  --felt-texture: 0 0 0;
+}
+[data-mode="light"][data-accent="mono"] {
+  --felt: 237 237 234;
+  --felt-dark: 220 220 215;
+  --parchment: 27 42 58;
+  --felt-texture: 0 0 0;
+}
+
+/* "system" mode is resolved to a literal "light"/"dark" data-mode value in JS
+   (both the pre-hydration inline script and ThemeInit), so every rule above
+   only ever needs to match literal "light"/"dark" — never "system" itself. */
+
+
 html,
 body {
   min-height: 100dvh;
@@ -9,15 +73,16 @@ body {
 
 body {
   background-image:
-    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(ellipse at top, rgb(var(--felt-texture) / 0.05), transparent 60%),
     repeating-linear-gradient(
       45deg,
-      rgba(255, 255, 255, 0.015) 0px,
-      rgba(255, 255, 255, 0.015) 1px,
+      rgb(var(--felt-texture) / 0.015) 0px,
+      rgb(var(--felt-texture) / 0.015) 1px,
       transparent 1px,
       transparent 3px
     );
-  background-color: #173c31;
+  background-color: rgb(var(--felt));
+  transition: background-color 0.2s ease;
 }
 
 @layer utilities {

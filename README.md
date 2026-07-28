@@ -22,6 +22,39 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 6** — theme picker:
+- Settings now has an Appearance card: System/Light/Dark mode, and a felt color
+  choice (Green/Blue/Monochrome). Applies immediately, independent of the
+  "Save"/"Start Game" flow, since it's an app preference rather than a game
+  rule. Persisted to `localStorage` (key `birdscore-theme`) via zustand's
+  `persist` middleware — this is a real deployed app, not a Claude artifact,
+  so `localStorage` is the correct tool here.
+- **Trump colors (Black/Green/Red/Yellow) deliberately don't theme.** They have
+  to match the physical Rook deck regardless of which app theme someone's
+  chosen, so they're a constant, not a preference — same for the cream
+  scorepad-paper surface (`paper`/`paper-dim` in `tailwind.config.ts`), which
+  represents a physical paper scorepad and shouldn't flip with dark/light mode.
+  Only the table felt and on-felt text (`felt`, `felt-dark`, `parchment`) are
+  theme-reactive, via CSS custom properties set per `data-mode`/`data-accent`
+  on `<html>` (`app/globals.css`). All 8 text/background combinations checked
+  against WCAG AA (4.5:1) — all pass comfortably, most above AAA (7:1).
+- No flash of the wrong theme on load: a small inline script
+  (`next/script`, `beforeInteractive`) reads `localStorage` and sets
+  `data-mode`/`data-accent` before first paint; `ThemeInit.tsx` keeps it in
+  sync reactively afterward, including live updates if the OS theme changes
+  mid-session while "System" is selected.
+- **On colorblind accessibility**: rather than a togglable "colorblind mode"
+  (which implies most people don't get the accessible version), the fix went
+  in as a permanent, always-on change — the Scoreboard ledger row was the one
+  place in the app relying on trump color *alone*, with no text label (the
+  picker and the collapsed in-round card both already paired color with a
+  text label). It now always shows the trump name as text too. This works
+  for every type of color vision deficiency without needing to redesign the
+  four trump hues, which can't change anyway since they have to match the
+  cards. A next step, if wanted: distinct shapes per trump color (not just
+  color) in the ledger dot and picker swatches, on top of the text that's
+  there now.
+
 **Beta round 5** (from a screenshot of real gameplay):
 - The `Adj` row marker was brass (`#C9A227`), which sits close enough to Yellow
   trump (`#E3B23C`) to be indistinguishable at 10px — a real "Renege" row was

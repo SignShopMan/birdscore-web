@@ -28,7 +28,7 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-      <div className="w-full max-w-md rounded-t-card bg-parchment p-5 shadow-card sm:rounded-card">
+      <div className="w-full max-w-md rounded-t-card bg-paper p-5 shadow-card sm:rounded-card">
         <h2 className="font-display text-xl font-semibold text-ink">
           Enter {nonBidder}&rsquo;s score
         </h2>

@@ -8,6 +8,7 @@ import {
   isValidWinningScore,
 } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
+import { ThemePicker } from "./ThemePicker";
 
 export function SettingsScreen({
   mode = "new",
@@ -69,7 +70,7 @@ export function SettingsScreen({
         </p>
 
         <div className="mt-8 space-y-4">
-          <div className="rounded-card bg-parchment p-4 shadow-card">
+          <div className="rounded-card bg-paper p-4 shadow-card">
             <label className="font-body text-sm font-semibold text-ink">Winning score</label>
             <p className="mt-1 font-body text-xs text-ink/60">
               First team to reach this score wins the game.
@@ -88,7 +89,7 @@ export function SettingsScreen({
             )}
           </div>
 
-          <div className="rounded-card bg-parchment p-4 shadow-card">
+          <div className="rounded-card bg-paper p-4 shadow-card">
             <label className="font-body text-sm font-semibold text-ink">
               Max points per hand
             </label>
@@ -143,6 +144,8 @@ export function SettingsScreen({
               </div>
             )}
           </div>
+
+          <ThemePicker />
         </div>
       </div>
 

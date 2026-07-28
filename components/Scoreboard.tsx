@@ -102,7 +102,9 @@ function RoundRow({
         <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT[round.trump as TrumpColor]}`} />
       )}
       <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/60">
-        {isAdj ? round.label || "Adjustment" : `${round.bidTeam} bid ${round.bid}${round.shootMoon ? " · Moon" : ""}`}
+        {isAdj
+          ? round.label || "Adjustment"
+          : `${round.bidTeam} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
       </span>
       <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
         {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}
@@ -147,7 +149,7 @@ function AdjustmentForm({
   const pointsValid = /^\d+$/.test(pointsInput.trim()) && Number(pointsInput) > 0;
 
   return (
-    <div className="rounded-card bg-parchment-dim p-3 ring-1 ring-ink/15">
+    <div className="rounded-card bg-paper-dim p-3 ring-1 ring-ink/15">
       <p className="font-body text-[10px] uppercase tracking-wide text-ink/50">
         House-rule adjustment &middot; optional
       </p>
@@ -275,7 +277,7 @@ export function Scoreboard({
         </div>
       )}
 
-      <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-parchment-dim p-2 shadow-card">
+      <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-paper-dim p-2 shadow-card">
         {rounds.length === 0 ? (
           <p className="p-3 text-center font-body text-xs text-ink/50">
             No rounds yet — score a round to start the tally.
