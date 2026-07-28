@@ -78,7 +78,13 @@ export function GameScreen({
           Scoreboard
         </span>
         <span className="font-score tabular-score text-lg font-bold text-parchment">
-          Us {usTotal(rounds)} &middot; Them {themTotal(rounds)}
+          <span className={usTotal(rounds) > themTotal(rounds) ? "text-brass" : undefined}>
+            Us {usTotal(rounds)}
+          </span>
+          {" \u00B7 "}
+          <span className={themTotal(rounds) > usTotal(rounds) ? "text-brass" : undefined}>
+            Them {themTotal(rounds)}
+          </span>
         </span>
       </button>
 

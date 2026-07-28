@@ -9,6 +9,7 @@ import {
 } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
 import { ThemePicker } from "./ThemePicker";
+import { CollapsibleCard } from "./CollapsibleCard";
 
 export function SettingsScreen({
   mode = "new",
@@ -69,34 +70,32 @@ export function SettingsScreen({
             : "Set the table rules, then deal."}
         </p>
 
-        <div className="mt-8 space-y-4">
-          <div className="rounded-card bg-paper p-4 shadow-card">
-            <label className="font-body text-sm font-semibold text-ink">Winning score</label>
-            <p className="mt-1 font-body text-xs text-ink/60">
-              First team to reach this score wins the game.
-            </p>
+        <div className="mt-8 space-y-3">
+          <CollapsibleCard
+            title="Winning score"
+            subtitle="First team to reach this score wins the game."
+            hasError={!winningScoreValid}
+          >
             <input
               type="text"
               inputMode="numeric"
               value={winningScoreInput}
               onChange={(e) => setWinningScoreInput(e.target.value)}
-              className="mt-3 w-32 rounded-md border border-ink/20 bg-white px-3 py-2 font-score text-lg tabular-score text-ink"
+              className="mt-1 w-32 rounded-md border border-ink/20 bg-white px-3 py-2 font-score text-lg tabular-score text-ink"
             />
             {!winningScoreValid && (
               <p className="mt-1 font-body text-xs text-trump-red">
                 Enter a multiple of 5, at least {maxPoints} (this hand&rsquo;s max) and up to 5000.
               </p>
             )}
-          </div>
+          </CollapsibleCard>
 
-          <div className="rounded-card bg-paper p-4 shadow-card">
-            <label className="font-body text-sm font-semibold text-ink">
-              Max points per hand
-            </label>
-            <p className="mt-1 font-body text-xs text-ink/60">
-              Total points on the board for a single round, per your house rules.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <CollapsibleCard
+            title="Max points per hand"
+            subtitle="Total points on the board for a single round, per your house rules."
+            hasError={customMode && !customValid}
+          >
+            <div className="flex flex-wrap gap-2">
               {MAX_POINTS_OPTIONS.map((v) => (
                 <button
                   key={v}
@@ -143,9 +142,11 @@ export function SettingsScreen({
                 )}
               </div>
             )}
-          </div>
+          </CollapsibleCard>
 
-          <ThemePicker />
+          <CollapsibleCard title="Appearance" subtitle="Theme and table felt color.">
+            <ThemePicker />
+          </CollapsibleCard>
         </div>
       </div>
 

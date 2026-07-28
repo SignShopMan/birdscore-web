@@ -43,20 +43,20 @@
 }
 
 [data-mode="light"][data-accent="green"] {
-  --felt: 233 241 234;
-  --felt-dark: 211 228 214;
+  --felt: 191 224 199;
+  --felt-dark: 159 205 170;
   --parchment: 27 42 58;
   --felt-texture: 0 0 0;
 }
 [data-mode="light"][data-accent="blue"] {
-  --felt: 231 239 246;
-  --felt-dark: 207 224 238;
+  --felt: 191 217 240;
+  --felt-dark: 156 194 232;
   --parchment: 27 42 58;
   --felt-texture: 0 0 0;
 }
 [data-mode="light"][data-accent="mono"] {
-  --felt: 237 237 234;
-  --felt-dark: 220 220 215;
+  --felt: 217 217 212;
+  --felt-dark: 196 196 190;
   --parchment: 27 42 58;
   --felt-texture: 0 0 0;
 }

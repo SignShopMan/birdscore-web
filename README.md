@@ -22,6 +22,27 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 7**:
+- Light-mode felt colors were nearly indistinguishable between accents (RGB
+  distance of 6-14 between green/blue/mono — genuinely invisible). Replaced
+  with more saturated values (distance now 30-42) while contrast against ink
+  text actually *improved* slightly (7.85-10.30:1, checked numerically, all
+  well past WCAG AA). Old pale-pastel values were the bug; not a taste call.
+- The "leading" indicator was previously just a subtle background tint
+  (`bg-brass/25`) — too subtle to read at a glance in a close game. Added an
+  explicit "Leading" badge on the ahead team's total card (`ScoreTotals.tsx`),
+  plus a bolded/brass-colored total in the compact mobile strip on the Game
+  screen for the same reason.
+- Settings cards (Winning score, Max points, Appearance) are now collapsible
+  (`CollapsibleCard.tsx`) — click the header to fold/unfold. All default open
+  so nothing's hidden on first visit; if a collapsed card has an invalid
+  value, a small red dot appears next to its chevron so a disabled Save/Start
+  button doesn't look unexplained.
+- Theme preview swatches in Settings now reflect whichever mode is actually
+  active (light vs dark) instead of always previewing the dark-mode hex —
+  pulled from a single `THEME_PALETTE` source of truth in `theme-store.ts` so
+  the JS preview and the CSS in `globals.css` can't silently drift apart.
+
 **Beta round 6** — theme picker:
 - Settings now has an Appearance card: System/Light/Dark mode, and a felt color
   choice (Green/Blue/Monochrome). Applies immediately, independent of the

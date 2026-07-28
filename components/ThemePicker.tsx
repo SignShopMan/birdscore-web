@@ -1,6 +1,6 @@
 "use client";
 
-import { useThemeStore, ThemeAccent, ThemeMode } from "@/lib/theme-store";
+import { useThemeStore, resolveMode, THEME_PALETTE, ThemeAccent, ThemeMode } from "@/lib/theme-store";
 
 const MODE_OPTIONS: { key: ThemeMode; label: string }[] = [
   { key: "system", label: "System" },
@@ -8,23 +8,25 @@ const MODE_OPTIONS: { key: ThemeMode; label: string }[] = [
   { key: "dark", label: "Dark" },
 ];
 
-// Preview swatches are hardcoded to each accent's dark-felt shade, independent
-// of whatever theme is currently active — they're previews of the choice, not
-// reflections of the current state.
-const ACCENT_OPTIONS: { key: ThemeAccent; label: string; swatch: string }[] = [
-  { key: "green", label: "Green", swatch: "#173C31" },
-  { key: "blue", label: "Blue", swatch: "#15324A" },
-  { key: "mono", label: "Monochrome", swatch: "#2B2B2A" },
+const ACCENT_OPTIONS: { key: ThemeAccent; label: string }[] = [
+  { key: "green", label: "Green" },
+  { key: "blue", label: "Blue" },
+  { key: "mono", label: "Monochrome" },
 ];
 
+/** No outer card here — SettingsScreen wraps this in a CollapsibleCard titled
+ * "Appearance", so this only renders the interactive content. */
 export function ThemePicker() {
   const { mode, accent, setMode, setAccent } = useThemeStore();
+  // Swatches preview the felt color at whatever mode is actually resolved right
+  // now (system resolves to the OS preference), so the preview never lies about
+  // what picking it will actually look like.
+  const resolved = resolveMode(mode);
 
   return (
-    <div className="rounded-card bg-paper p-4 shadow-card">
-      <label className="font-body text-sm font-semibold text-ink">Appearance</label>
-      <p className="mt-1 font-body text-xs text-ink/60">Light, dark, or match your device.</p>
-      <div className="mt-3 flex flex-wrap gap-2">
+    <div>
+      <label className="font-body text-sm font-semibold text-ink">Mode</label>
+      <div className="mt-2 flex flex-wrap gap-2">
         {MODE_OPTIONS.map(({ key, label }) => (
           <button
             key={key}
@@ -41,11 +43,10 @@ export function ThemePicker() {
 
       <label className="mt-5 block font-body text-sm font-semibold text-ink">Table felt</label>
       <p className="mt-1 font-body text-xs text-ink/60">
-        Trump colors always match the physical deck, so only the felt and scorepad
-        theme change here.
+        Trump colors always match the physical deck — only the felt changes here.
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {ACCENT_OPTIONS.map(({ key, label, swatch }) => (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {ACCENT_OPTIONS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setAccent(key)}
@@ -56,7 +57,7 @@ export function ThemePicker() {
           >
             <span
               className="h-5 w-5 shrink-0 rounded-full ring-1 ring-black/15"
-              style={{ backgroundColor: swatch }}
+              style={{ backgroundColor: THEME_PALETTE[resolved][key] }}
               aria-hidden
             />
             {label}
