@@ -4,7 +4,13 @@ import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { ScoreTotals } from "./ScoreTotals";
 import { Scoreboard } from "./Scoreboard";
 
-export function GameOverScreen({ onNewGame }: { onNewGame: () => void }) {
+export function GameOverScreen({
+  onNewGame,
+  onOpenSettings,
+}: {
+  onNewGame: () => void;
+  onOpenSettings: () => void;
+}) {
   const { rounds, winner, newGame, updateRound, deleteRound } = useGameStore();
 
   return (
@@ -43,6 +49,12 @@ export function GameOverScreen({ onNewGame }: { onNewGame: () => void }) {
         className="mt-8 w-full rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink shadow-card"
       >
         New Game
+      </button>
+      <button
+        onClick={onOpenSettings}
+        className="mt-3 w-full font-body text-xs text-parchment/60 underline underline-offset-4"
+      >
+        Change settings before the next game
       </button>
     </div>
   );

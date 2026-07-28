@@ -39,11 +39,19 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 /** Custom max-points input must be a positive multiple of 5, within a sane table-rules range. */
-export function isValidCustomMaxPoints(rawText: string): boolean {
+export function isValidPositiveMultipleOfFive(rawText: string, min: number, max: number): boolean {
   const text = rawText.trim();
   if (text === "" || !/^\d+$/.test(text)) return false;
   const value = Number(text);
-  return value >= 50 && value <= 1000 && value % 5 === 0;
+  return value >= min && value <= max && value % 5 === 0;
+}
+
+export function isValidCustomMaxPoints(rawText: string): boolean {
+  return isValidPositiveMultipleOfFive(rawText, 50, 1000);
+}
+
+export function isValidWinningScore(rawText: string): boolean {
+  return isValidPositiveMultipleOfFive(rawText, 50, 5000);
 }
 
 /** Bid options: 50 to maxPointsPerRound, in steps of 5. */

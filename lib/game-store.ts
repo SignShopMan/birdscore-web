@@ -19,10 +19,12 @@ interface GameState {
   rounds: Round[];
 
   // current-round-in-progress fields (mirror varTrump / varBid / varBidTeam / ...)
+  // There's no separate "locked" flag — once team + bid + trump are all set, the
+  // round is implicitly ready to score. UI derives that from these three fields
+  // directly rather than storing a redundant boolean.
   trump: TrumpColor | null;
   bid: number | null;
   bidTeam: Team | null;
-  bidLocked: boolean;
   shootMoon: boolean;
   dealerIndex: number;
 
@@ -30,12 +32,12 @@ interface GameState {
   winner: Team | null;
 
   startGame: (settings: GameSettings) => void;
+  updateSettings: (settings: GameSettings) => void;
   setTrump: (t: TrumpColor) => void;
+  clearTrump: () => void;
   setBidTeam: (t: Team) => void;
   setBid: (b: number) => void;
   toggleShootMoon: () => void;
-  lockBid: () => void;
-  unlockBid: () => void;
   advanceDealer: () => void;
   saveRound: (nonBidderScore: number) => void;
   updateRound: (rowId: string, usScore: number, themScore: number) => void;
@@ -49,7 +51,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   trump: null,
   bid: null,
   bidTeam: null,
-  bidLocked: false,
   shootMoon: false,
   dealerIndex: 0,
   gameOver: false,
@@ -62,14 +63,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       trump: null,
       bid: null,
       bidTeam: null,
-      bidLocked: false,
       shootMoon: false,
       dealerIndex: 0,
       gameOver: false,
       winner: null,
     }),
 
+  // Adjusts rules for the game already in progress, without touching rounds already
+  // scored — used when someone backs out to Settings mid-game to fix a typo.
+  updateSettings: (settings) => set({ settings }),
+
   setTrump: (t) => set({ trump: t }),
+  clearTrump: () => set({ trump: null }),
   setBidTeam: (t) => set({ bidTeam: t }),
   setBid: (b) => set({ bid: b }),
 
@@ -79,10 +84,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       bid: !s.shootMoon ? s.settings.maxPointsPerRound : s.bid,
     })),
 
-  lockBid: () => set({ bidLocked: true }),
-  unlockBid: () => set({ bidLocked: false, trump: null }),
-
-  // Manual override only — normal rotation now happens automatically in saveRound.
+  // Manual override only — normal rotation happens automatically in saveRound.
   advanceDealer: () => set((s) => ({ dealerIndex: nextDealerIndex(s.dealerIndex) })),
 
   saveRound: (nonBidderScore) => {
@@ -118,7 +120,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       rounds,
       gameOver: over,
       winner,
-      bidLocked: false,
       trump: null,
       bidTeam: null,
       bid: null,
@@ -148,7 +149,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       rounds: [],
       gameOver: false,
       winner: null,
-      bidLocked: false,
       trump: null,
       bidTeam: null,
       bid: null,

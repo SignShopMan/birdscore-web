@@ -11,9 +11,11 @@ const DEALER_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "De
 export function GameScreen({
   onScoreRound,
   onOpenScoreboard,
+  onOpenSettings,
 }: {
   onScoreRound: () => void;
   onOpenScoreboard: () => void;
+  onOpenSettings: () => void;
 }) {
   const {
     settings,
@@ -21,24 +23,25 @@ export function GameScreen({
     trump,
     bid,
     bidTeam,
-    bidLocked,
     shootMoon,
     dealerIndex,
     setTrump,
+    clearTrump,
     setBidTeam,
     setBid,
     toggleShootMoon,
-    lockBid,
-    unlockBid,
     advanceDealer,
   } = useGameStore();
 
-  const bidIsValid = !!trump && !!bidTeam && !!bid;
   const bids = bidOptions(settings.maxPointsPerRound);
   const bidChosen = bid != null || shootMoon;
+  // No separate "locked" flag to manage — once all three are set, the round is
+  // implicitly ready. Edit Bid (below) is the one way back to an editable state.
+  const locked = !!bidTeam && bidChosen && !!trump;
+  const bidValue = shootMoon ? settings.maxPointsPerRound : bid ?? 0;
 
   // Bidding happens before trump is called — once a team is on the hook for the bid,
-  // give the stepper a starting number right away instead of showing an empty state.
+  // give the slider a starting number right away instead of showing an empty state.
   useEffect(() => {
     if (bidTeam && bid == null && !shootMoon) setBid(bids[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,8 +51,13 @@ export function GameScreen({
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 lg:max-w-xl lg:px-0">
       <header className="flex items-center justify-between">
         <div>
-          <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">In Progress</p>
-          <h1 className="font-display text-2xl font-semibold text-parchment lg:text-3xl">
+          <button
+            onClick={onOpenSettings}
+            className="font-body text-xs uppercase tracking-[0.3em] text-brass underline underline-offset-4"
+          >
+            &larr; Settings
+          </button>
+          <h1 className="mt-1 font-display text-2xl font-semibold text-parchment lg:text-3xl">
             Round {rounds.length + 1}
           </h1>
         </div>
@@ -84,7 +92,7 @@ export function GameScreen({
             {(["US", "THEM"] as const).map((team) => (
               <button
                 key={team}
-                disabled={bidLocked}
+                disabled={locked}
                 onClick={() => setBidTeam(team)}
                 className={`rounded-card py-3 font-body text-sm font-semibold uppercase tracking-wide transition disabled:opacity-50 ${
                   bidTeam === team
@@ -107,7 +115,7 @@ export function GameScreen({
               </p>
               <button
                 onClick={toggleShootMoon}
-                disabled={bidLocked}
+                disabled={locked}
                 aria-pressed={shootMoon}
                 className={`rounded-full px-3 py-1 font-body text-xs font-semibold uppercase tracking-wide disabled:opacity-50 ${
                   shootMoon
@@ -134,70 +142,36 @@ export function GameScreen({
                 min={bids[0]}
                 max={settings.maxPointsPerRound}
                 onChange={setBid}
-                disabled={bidLocked}
+                disabled={locked}
               />
             )}
           </section>
         )}
 
-        {/* 3. Trump — called after the bid is settled */}
+        {/* 3. Trump — called after the bid is settled; collapses to one card once set */}
         {bidChosen && (
           <section>
-            <div className="flex items-center justify-between">
-              <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
-                Trump
-              </p>
-              {bidLocked && (
-                <button
-                  onClick={unlockBid}
-                  className="font-body text-xs text-brass underline underline-offset-2"
-                >
-                  Edit bid
-                </button>
-              )}
-            </div>
+            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
+              Trump
+            </p>
             <div className="mt-2">
-              <TrumpPicker value={trump} onChange={setTrump} disabled={bidLocked} />
+              <TrumpPicker value={trump} bidValue={bidValue} onChange={setTrump} disabled={locked} />
             </div>
           </section>
-        )}
-
-        {bidChosen && trump && (
-          <div
-            className="rounded-card p-6 text-center shadow-card"
-            style={{
-              backgroundColor:
-                trump === "Black"
-                  ? "#1A1A1A"
-                  : trump === "Green"
-                  ? "#2F7A3D"
-                  : trump === "Red"
-                  ? "#B23A32"
-                  : "#E3B23C",
-            }}
-          >
-            <div
-              className={`font-score tabular-score text-6xl font-bold ${
-                trump === "Yellow" ? "text-ink" : "text-parchment"
-              }`}
-            >
-              {shootMoon ? settings.maxPointsPerRound : bid}
-            </div>
-          </div>
         )}
       </div>
 
       <footer className="mt-6 flex gap-3">
         <button
-          onClick={() => (bidLocked ? unlockBid() : lockBid())}
-          disabled={!bidIsValid && !bidLocked}
-          className="flex-1 rounded-full bg-parchment/10 py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment ring-1 ring-parchment/30 disabled:opacity-40"
+          onClick={clearTrump}
+          disabled={!locked}
+          className="flex-1 rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] transition disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-parchment/40 disabled:ring-1 disabled:ring-parchment/20 enabled:bg-parchment/10 enabled:text-brass enabled:ring-2 enabled:ring-brass"
         >
-          {bidLocked ? "Edit Bid" : "Lock Bid"}
+          Edit Bid
         </button>
         <button
           onClick={onScoreRound}
-          disabled={!bidLocked}
+          disabled={!locked}
           className="flex-1 rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-ink disabled:opacity-40"
         >
           Score Round

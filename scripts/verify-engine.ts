@@ -4,6 +4,7 @@ import {
   checkGameOver,
   bidOptions,
   bidShortcuts,
+  isValidWinningScore,
 } from "../lib/rook-engine";
 
 function assertEqual(label: string, actual: unknown, expected: unknown) {
@@ -46,6 +47,14 @@ assertEqual("invalid: not mult of 5", isValidNonBidderScore("53", 180), false);
 assertEqual("invalid: negative", isValidNonBidderScore("-5", 180), false);
 assertEqual("invalid: exceeds max", isValidNonBidderScore("200", 180), false);
 assertEqual("invalid: empty", isValidNonBidderScore("", 180), false);
+
+// Winning score validation — guards against the leading-zero bug: an empty or "0"
+// string must stay invalid rather than silently becoming a valid 0 that gets
+// committed to state and re-rendered before the next keystroke lands.
+assertEqual("winning score valid 500", isValidWinningScore("500"), true);
+assertEqual("winning score invalid empty", isValidWinningScore(""), false);
+assertEqual("winning score invalid zero", isValidWinningScore("0"), false);
+assertEqual("winning score invalid not mult of 5", isValidWinningScore("501"), false);
 
 // Game over detection
 const over = checkGameOver(

@@ -22,6 +22,29 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 3**:
+- Trump picker now collapses into a single card (trump color + bid, large) once
+  trump is called, instead of staying a 4-swatch grid with one highlighted — matches
+  what the original prototype did, and it's the thing everyone at the table actually
+  needs to read during the round (`TrumpPicker.tsx`).
+- Removed the manual "Lock Bid" step. There's no `bidLocked` state anymore — once
+  team + bid + trump are all set, the round is automatically ready to score. In its
+  place, an "Edit Bid" button lights up (goes from greyed-out to a filled brass
+  outline) once there's something to edit, and resets trump so you can recall it.
+  Team and bid stay directly editable the whole time — only trump collapses, so
+  only trump needs an explicit way back.
+- Fixed a real bug: the winning-score field was a `type="number"` input whose state
+  was a `number`, re-coerced from `e.target.value` on every keystroke. Selecting all
+  and typing over it hit a keystroke where the field was momentarily empty,
+  `Number("")` evaluated to `0`, and that got committed and re-rendered before the
+  next digit landed — hence the leading zero. Fixed by making it string-backed with
+  its own validation, same pattern the custom max-points field already used.
+- Added a way back to Settings: a "← Settings" link in the Game screen header edits
+  the rules for the game already in progress without touching rounds already scored
+  (`updateSettings` in the store, separate from `startGame`'s full reset). Game Over
+  also got a "Change settings before the next game" link, pre-filled with whatever
+  was just used rather than resetting to defaults.
+
 **Beta round 2**:
 - Replaced the ±5 stepper with a slider — dragging from 55 to 125 was a lot of taps.
 - Added quick-bid shortcut chips below the slider (`lib/rook-engine.ts`:

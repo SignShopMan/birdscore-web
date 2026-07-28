@@ -9,31 +9,53 @@ import { GameOverScreen } from "@/components/GameOverScreen";
 import { Scoreboard } from "@/components/Scoreboard";
 
 type Screen = "settings" | "game";
+type SettingsMode = "new" | "edit";
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("settings");
+  const [settingsMode, setSettingsMode] = useState<SettingsMode>("new");
+  const [hasStartedGame, setHasStartedGame] = useState(false);
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
   const { gameOver, rounds, updateRound, deleteRound } = useGameStore();
 
-  if (gameOver) {
-    return <GameOverScreen onNewGame={() => setScreen("game")} />;
+  const openSettings = (mode: SettingsMode) => {
+    setSettingsMode(mode);
+    setScreen("settings");
+  };
+  const closeSettings = () => {
+    setHasStartedGame(true);
+    setScreen("game");
+  };
+
+  // gameOver takes over the whole screen normally, but yields to Settings when
+  // someone backs out to fix the rules before the next game.
+  if (gameOver && screen !== "settings") {
+    return (
+      <GameOverScreen
+        onNewGame={() => setScreen("game")}
+        onOpenSettings={() => openSettings("new")}
+      />
+    );
   }
 
   return (
     <div className="mx-auto min-h-dvh max-w-5xl lg:grid lg:grid-cols-[minmax(0,32rem)_320px] lg:items-start lg:gap-10 lg:px-10 lg:py-10">
       <div>
-        {screen === "settings" && <SettingsScreen onStart={() => setScreen("game")} />}
-        {screen === "game" && (
+        {screen === "settings" && (
+          <SettingsScreen mode={settingsMode} canCancel={hasStartedGame} onDone={closeSettings} />
+        )}
+        {screen === "game" && !gameOver && (
           <GameScreen
             onScoreRound={() => setScorecardOpen(true)}
             onOpenScoreboard={() => setScoreboardOpen(true)}
+            onOpenSettings={() => openSettings("edit")}
           />
         )}
       </div>
 
       {/* Desktop: scoreboard lives permanently in a sidebar, no toggling needed */}
-      {screen === "game" && (
+      {screen === "game" && !gameOver && (
         <aside className="sticky top-10 hidden h-[calc(100dvh-5rem)] lg:block">
           <Scoreboard
             rounds={rounds}
