@@ -1,0 +1,116 @@
+# BirdScore Web
+
+A Rook scorekeeper, rebuilt from the `BirdScore_v3.msapp` Power Apps prototype as a
+Next.js web app. Phase 1 (this drop) is a fully playable, faithful port of the
+original game logic — no accounts or billing yet. Phases 2–4 below are the path to
+the accounts + paywall version you're after.
+
+## Run it locally
+
+```bash
+npm install
+npm run dev
+```
+
+Then open http://localhost:3000. Play a full game — Settings → bid → trump → score
+each round → Game Over — and check it matches how the Power Apps version behaved.
+
+`npm run build` does a production build. Note: `next/font/google` needs internet
+access at build time to fetch Fraunces/Inter/Space Mono — that's normal and will
+work fine on your machine and on Vercel; it's only blocked in the sandboxed
+environment I built this in.
+
+## Scoreboard & responsive layout
+
+`components/Scoreboard.tsx` is the round-by-round ledger the original Scorecard
+screen had (trump, bidder, bid, Us/Them per round) plus the running totals —
+each row supports inline edit and delete, same as the original's edit/delete
+row behavior. It's shared across three places rather than three separate
+implementations:
+
+- **Desktop (`lg:` and up):** a sticky sidebar next to the game controls —
+  always visible, no extra taps.
+- **Mobile:** a full-screen sheet opened from a compact "Us X · Them Y" strip,
+  since there isn't room for a permanent sidebar on a phone.
+- **Game Over:** a read-only recap under the final tally.
+
+That's also the answer to "different UI for desktop vs. mobile" more broadly —
+rather than one layout stretched to fit both, the extra desktop width goes to
+showing the scoreboard permanently instead of widening buttons and inputs
+past a comfortable size. The trump color picker is the other place this
+shows: 2x2 on a phone, a single row of 4 once there's room (`sm:grid-cols-4`
+in `TrumpPicker.tsx`).
+
+## What's ported 1:1 from the original
+
+`lib/rook-engine.ts` holds every scoring rule as a pure function, pulled directly
+from `Game.pa.yaml` and `Scorecard.pa.yaml`:
+
+- Bid options (50 → max, steps of 5)
+- Non-bidder score entry validation (multiple of 5, 0..max)
+- Bidder score calculation, including going set
+- Shoot the Moon
+- Dealer rotation (advances only after the first dealer is manually set)
+- Win detection at the configured winning score
+
+`scripts/verify-engine.ts` has scenario checks for all of the above (`npx tsx
+scripts/verify-engine.ts`) — worth extending as you add rules, since this file is
+what Phase 2's realtime sync and any future game variant will build on top of.
+
+The reason the engine is a separate, framework-free module: it can run identically
+in the browser (like now) or inside a Supabase Edge Function / Next.js API route
+later, so when a second device needs to see the same round's score, you're not
+duplicating scoring logic client- and server-side.
+
+## Design direction
+
+The original app used the trump colors as its only real visual identity (Black /
+Green / Red / Yellow, straight off the Rook deck). This rebuild leans into that
+instead of a generic dashboard look: a felt-table green background, a parchment
+"scorepad" surface, a slab serif for headers, tabular-figure mono for scores (so
+digits don't jitter as they change at a glance across the table), and the trump
+picker rendered as actual card-shaped chips rather than a dropdown.
+
+## Roadmap to accounts + paywall
+
+**Phase 2 — Accounts & persistence (Supabase)**
+1. Create a Supabase project. Add `users` (handled by Supabase Auth), `games`,
+   and `rounds` tables — `rounds` maps directly to the `Round` type in
+   `lib/rook-engine.ts`.
+2. Swap `lib/game-store.ts`'s in-memory zustand store for one backed by Supabase:
+   `saveRound` becomes an insert into `rounds`, game totals become a query instead
+   of `Array.reduce`. The scoring math in `rook-engine.ts` doesn't change at all.
+3. Add email or magic-link sign-in via Supabase Auth.
+
+**Phase 3 — Multi-device live sync (premium)**
+Supabase's Postgres change subscriptions push row inserts to every connected
+client in real time — when one phone saves a round, everyone else's screen
+updates without polling. This is the natural place to gate: free accounts play
+on one device: premium accounts can have every player watching live on their
+own phone.
+
+**Phase 4 — Billing (Stripe)**
+1. Stripe Checkout for the premium subscription, Customer Portal for
+   cancel/upgrade.
+2. A webhook endpoint (`app/api/stripe-webhook/route.ts`) that flips a
+   `is_premium` flag on the user's row when their subscription becomes
+   active/past_due/canceled.
+3. Gate Phase 3's realtime sync and multi-variant support behind that flag.
+
+**Phase 5 — Additional game variants**
+Everything in `rook-engine.ts` is Rook-specific by design — bid steps of 5,
+trump colors instead of suits, the set/moon rules. A second variant (e.g.
+Spades or Euchre) would get its own `lib/<game>-engine.ts` alongside it, with
+a shared `Round`-like interface so the Scorecard/GameOver UI can stay mostly
+generic. Worth deferring until Phase 2–4 are solid — the account and billing
+plumbing is the same regardless of which games sit on top of it.
+
+## What I'd need from you to start Phase 2
+
+- A Supabase project (free tier is fine to start) — project URL + anon key
+- A Stripe account, in test mode to start — publishable + secret key, and a
+  price ID for the premium subscription
+
+Neither of those need to be shared in chat — once you've created them, drop the
+keys into a `.env.local` file (never committed) and I can wire up the
+integration code against the actual variable names.

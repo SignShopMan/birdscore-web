@@ -1,0 +1,113 @@
+// Rook scoring engine — ported from BirdScore_v3.msapp (Game.pa.yaml / Scorecard.pa.yaml)
+// Kept as pure functions with no UI or storage dependencies, so this same module
+// can run client-side today and inside a Supabase edge function / API route later
+// without changes — that's what lets multi-device sync (Phase 2) reuse it as-is.
+
+export type Team = "US" | "THEM";
+export type TrumpColor = "Black" | "Green" | "Red" | "Yellow";
+
+export const TRUMP_OPTIONS: { key: TrumpColor; label: string }[] = [
+  { key: "Black", label: "Black" },
+  { key: "Green", label: "Green" },
+  { key: "Red", label: "Red" },
+  { key: "Yellow", label: "Yellow" },
+];
+
+export interface Round {
+  rowId: string;
+  round: number;
+  trump: TrumpColor;
+  bidTeam: Team;
+  bid: number;
+  dealerIndex: number;
+  shootMoon: boolean;
+  usScore: number;
+  themScore: number;
+  rowType: "Round" | "Adj";
+  createdAt: string;
+}
+
+export interface GameSettings {
+  winningScore: number; // original default: 500
+  maxPointsPerRound: number; // original default: 180 (options: 120/150/180/200/250)
+}
+
+export const MAX_POINTS_OPTIONS = [120, 150, 180, 200, 250] as const;
+export const DEFAULT_SETTINGS: GameSettings = {
+  winningScore: 500,
+  maxPointsPerRound: 180,
+};
+
+/** Bid options: 50 to maxPointsPerRound, in steps of 5 (Sequence(50, 75, 5) filtered by max). */
+export function bidOptions(maxPointsPerRound: number): number[] {
+  const options: number[] = [];
+  for (let bid = 50; bid <= 200; bid += 5) {
+    if (bid <= maxPointsPerRound) options.push(bid);
+  }
+  return options;
+}
+
+/**
+ * Bidder's/non-bidder's score for a round, mirroring lblUsCalcScore / lblThemCalcScore.
+ * The non-bidding team enters a score (must be a clean multiple of 5, 0..max).
+ * The bidding team's score is (max - nonBidderScore), unless that would exceed what
+ * they bid for (nonBidderScore > max - bid), in which case the bidder goes SET and
+ * scores -bid for the round.
+ */
+export function calculateRoundScores(params: {
+  bidTeam: Team;
+  bid: number;
+  maxPointsPerRound: number;
+  nonBidderScore: number;
+  shootMoon: boolean;
+}): { usScore: number; themScore: number; bidderSet: boolean } {
+  const { bidTeam, bid, maxPointsPerRound, nonBidderScore, shootMoon } = params;
+
+  // Shoot the Moon: bidding team must take every point (bid == maxPointsPerRound).
+  // Any points the "non-bidder" is entered as having taken means the moon shot failed.
+  const bidderWentSet = nonBidderScore > maxPointsPerRound - bid;
+  const bidderScore = bidderWentSet ? -bid : maxPointsPerRound - nonBidderScore;
+  const nonBidderFinal = nonBidderScore;
+
+  if (bidTeam === "US") {
+    return { usScore: bidderScore, themScore: nonBidderFinal, bidderSet: bidderWentSet };
+  }
+  return { usScore: nonBidderFinal, themScore: bidderScore, bidderSet: bidderWentSet };
+}
+
+/** Mirrors btnSaveScore's DisplayMode validation gate on the non-bidder's score input. */
+export function isValidNonBidderScore(rawText: string, maxPointsPerRound: number): boolean {
+  const text = rawText.trim();
+  if (text === "" || !/^-?\d+$/.test(text)) return false;
+  const value = Number(text);
+  if (!Number.isInteger(value)) return false;
+  if (value % 5 !== 0) return false;
+  if (value < 0 || value > maxPointsPerRound) return false;
+  return true;
+}
+
+export function teamTotal(rounds: Round[], team: Team): number {
+  return rounds.reduce((sum, r) => sum + (team === "US" ? r.usScore : r.themScore), 0);
+}
+
+export function checkGameOver(
+  rounds: Round[],
+  winningScore: number
+): { over: boolean; winner: Team | null; usTotal: number; themTotal: number } {
+  const usTotal = teamTotal(rounds, "US");
+  const themTotal = teamTotal(rounds, "THEM");
+  const over = usTotal >= winningScore || themTotal >= winningScore;
+  const winner = over ? (usTotal >= winningScore ? "US" : "THEM") : null;
+  return { over, winner, usTotal, themTotal };
+}
+
+/** Dealer rotates through 4 seats; only advances automatically once the first dealer is set. */
+export function nextDealerIndex(currentIndex: number): number {
+  return (currentIndex + 1) % 4;
+}
+
+export function newRoundId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
