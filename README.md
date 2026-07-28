@@ -22,6 +22,24 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 4**:
+- Winning score can no longer be set below the configured max points per round —
+  the floor is now dynamic (`isValidWinningScore` takes the round max as a
+  parameter) instead of a flat 50, since a winning score under the round max was
+  never sensible in the first place.
+- The collapsed trump/bid card is bigger (`text-8xl`/`text-9xl`, more padding),
+  and the bid section (slider, shortcuts, Shoot the Moon toggle) now disappears
+  entirely once trump is called instead of just greying out — Edit Bid brings it
+  back by clearing trump.
+- Added a fully optional penalty/bonus workflow, reachable from the Scoreboard
+  ("+ Penalty / Bonus"): pick a team, Penalty or Bonus, a point value, and a
+  free-text reason (misdeal, renege, moon bonus — whatever your table uses,
+  since there's no fixed amount for any of these). These show up as `Adj` rows
+  in the ledger, separate from `Round` rows, and fold into totals and win
+  detection the same way rounds do (`Round` type now covers both; `roundsPlayed`
+  excludes adjustments from round numbering so "Round 4" still means the 4th
+  hand actually played).
+
 **Beta round 3**:
 - Trump picker now collapses into a single card (trump color + bid, large) once
   trump is called, instead of staying a 4-swatch grid with one highlighted — matches

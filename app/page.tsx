@@ -17,7 +17,7 @@ export default function Home() {
   const [hasStartedGame, setHasStartedGame] = useState(false);
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
-  const { gameOver, rounds, updateRound, deleteRound } = useGameStore();
+  const { gameOver, rounds, updateRound, deleteRound, addAdjustment } = useGameStore();
 
   const openSettings = (mode: SettingsMode) => {
     setSettingsMode(mode);
@@ -63,6 +63,7 @@ export default function Home() {
             themTotal={themTotal(rounds)}
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
+            onAddAdjustment={addAdjustment}
           />
         </aside>
       )}
@@ -76,6 +77,7 @@ export default function Home() {
             themTotal={themTotal(rounds)}
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
+            onAddAdjustment={addAdjustment}
             onClose={() => setScoreboardOpen(false)}
           />
         </div>

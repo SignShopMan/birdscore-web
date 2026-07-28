@@ -16,15 +16,24 @@ export const TRUMP_OPTIONS: { key: TrumpColor; label: string }[] = [
 export interface Round {
   rowId: string;
   round: number;
-  trump: TrumpColor;
-  bidTeam: Team;
-  bid: number;
-  dealerIndex: number;
-  shootMoon: boolean;
   usScore: number;
   themScore: number;
   rowType: "Round" | "Adj";
   createdAt: string;
+  // Present when rowType === "Round"
+  trump?: TrumpColor;
+  bidTeam?: Team;
+  bid?: number;
+  dealerIndex?: number;
+  shootMoon?: boolean;
+  // Present when rowType === "Adj" — free-text reason since house rules vary
+  // table to table (misdeal, renege, moon bonus, etc.) with no fixed amounts.
+  label?: string;
+}
+
+/** Count of actual played rounds, excluding adjustment entries — used for round numbering. */
+export function roundsPlayed(rounds: Round[]): number {
+  return rounds.filter((r) => r.rowType === "Round").length;
 }
 
 export interface GameSettings {
@@ -50,8 +59,8 @@ export function isValidCustomMaxPoints(rawText: string): boolean {
   return isValidPositiveMultipleOfFive(rawText, 50, 1000);
 }
 
-export function isValidWinningScore(rawText: string): boolean {
-  return isValidPositiveMultipleOfFive(rawText, 50, 5000);
+export function isValidWinningScore(rawText: string, minWinningScore: number): boolean {
+  return isValidPositiveMultipleOfFive(rawText, minWinningScore, 5000);
 }
 
 /** Bid options: 50 to maxPointsPerRound, in steps of 5. */

@@ -5,6 +5,9 @@ import {
   bidOptions,
   bidShortcuts,
   isValidWinningScore,
+  teamTotal,
+  roundsPlayed,
+  Round,
 } from "../lib/rook-engine";
 
 function assertEqual(label: string, actual: unknown, expected: unknown) {
@@ -50,11 +53,15 @@ assertEqual("invalid: empty", isValidNonBidderScore("", 180), false);
 
 // Winning score validation — guards against the leading-zero bug: an empty or "0"
 // string must stay invalid rather than silently becoming a valid 0 that gets
-// committed to state and re-rendered before the next keystroke lands.
-assertEqual("winning score valid 500", isValidWinningScore("500"), true);
-assertEqual("winning score invalid empty", isValidWinningScore(""), false);
-assertEqual("winning score invalid zero", isValidWinningScore("0"), false);
-assertEqual("winning score invalid not mult of 5", isValidWinningScore("501"), false);
+// committed to state and re-rendered before the next keystroke lands. The floor
+// is now tied to the round's max points, not a flat 50 — a winning score below
+// the round max is nonsensical.
+assertEqual("winning score valid 500 at 180 max", isValidWinningScore("500", 180), true);
+assertEqual("winning score invalid empty", isValidWinningScore("", 180), false);
+assertEqual("winning score invalid zero", isValidWinningScore("0", 180), false);
+assertEqual("winning score invalid not mult of 5", isValidWinningScore("501", 180), false);
+assertEqual("winning score below round max is invalid", isValidWinningScore("100", 180), false);
+assertEqual("winning score equal to round max is valid", isValidWinningScore("180", 180), true);
 
 // Game over detection
 const over = checkGameOver(
@@ -77,5 +84,23 @@ assertEqual("bid options count for 230 max", bids230.length, 37); // 50..230 ste
 // Bid shortcuts scale with the configured max, rounded to steps of 5
 assertEqual("bid shortcuts at 180 max", bidShortcuts(180), [110, 125, 145, 160]);
 assertEqual("bid shortcuts at custom 230 max", bidShortcuts(230), [140, 160, 185, 205]);
+
+// Adjustment entries (penalties/bonuses) reuse the Round shape and must fold into
+// totals and win detection the same way actual rounds do, with no special-casing.
+const withAdjustment: Round[] = [
+  { rowId: "1", round: 1, trump: "Red", bidTeam: "US", bid: 60, dealerIndex: 0, shootMoon: false, usScore: 130, themScore: 50, rowType: "Round", createdAt: "" },
+  { rowId: "2", round: 1, usScore: 0, themScore: -25, rowType: "Adj", label: "Renege", createdAt: "" },
+  { rowId: "3", round: 1, usScore: 50, themScore: 0, rowType: "Adj", label: "Moon bonus", createdAt: "" },
+];
+assertEqual("adjustments fold into US total", teamTotal(withAdjustment, "US"), 180);
+assertEqual("adjustments fold into THEM total", teamTotal(withAdjustment, "THEM"), 25);
+assertEqual(
+  "adjustments can push a team over the winning score",
+  checkGameOver(withAdjustment, 180),
+  { over: true, winner: "US", usTotal: 180, themTotal: 25 }
+);
+
+// Adjustment entries must not count toward round numbering
+assertEqual("roundsPlayed excludes adjustments", roundsPlayed(withAdjustment), 1);
 
 console.log("\nDone.");

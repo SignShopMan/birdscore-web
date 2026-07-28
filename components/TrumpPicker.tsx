@@ -29,13 +29,15 @@ export function TrumpPicker({
     const swatch = SWATCH[value];
     return (
       <div
-        className={`rounded-card p-6 text-center shadow-card ${swatch.bg} ${swatch.text}`}
+        className={`rounded-card p-8 text-center shadow-card sm:p-10 ${swatch.bg} ${swatch.text}`}
         aria-live="polite"
       >
-        <div className="font-body text-xs uppercase tracking-[0.25em] opacity-75">
+        <div className="font-body text-sm uppercase tracking-[0.3em] opacity-75">
           {value} Trump
         </div>
-        <div className="mt-1 font-score tabular-score text-6xl font-bold">{bidValue}</div>
+        <div className="mt-2 font-score tabular-score text-8xl font-bold leading-none sm:text-9xl">
+          {bidValue}
+        </div>
       </div>
     );
   }

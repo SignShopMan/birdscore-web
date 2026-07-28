@@ -11,6 +11,7 @@ import {
   checkGameOver,
   newRoundId,
   nextDealerIndex,
+  roundsPlayed,
   teamTotal,
 } from "./rook-engine";
 
@@ -40,6 +41,7 @@ interface GameState {
   toggleShootMoon: () => void;
   advanceDealer: () => void;
   saveRound: (nonBidderScore: number) => void;
+  addAdjustment: (team: Team, points: number, label: string) => void;
   updateRound: (rowId: string, usScore: number, themScore: number) => void;
   deleteRound: (rowId: string) => void;
   newGame: () => void;
@@ -101,7 +103,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const round: Round = {
       rowId: newRoundId(),
-      round: s.rounds.length + 1,
+      round: roundsPlayed(s.rounds) + 1,
       trump: s.trump,
       bidTeam: s.bidTeam,
       bid: s.bid,
@@ -127,6 +129,26 @@ export const useGameStore = create<GameState>((set, get) => ({
       dealerIndex: over ? s.dealerIndex : nextDealerIndex(s.dealerIndex),
     });
   },
+
+  // Fully optional house-rule entry — misdeal, renege, moon bonus, whatever a table
+  // uses. No fixed amounts, since that varies table to table; points and reason are
+  // both free-form. Reuses the Round shape (one team's score field, the other 0) so
+  // totals/history/game-over detection all work without any special-casing.
+  addAdjustment: (team, points, label) =>
+    set((s) => {
+      const entry: Round = {
+        rowId: newRoundId(),
+        round: roundsPlayed(s.rounds),
+        usScore: team === "US" ? points : 0,
+        themScore: team === "THEM" ? points : 0,
+        rowType: "Adj",
+        label,
+        createdAt: new Date().toISOString(),
+      };
+      const rounds = [...s.rounds, entry];
+      const { over, winner } = checkGameOver(rounds, s.settings.winningScore);
+      return { rounds, gameOver: over, winner };
+    }),
 
   updateRound: (rowId, usScore, themScore) =>
     set((s) => {

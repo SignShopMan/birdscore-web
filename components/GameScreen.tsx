@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { bidOptions } from "@/lib/rook-engine";
+import { bidOptions, roundsPlayed } from "@/lib/rook-engine";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { TrumpPicker } from "./TrumpPicker";
 import { BidSlider } from "./BidSlider";
@@ -58,7 +58,7 @@ export function GameScreen({
             &larr; Settings
           </button>
           <h1 className="mt-1 font-display text-2xl font-semibold text-parchment lg:text-3xl">
-            Round {rounds.length + 1}
+            Round {roundsPlayed(rounds) + 1}
           </h1>
         </div>
         <button
@@ -106,8 +106,10 @@ export function GameScreen({
           </div>
         </section>
 
-        {/* 2. The bid itself — happens before trump is called, like the real auction does */}
-        {bidTeam && (
+        {/* 2. The bid itself — happens before trump is called, like the real auction does.
+               Once trump is called, this whole section gives way to the collapsed card below;
+               Edit Bid clears trump to bring it back rather than leaving it visible-but-disabled. */}
+        {bidTeam && !trump && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">

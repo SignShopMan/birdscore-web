@@ -33,7 +33,7 @@ export function SettingsScreen({
   const [customMode, setCustomMode] = useState(!presetMatch);
   const [customInput, setCustomInput] = useState(String(current.maxPointsPerRound));
 
-  const winningScoreValid = isValidWinningScore(winningScoreInput);
+  const winningScoreValid = isValidWinningScore(winningScoreInput, maxPoints);
   const customValid = isValidCustomMaxPoints(customInput);
   const canSave = winningScoreValid && (customMode ? customValid : true);
 
@@ -83,7 +83,7 @@ export function SettingsScreen({
             />
             {!winningScoreValid && (
               <p className="mt-1 font-body text-xs text-trump-red">
-                Enter a multiple of 5, between 50 and 5000.
+                Enter a multiple of 5, at least {maxPoints} (this hand&rsquo;s max) and up to 5000.
               </p>
             )}
           </div>
