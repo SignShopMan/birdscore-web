@@ -22,6 +22,15 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 2**:
+- Replaced the ±5 stepper with a slider — dragging from 55 to 125 was a lot of taps.
+- Added quick-bid shortcut chips below the slider (`lib/rook-engine.ts`:
+  `bidShortcuts`) at 60/70/80/90% of the configured max, rounded to steps of 5.
+  These are based on general Rook bidding convention (competitive bids commonly
+  land ~55-65% of total points, strong hands push 80-90%) — **not** measured
+  from your group's actual games, since nothing persists yet. Worth revisiting
+  once Phase 2 has real data to compute this group's actual average bid instead.
+
 **Beta round 1** (post-launch feedback):
 - Bid now comes before trump (matches how the real auction works) — trump picker is
   hidden until a bid is set.

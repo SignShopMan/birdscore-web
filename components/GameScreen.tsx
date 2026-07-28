@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { bidOptions } from "@/lib/rook-engine";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { TrumpPicker } from "./TrumpPicker";
-import { BidStepper } from "./BidStepper";
+import { BidSlider } from "./BidSlider";
 
 const DEALER_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
 
@@ -129,7 +129,7 @@ export function GameScreen({
                 </div>
               </div>
             ) : (
-              <BidStepper
+              <BidSlider
                 value={bid ?? bids[0]}
                 min={bids[0]}
                 max={settings.maxPointsPerRound}

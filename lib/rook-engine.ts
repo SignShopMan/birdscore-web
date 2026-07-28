@@ -56,6 +56,23 @@ export function bidOptions(maxPointsPerRound: number): number[] {
 }
 
 /**
+ * Quick-bid shortcuts as a fraction of the max points per round, since this app has
+ * no bid history yet to compute a real group average from (everything's client-only,
+ * nothing persists between sessions). These fractions reflect general Rook bidding
+ * convention — most competitive bids land ~55-65% of total points, stronger hands
+ * push toward 80-90% — not this group's actual play. Once Phase 2 persistence is in,
+ * this can be swapped for a real "your group's average bid" calculation.
+ */
+export function bidShortcuts(maxPointsPerRound: number, min = 50): number[] {
+  const fractions = [0.6, 0.7, 0.8, 0.9];
+  const values = fractions.map((f) => {
+    const raw = Math.round((maxPointsPerRound * f) / 5) * 5;
+    return Math.min(maxPointsPerRound, Math.max(min, raw));
+  });
+  return Array.from(new Set(values)).sort((a, b) => a - b);
+}
+
+/**
  * Bidder's/non-bidder's score for a round, mirroring lblUsCalcScore / lblThemCalcScore.
  * The non-bidding team enters a score (must be a clean multiple of 5, 0..max).
  * The bidding team's score is (max - nonBidderScore), unless that would exceed what
