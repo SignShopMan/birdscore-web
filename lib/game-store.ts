@@ -25,7 +25,6 @@ interface GameState {
   bidLocked: boolean;
   shootMoon: boolean;
   dealerIndex: number;
-  dealerIsSet: boolean;
 
   gameOver: boolean;
   winner: Team | null;
@@ -53,7 +52,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   bidLocked: false,
   shootMoon: false,
   dealerIndex: 0,
-  dealerIsSet: false,
   gameOver: false,
   winner: null,
 
@@ -67,7 +65,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       bidLocked: false,
       shootMoon: false,
       dealerIndex: 0,
-      dealerIsSet: false,
       gameOver: false,
       winner: null,
     }),
@@ -85,11 +82,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   lockBid: () => set({ bidLocked: true }),
   unlockBid: () => set({ bidLocked: false, trump: null }),
 
-  advanceDealer: () =>
-    set((s) => ({
-      dealerIndex: nextDealerIndex(s.dealerIndex),
-      dealerIsSet: true,
-    })),
+  // Manual override only — normal rotation now happens automatically in saveRound.
+  advanceDealer: () => set((s) => ({ dealerIndex: nextDealerIndex(s.dealerIndex) })),
 
   saveRound: (nonBidderScore) => {
     const s = get();
@@ -129,11 +123,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       bidTeam: null,
       bid: null,
       shootMoon: false,
-      dealerIndex: over
-        ? s.dealerIndex
-        : s.dealerIsSet
-        ? nextDealerIndex(s.dealerIndex)
-        : s.dealerIndex,
+      dealerIndex: over ? s.dealerIndex : nextDealerIndex(s.dealerIndex),
     });
   },
 
@@ -164,7 +154,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       bid: null,
       shootMoon: false,
       dealerIndex: 0,
-      dealerIsSet: false,
     }),
 }));
 

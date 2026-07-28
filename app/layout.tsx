@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, Space_Mono } from "next/font/google";
+import { FeedbackLink } from "@/components/FeedbackLink";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${fraunces.variable} ${inter.variable} ${spaceMono.variable} font-body bg-felt text-parchment`}
       >
         {children}
+        <FeedbackLink />
       </body>
     </html>
   );

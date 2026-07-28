@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { bidOptions } from "@/lib/rook-engine";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { TrumpPicker } from "./TrumpPicker";
+import { BidStepper } from "./BidStepper";
 
 const DEALER_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
 
@@ -33,6 +35,14 @@ export function GameScreen({
 
   const bidIsValid = !!trump && !!bidTeam && !!bid;
   const bids = bidOptions(settings.maxPointsPerRound);
+  const bidChosen = bid != null || shootMoon;
+
+  // Bidding happens before trump is called — once a team is on the hook for the bid,
+  // give the stepper a starting number right away instead of showing an empty state.
+  useEffect(() => {
+    if (bidTeam && bid == null && !shootMoon) setBid(bids[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bidTeam]);
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 lg:max-w-xl lg:px-0">
@@ -47,7 +57,7 @@ export function GameScreen({
           onClick={advanceDealer}
           className="rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
         >
-          {DEALER_LABELS[dealerIndex]} →
+          {DEALER_LABELS[dealerIndex]} &middot; override
         </button>
       </header>
 
@@ -65,6 +75,7 @@ export function GameScreen({
       </button>
 
       <div className="mt-6 flex-1 space-y-5">
+        {/* 1. Who's bidding */}
         <section>
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
             Bidding team
@@ -87,66 +98,71 @@ export function GameScreen({
           </div>
         </section>
 
-        <section>
-          <div className="flex items-center justify-between">
-            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
-              Trump
-            </p>
-            {bidLocked && (
+        {/* 2. The bid itself — happens before trump is called, like the real auction does */}
+        {bidTeam && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
+                Bid
+              </p>
               <button
-                onClick={unlockBid}
-                className="font-body text-xs text-brass underline underline-offset-2"
+                onClick={toggleShootMoon}
+                disabled={bidLocked}
+                aria-pressed={shootMoon}
+                className={`rounded-full px-3 py-1 font-body text-xs font-semibold uppercase tracking-wide disabled:opacity-50 ${
+                  shootMoon
+                    ? "bg-brass text-ink"
+                    : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
+                }`}
               >
-                Edit bid
+                Shoot the Moon {shootMoon ? "🌜" : ""}
               </button>
+            </div>
+
+            {shootMoon ? (
+              <div className="rounded-card bg-parchment/10 p-3 text-center ring-1 ring-parchment/20">
+                <div className="font-score tabular-score text-5xl font-bold text-parchment">
+                  {settings.maxPointsPerRound}
+                </div>
+                <div className="font-body text-[10px] uppercase tracking-wide text-parchment/50">
+                  All or nothing
+                </div>
+              </div>
+            ) : (
+              <BidStepper
+                value={bid ?? bids[0]}
+                min={bids[0]}
+                max={settings.maxPointsPerRound}
+                onChange={setBid}
+                disabled={bidLocked}
+              />
             )}
-          </div>
-          <div className="mt-2">
-            <TrumpPicker value={trump} onChange={setTrump} disabled={bidLocked} />
-          </div>
-        </section>
+          </section>
+        )}
 
-        <section className="rounded-card bg-parchment/10 p-4 ring-1 ring-parchment/20">
-          <div className="flex items-center justify-between">
-            <p className="font-body text-sm text-parchment">Shoot the Moon?</p>
-            <button
-              onClick={toggleShootMoon}
-              disabled={bidLocked}
-              aria-pressed={shootMoon}
-              className={`rounded-full px-4 py-1.5 font-body text-xs font-semibold uppercase tracking-wide disabled:opacity-50 ${
-                shootMoon ? "bg-brass text-ink" : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
-              }`}
-            >
-              {shootMoon ? "Yes 🌜" : "No"}
-            </button>
-          </div>
-        </section>
-
-        {!shootMoon && (
+        {/* 3. Trump — called after the bid is settled */}
+        {bidChosen && (
           <section>
-            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
-              Bid
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {bids.map((b) => (
+            <div className="flex items-center justify-between">
+              <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
+                Trump
+              </p>
+              {bidLocked && (
                 <button
-                  key={b}
-                  disabled={bidLocked}
-                  onClick={() => setBid(b)}
-                  className={`rounded-full px-4 py-1.5 font-score text-sm tabular-score disabled:opacity-50 ${
-                    bid === b
-                      ? "bg-brass text-ink"
-                      : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
-                  }`}
+                  onClick={unlockBid}
+                  className="font-body text-xs text-brass underline underline-offset-2"
                 >
-                  {b}
+                  Edit bid
                 </button>
-              ))}
+              )}
+            </div>
+            <div className="mt-2">
+              <TrumpPicker value={trump} onChange={setTrump} disabled={bidLocked} />
             </div>
           </section>
         )}
 
-        {(bid != null || shootMoon) && trump && (
+        {bidChosen && trump && (
           <div
             className="rounded-card p-6 text-center shadow-card"
             style={{

@@ -20,6 +20,26 @@ access at build time to fetch Fraunces/Inter/Space Mono — that's normal and wi
 work fine on your machine and on Vercel; it's only blocked in the sandboxed
 environment I built this in.
 
+## Changelog
+
+**Beta round 1** (post-launch feedback):
+- Bid now comes before trump (matches how the real auction works) — trump picker is
+  hidden until a bid is set.
+- Replaced the full row of bid buttons with a stepper (±5) — was 27+ buttons at a
+  180 max, unreadable at 250+.
+- Fixed a real bug: `bidOptions()` was hardcoded to stop generating at 200, so a
+  230-point max (as a beta tester requested) silently made bids above 200
+  unreachable. Now scales to any max.
+- Settings now supports a custom max points per hand, not just the five presets.
+- Dealer seat was only auto-advancing if you happened to tap the header control
+  once at game start to "arm" it — an undiscoverable gate most people would never
+  trigger. It now always auto-advances after each round is scored; the header
+  control is a manual override for corrections only.
+- Added a persistent "Beta · send feedback" mailto link (bottom-right, all
+  screens) pointed at `feedback@therealbirdscore.com` — swap the address in
+  `components/FeedbackLink.tsx` if you'd rather use something else. You'll need
+  to set up that inbox/forwarding on your end; the app side is just the link.
+
 ## Scoreboard & responsive layout
 
 `components/Scoreboard.tsx` is the round-by-round ledger the original Scorecard

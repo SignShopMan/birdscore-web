@@ -59,4 +59,9 @@ assertEqual("game over at 500", over, { over: true, winner: "US", usTotal: 520, 
 // Bid options respect the max-points ceiling
 assertEqual("bid options capped at 150", bidOptions(150), [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150]);
 
+// Regression: a custom max above the old hardcoded 200 ceiling must still generate all bids up to it
+const bids230 = bidOptions(230);
+assertEqual("bid options reach a custom 230 max", bids230[bids230.length - 1], 230);
+assertEqual("bid options count for 230 max", bids230.length, 37); // 50..230 step 5
+
 console.log("\nDone.");

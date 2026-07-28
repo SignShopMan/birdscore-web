@@ -38,11 +38,19 @@ export const DEFAULT_SETTINGS: GameSettings = {
   maxPointsPerRound: 180,
 };
 
-/** Bid options: 50 to maxPointsPerRound, in steps of 5 (Sequence(50, 75, 5) filtered by max). */
+/** Custom max-points input must be a positive multiple of 5, within a sane table-rules range. */
+export function isValidCustomMaxPoints(rawText: string): boolean {
+  const text = rawText.trim();
+  if (text === "" || !/^\d+$/.test(text)) return false;
+  const value = Number(text);
+  return value >= 50 && value <= 1000 && value % 5 === 0;
+}
+
+/** Bid options: 50 to maxPointsPerRound, in steps of 5. */
 export function bidOptions(maxPointsPerRound: number): number[] {
   const options: number[] = [];
-  for (let bid = 50; bid <= 200; bid += 5) {
-    if (bid <= maxPointsPerRound) options.push(bid);
+  for (let bid = 50; bid <= maxPointsPerRound; bid += 5) {
+    options.push(bid);
   }
   return options;
 }
