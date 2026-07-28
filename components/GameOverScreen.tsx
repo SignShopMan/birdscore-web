@@ -20,7 +20,7 @@ export function GameOverScreen({
         <h1 className="mt-1 font-display text-5xl font-semibold text-parchment lg:text-6xl">
           {winner} wins
         </h1>
-        <p className="mt-3 font-body text-sm text-parchment/70">
+        <p className="mt-3 font-body text-sm text-parchment/75">
           Nicely played — here&rsquo;s the final tally.
         </p>
 
@@ -52,7 +52,7 @@ export function GameOverScreen({
       </button>
       <button
         onClick={onOpenSettings}
-        className="mt-3 w-full font-body text-xs text-parchment/60 underline underline-offset-4"
+        className="mt-3 w-full font-body text-xs text-parchment/75 underline underline-offset-4"
       >
         Change settings before the next game
       </button>

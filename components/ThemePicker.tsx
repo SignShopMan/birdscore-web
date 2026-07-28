@@ -33,7 +33,7 @@ export function ThemePicker() {
             onClick={() => setMode(key)}
             aria-pressed={mode === key}
             className={`rounded-full px-4 py-1.5 font-body text-sm ${
-              mode === key ? "bg-ink text-parchment" : "bg-white text-ink ring-1 ring-ink/20"
+              mode === key ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
             }`}
           >
             {label}
@@ -42,7 +42,7 @@ export function ThemePicker() {
       </div>
 
       <label className="mt-5 block font-body text-sm font-semibold text-ink">Table felt</label>
-      <p className="mt-1 font-body text-xs text-ink/60">
+      <p className="mt-1 font-body text-xs text-ink/75">
         Trump colors always match the physical deck — only the felt changes here.
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -52,7 +52,7 @@ export function ThemePicker() {
             onClick={() => setAccent(key)}
             aria-pressed={accent === key}
             className={`flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 font-body text-sm ${
-              accent === key ? "bg-ink text-parchment" : "bg-white text-ink ring-1 ring-ink/20"
+              accent === key ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
             }`}
           >
             <span

@@ -21,7 +21,7 @@ export function BidSlider({
     <div className="rounded-card bg-parchment/10 p-4 ring-1 ring-parchment/20">
       <div className="text-center">
         <div className="font-score tabular-score text-5xl font-bold text-parchment">{value}</div>
-        <div className="font-body text-[10px] uppercase tracking-wide text-parchment/50">
+        <div className="font-body text-[10px] uppercase tracking-wide text-parchment/75">
           range {min}&ndash;{max}
         </div>
       </div>

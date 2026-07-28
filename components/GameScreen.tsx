@@ -74,7 +74,7 @@ export function GameScreen({
         onClick={onOpenScoreboard}
         className="mt-5 flex items-center justify-between rounded-card bg-parchment/10 px-4 py-3 ring-1 ring-parchment/20 lg:hidden"
       >
-        <span className="font-body text-xs uppercase tracking-[0.15em] text-parchment/70">
+        <span className="font-body text-xs uppercase tracking-[0.15em] text-parchment/75">
           Scoreboard
         </span>
         <span className="font-score tabular-score text-lg font-bold text-parchment">
@@ -91,7 +91,7 @@ export function GameScreen({
       <div className="mt-6 flex-1 space-y-5">
         {/* 1. Who's bidding */}
         <section>
-          <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
+          <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
             Bidding team
           </p>
           <div className="mt-2 grid grid-cols-2 gap-3">
@@ -118,7 +118,7 @@ export function GameScreen({
         {bidTeam && !trump && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
+              <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
                 Bid
               </p>
               <button
@@ -140,7 +140,7 @@ export function GameScreen({
                 <div className="font-score tabular-score text-5xl font-bold text-parchment">
                   {settings.maxPointsPerRound}
                 </div>
-                <div className="font-body text-[10px] uppercase tracking-wide text-parchment/50">
+                <div className="font-body text-[10px] uppercase tracking-wide text-parchment/75">
                   All or nothing
                 </div>
               </div>
@@ -159,7 +159,7 @@ export function GameScreen({
         {/* 3. Trump — called after the bid is settled; collapses to one card once set */}
         {bidChosen && (
           <section>
-            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/70">
+            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
               Trump
             </p>
             <div className="mt-2">

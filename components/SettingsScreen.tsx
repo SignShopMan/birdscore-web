@@ -59,12 +59,12 @@ export function SettingsScreen({
           <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
             {mode === "edit" ? "Game Settings" : "New Game"}
           </p>
-          <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/60 ring-1 ring-parchment/20">
+          <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
             Beta
           </span>
         </div>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
-        <p className="mt-2 font-body text-sm text-parchment/70">
+        <p className="mt-2 font-body text-sm text-parchment/75">
           {mode === "edit"
             ? "Adjust the table rules — rounds already scored are untouched."
             : "Set the table rules, then deal."}
@@ -105,7 +105,7 @@ export function SettingsScreen({
                   }}
                   className={`rounded-full px-4 py-1.5 font-score text-sm tabular-score ${
                     !customMode && maxPoints === v
-                      ? "bg-ink text-parchment"
+                      ? "bg-ink text-paper"
                       : "bg-white text-ink ring-1 ring-ink/20"
                   }`}
                 >
@@ -115,7 +115,7 @@ export function SettingsScreen({
               <button
                 onClick={() => setCustomMode(true)}
                 className={`rounded-full px-4 py-1.5 font-body text-sm ${
-                  customMode ? "bg-ink text-parchment" : "bg-white text-ink ring-1 ring-ink/20"
+                  customMode ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
                 }`}
               >
                 Custom
@@ -161,7 +161,7 @@ export function SettingsScreen({
         {canCancel && (
           <button
             onClick={onDone}
-            className="w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment/70 ring-1 ring-parchment/20"
+            className="w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment/75 ring-1 ring-parchment/20"
           >
             Cancel
           </button>

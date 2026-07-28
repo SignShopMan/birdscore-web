@@ -53,7 +53,7 @@ function RoundRow({
   if (editing) {
     return (
       <li className="flex items-center gap-2 rounded-md bg-white/60 px-2 py-1.5 ring-1 ring-ink/15">
-        <span className="w-5 shrink-0 font-score text-xs text-ink/50">
+        <span className="w-5 shrink-0 font-score text-xs text-ink/75">
           {isAdj ? "\u00B1" : round.round}
         </span>
         <input
@@ -71,7 +71,7 @@ function RoundRow({
         <div className="ml-auto flex gap-1">
           <button
             onClick={() => setEditing(false)}
-            className="rounded px-2 py-1 font-body text-xs text-ink/60"
+            className="rounded px-2 py-1 font-body text-xs text-ink/75"
           >
             Cancel
           </button>
@@ -93,7 +93,7 @@ function RoundRow({
 
   return (
     <li className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-white/50">
-      <span className="w-5 shrink-0 font-score text-xs text-ink/50">
+      <span className="w-5 shrink-0 font-score text-xs text-ink/75">
         {isAdj ? "\u00B1" : round.round}
       </span>
       {isAdj ? (
@@ -101,7 +101,7 @@ function RoundRow({
       ) : (
         <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT[round.trump as TrumpColor]}`} />
       )}
-      <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/60">
+      <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/75">
         {isAdj
           ? round.label || "Adjustment"
           : `${round.bidTeam} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
@@ -117,14 +117,14 @@ function RoundRow({
           <button
             onClick={() => setEditing(true)}
             aria-label={`Edit ${isAdj ? "adjustment" : `round ${round.round}`}`}
-            className="rounded p-1 text-ink/40 hover:bg-ink/10 hover:text-ink"
+            className="rounded p-1 text-ink/75 hover:bg-ink/10 hover:text-ink"
           >
             <PencilIcon />
           </button>
           <button
             onClick={() => onDelete(round.rowId)}
             aria-label={`Delete ${isAdj ? "adjustment" : `round ${round.round}`}`}
-            className="rounded p-1 text-ink/40 hover:bg-trump-red/10 hover:text-trump-red"
+            className="rounded p-1 text-ink/75 hover:bg-trump-red/10 hover:text-trump-red"
           >
             <TrashIcon />
           </button>
@@ -150,10 +150,10 @@ function AdjustmentForm({
 
   return (
     <div className="rounded-card bg-paper-dim p-3 ring-1 ring-ink/15">
-      <p className="font-body text-[10px] uppercase tracking-wide text-ink/50">
+      <p className="font-body text-[10px] uppercase tracking-wide text-ink/75">
         House-rule adjustment &middot; optional
       </p>
-      <p className="mt-0.5 font-body text-[11px] text-ink/50">
+      <p className="mt-0.5 font-body text-[11px] text-ink/75">
         For misdeal, renege, moon bonus, or whatever your table uses. No fixed
         amounts — enter whatever you've agreed on.
       </p>
@@ -164,7 +164,7 @@ function AdjustmentForm({
             key={t}
             onClick={() => setTeam(t)}
             className={`rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
-              team === t ? "bg-ink text-parchment" : "bg-white text-ink ring-1 ring-ink/20"
+              team === t ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
             }`}
           >
             {t}
@@ -177,7 +177,7 @@ function AdjustmentForm({
           onClick={() => setKind("penalty")}
           className={`rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
             kind === "penalty"
-              ? "bg-trump-red text-parchment"
+              ? "bg-trump-red text-white"
               : "bg-white text-ink ring-1 ring-ink/20"
           }`}
         >
@@ -186,7 +186,7 @@ function AdjustmentForm({
         <button
           onClick={() => setKind("bonus")}
           className={`rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
-            kind === "bonus" ? "bg-trump-green text-parchment" : "bg-white text-ink ring-1 ring-ink/20"
+            kind === "bonus" ? "bg-trump-green text-white" : "bg-white text-ink ring-1 ring-ink/20"
           }`}
         >
           Bonus +
@@ -210,7 +210,7 @@ function AdjustmentForm({
       <div className="mt-3 flex gap-2">
         <button
           onClick={onCancel}
-          className="flex-1 rounded-full py-2 font-body text-xs font-semibold uppercase tracking-wide text-ink/60 ring-1 ring-ink/15"
+          className="flex-1 rounded-full py-2 font-body text-xs font-semibold uppercase tracking-wide text-ink/75 ring-1 ring-ink/15"
         >
           Cancel
         </button>
@@ -279,12 +279,12 @@ export function Scoreboard({
 
       <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-paper-dim p-2 shadow-card">
         {rounds.length === 0 ? (
-          <p className="p-3 text-center font-body text-xs text-ink/50">
+          <p className="p-3 text-center font-body text-xs text-ink/75">
             No rounds yet — score a round to start the tally.
           </p>
         ) : (
           <ul className="space-y-0.5">
-            <li className="flex items-center gap-2 px-2 pb-1 font-body text-[10px] uppercase tracking-wide text-ink/40">
+            <li className="flex items-center gap-2 px-2 pb-1 font-body text-[10px] uppercase tracking-wide text-ink/75">
               <span className="w-5 shrink-0">#</span>
               <span className="w-2.5 shrink-0" />
               <span className="min-w-0 flex-1">Bid</span>

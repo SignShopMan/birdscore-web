@@ -11,7 +11,7 @@ export function ScoreTotals({ us, them }: { us: number; them: number }) {
         }`}
       >
         <div className="flex items-center justify-center gap-1.5">
-          <span className="font-body text-xs uppercase tracking-[0.2em] text-ink/60">Us</span>
+          <span className="font-body text-xs uppercase tracking-[0.2em] text-ink/75">Us</span>
           {usLeads && (
             <span className="rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
               Leading
@@ -26,7 +26,7 @@ export function ScoreTotals({ us, them }: { us: number; them: number }) {
         }`}
       >
         <div className="flex items-center justify-center gap-1.5">
-          <span className="font-body text-xs uppercase tracking-[0.2em] text-ink/60">Them</span>
+          <span className="font-body text-xs uppercase tracking-[0.2em] text-ink/75">Them</span>
           {themLeads && (
             <span className="rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
               Leading

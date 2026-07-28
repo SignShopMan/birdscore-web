@@ -32,7 +32,7 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
         <h2 className="font-display text-xl font-semibold text-ink">
           Enter {nonBidder}&rsquo;s score
         </h2>
-        <p className="mt-1 font-body text-sm text-ink/60">
+        <p className="mt-1 font-body text-sm text-ink/75">
           {bidTeam} bid {shootMoon ? `${bid} (Shoot the Moon)` : bid}. Enter what {nonBidder}{" "}
           actually took — in multiples of 5.
         </p>
@@ -53,13 +53,13 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-card bg-white p-3 text-center ring-1 ring-ink/10">
-            <div className="font-body text-xs uppercase tracking-wide text-ink/50">Us</div>
+            <div className="font-body text-xs uppercase tracking-wide text-ink/75">Us</div>
             <div className="font-score tabular-score text-3xl font-bold text-ink">
               {bidTeam === "US" ? preview.usScore : nonBidderScore || 0}
             </div>
           </div>
           <div className="rounded-card bg-white p-3 text-center ring-1 ring-ink/10">
-            <div className="font-body text-xs uppercase tracking-wide text-ink/50">Them</div>
+            <div className="font-body text-xs uppercase tracking-wide text-ink/75">Them</div>
             <div className="font-score tabular-score text-3xl font-bold text-ink">
               {bidTeam === "THEM" ? preview.themScore : nonBidderScore || 0}
             </div>

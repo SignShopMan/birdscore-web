@@ -11,7 +11,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className={`shrink-0 text-ink/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+      className={`shrink-0 text-ink/75 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
     >
       <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -46,7 +46,7 @@ export function CollapsibleCard({
         <span className="min-w-0">
           <span className="block font-body text-sm font-semibold text-ink">{title}</span>
           {subtitle && (
-            <span className="mt-1 block font-body text-xs text-ink/60">{subtitle}</span>
+            <span className="mt-1 block font-body text-xs text-ink/75">{subtitle}</span>
           )}
         </span>
         <span className="flex shrink-0 items-center gap-2">

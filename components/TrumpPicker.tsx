@@ -2,11 +2,14 @@
 
 import { TRUMP_OPTIONS, TrumpColor } from "@/lib/rook-engine";
 
-const SWATCH: Record<TrumpColor, { bg: string; text: string; ring: string; hex: string }> = {
-  Black: { bg: "bg-trump-black", text: "text-parchment", ring: "ring-parchment/70", hex: "#1A1A1A" },
-  Green: { bg: "bg-trump-green", text: "text-parchment", ring: "ring-parchment/70", hex: "#2F7A3D" },
-  Red: { bg: "bg-trump-red", text: "text-parchment", ring: "ring-parchment/70", hex: "#B23A32" },
-  Yellow: { bg: "bg-trump-yellow", text: "text-ink", ring: "ring-ink/70", hex: "#E3B23C" },
+const SWATCH: Record<TrumpColor, { bg: string; text: string; hex: string }> = {
+  // Pure white here, not the cream "paper" token — on trump-green specifically,
+  // paper only cleared AA by 0.10 (4.60 vs 4.5 needed); white gives 5.29, real
+  // margin instead of a razor's edge. See scripts/verify-contrast.ts.
+  Black: { bg: "bg-trump-black", text: "text-white", hex: "#1A1A1A" },
+  Green: { bg: "bg-trump-green", text: "text-white", hex: "#2F7A3D" },
+  Red: { bg: "bg-trump-red", text: "text-white", hex: "#B23A32" },
+  Yellow: { bg: "bg-trump-yellow", text: "text-ink", hex: "#E3B23C" },
 };
 
 export function TrumpPicker({
@@ -32,9 +35,7 @@ export function TrumpPicker({
         className={`rounded-card p-8 text-center shadow-card sm:p-10 ${swatch.bg} ${swatch.text}`}
         aria-live="polite"
       >
-        <div className="font-body text-sm uppercase tracking-[0.3em] opacity-75">
-          {value} Trump
-        </div>
+        <div className="font-body text-sm uppercase tracking-[0.3em]">{value} Trump</div>
         <div className="mt-2 font-score tabular-score text-8xl font-bold leading-none sm:text-9xl">
           {bidValue}
         </div>

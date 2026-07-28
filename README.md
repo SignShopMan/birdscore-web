@@ -22,6 +22,33 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 8** — contrast audit:
+- **The reported bug**: trump-card text used `text-parchment` (theme-reactive)
+  on Black/Green/Red instead of a constant — fine in dark mode where
+  parchment resolves near-white, broken in light mode where it resolves
+  near-black. Now `text-white` on Black/Green/Red, `text-ink` on Yellow —
+  both constants, since trump colors themselves are constants.
+- **A bigger version of the same bug, found while auditing**: every "selected"
+  pill (team picker, mode picker, accent picker, max-points preset, custom
+  toggle) used `bg-ink text-parchment`. `ink` is a constant; in light mode
+  `parchment` resolves to that *same* value — navy text on a navy background,
+  completely invisible. Now `bg-ink text-paper` (paper is the one other
+  always-cream constant, so visually this is unchanged from how it always
+  looked in dark mode — light mode just now actually shows it too).
+- **Systemic sweep**: every opacity-muted text/icon color in the app
+  (`text-parchment/40..60`, `text-ink/40..60` — subtitles, captions, labels,
+  the ledger's edit/delete icons) got checked numerically, not eyeballed.
+  Several failed WCAG AA (4.5:1) even in the *original* dark-only design —
+  this wasn't only a light-mode problem. Standardized on a 75% opacity floor
+  (verified with real margin, not a razor's-edge pass) across the board.
+- **Added `scripts/verify-contrast.ts`** — a permanent, run-anytime check
+  covering every real text/background pairing in the app (all 6 mode×accent
+  combos, the trump card, selected pills, muted text) against WCAG AA. Run it
+  after any future color or opacity change: `npx tsx scripts/verify-contrast.ts`.
+  This is how round 8 got found systematically instead of by re-screenshotting
+  every screen by hand — worth running as a habit from here on, the same way
+  `verify-engine.ts` already gets run for scoring logic changes.
+
 **Beta round 7**:
 - Light-mode felt colors were nearly indistinguishable between accents (RGB
   distance of 6-14 between green/blue/mono — genuinely invisible). Replaced

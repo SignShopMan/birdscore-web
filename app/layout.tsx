@@ -1,31 +1,14 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, Space_Mono } from "next/font/google";
 import Script from "next/script";
 import { FeedbackLink } from "@/components/FeedbackLink";
 import { ThemeInit } from "@/components/ThemeInit";
 import "./globals.css";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  weight: ["500", "600", "700"],
-});
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const spaceMono = Space_Mono({
-  subsets: ["latin"],
-  variable: "--font-space-mono",
-  weight: ["400", "700"],
-});
 
 export const metadata: Metadata = {
   title: "BirdScore — Rook Scorekeeper",
   description: "Live bid and score tracking for Rook, tableside.",
 };
 
-// Keep this in sync with lib/theme-store.ts's persist key/shape and resolveMode
-// logic — duplicated here as plain JS since an inline pre-hydration script
-// can't import from app modules. Runs before first paint so there's no flash
-// of the wrong theme.
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
@@ -53,9 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {THEME_INIT_SCRIPT}
         </Script>
       </head>
-      <body
-        className={`${fraunces.variable} ${inter.variable} ${spaceMono.variable} font-body bg-felt text-parchment`}
-      >
+      <body className="font-body bg-felt text-parchment">
         <ThemeInit />
         {children}
         <FeedbackLink />
