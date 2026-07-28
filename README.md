@@ -22,6 +22,19 @@ environment I built this in.
 
 ## Changelog
 
+**Beta round 5** (from a screenshot of real gameplay):
+- The `Adj` row marker was brass (`#C9A227`), which sits close enough to Yellow
+  trump (`#E3B23C`) to be indistinguishable at 10px — a real "Renege" row was
+  unreadable against a Yellow-trump round right above it. Changed to a square
+  instead of a circle, so the shape itself disambiguates regardless of color.
+- The mobile scoreboard sheet was `bg-felt-dark/95`, letting the Game screen
+  ghost through behind it (visible "SETTINGS," "Round 3," dealer pill in the
+  screenshot). It's a full-screen takeover, not a translucent overlay — now
+  fully opaque.
+- Adjustment rows showed "0" for the team not affected by that adjustment,
+  ambiguous against a team genuinely scoring 0 in a real round. Now shows a
+  dash instead.
+
 **Beta round 4**:
 - Winning score can no longer be set below the configured max points per round —
   the floor is now dynamic (`isValidWinningScore` takes the round max as a

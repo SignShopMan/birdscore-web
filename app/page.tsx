@@ -70,7 +70,7 @@ export default function Home() {
 
       {/* Mobile: scoreboard opens as a full sheet on demand */}
       {scoreboardOpen && (
-        <div className="fixed inset-0 z-40 bg-felt-dark/95 p-5 pt-8 lg:hidden">
+        <div className="fixed inset-0 z-40 bg-felt-dark p-5 pt-8 lg:hidden">
           <Scoreboard
             rounds={rounds}
             usTotal={usTotal(rounds)}
