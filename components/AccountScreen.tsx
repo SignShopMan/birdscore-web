@@ -5,6 +5,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useGameStore } from "@/lib/game-store";
 import { SignInForm } from "./SignInForm";
 import { MainMenu } from "./MainMenu";
+import { DevToolsCard } from "./DevToolsCard";
 
 const TIER_LABEL: Record<string, string> = {
   free: "Free",
@@ -118,6 +119,8 @@ export function AccountScreen({
           </div>
         )}
       </div>
+
+      <DevToolsCard />
 
       {userId && (
         <div className="mt-6 flex-1">

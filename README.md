@@ -22,6 +22,30 @@ environment I built this in.
 
 ## Changelog
 
+**Dev-only tier switch**, locked to one account:
+- New `dev_tier_override` column on `profiles`
+  (`supabase/migrations/0002_dev_tier_override.sql`) — deliberately a
+  *separate* column from the real `tier`/`plus_purchased_at`/
+  `pro_current_period_end` that Stripe's webhooks write to, so switching
+  tiers for testing never corrupts real billing state, and a real purchase
+  later reads clean data.
+- The gate is hardcoded in `lib/entitlements.ts` (`DEV_EMAIL`, currently
+  `watkins.jonathan@gmail.com`) and enforced **server-side** in the new
+  `app/api/dev-tier/route.ts` — it independently re-checks the
+  authenticated session's own email before writing anything, regardless of
+  what a request claims. The UI (`DevToolsCard.tsx`, shown on the Account
+  screen) only decides whether to *display* the buttons; it isn't the
+  security boundary. Changing who this applies to means editing and
+  shipping a code change, not flipping a setting.
+- `effectiveTier()` now applies the lapse policy first, then layers the dev
+  override on top only for that one account — every existing caller
+  (`lib/auth-store.ts`, `app/api/games/route.ts`) updated for the new
+  required `email`/`devTierOverride` fields on its input.
+- One practical note: now that a real personal email is hardcoded into the
+  source, it's worth making sure the GitHub repo is private if it isn't
+  already — a public repo would make that address visible to anyone
+  browsing the code.
+
 **Navigation refactor: menu + real Account/profile page**:
 - Replaced the scattered per-screen "← Settings" links with `MainMenu.tsx` —
   one consistent hamburger menu mounted the same way on every screen
@@ -163,7 +187,10 @@ would mean redoing them if something in the foundation needs to change.
 1. **Supabase**: New Project at supabase.com (free tier is fine — 500MB DB,
    50K MAU, no card required; note it auto-pauses after 7 days with no API
    traffic, worth a scheduled ping once this is live day-to-day). Then:
-   - SQL Editor → paste and run `supabase/migrations/0001_init.sql`.
+   - SQL Editor → paste and run `supabase/migrations/0001_init.sql`, then
+     `0002_dev_tier_override.sql` (if the GitHub↔Supabase integration is
+     connected, this may already be applied automatically — check
+     Database → Migrations first, same as with the first one).
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.

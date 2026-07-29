@@ -3,12 +3,16 @@
 import { create } from "zustand";
 import { createClient } from "./supabase/client";
 import { isSupabaseConfigured } from "./supabase/config";
-import { effectiveTier, Tier } from "./entitlements";
+import { effectiveTier, isDevAccount, Tier } from "./entitlements";
 
 interface AuthState {
   userId: string | null;
   email: string | null;
   tier: Tier;
+  // Raw stored override (or null) — separate from `tier`, which is always
+  // the *resolved* value. The dev-tools UI needs to know which button is
+  // currently selected, not just the effective result.
+  devTierOverride: Tier | null;
   loading: boolean;
   magicLinkSent: boolean;
 
@@ -16,12 +20,14 @@ interface AuthState {
   sendMagicLink: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  setDevTierOverride: (tier: Tier | null) => Promise<{ error: string | null }>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   userId: null,
   email: null,
   tier: "free",
+  devTierOverride: null,
   loading: true,
   magicLinkSent: false,
 
@@ -48,7 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ userId: session.user.id, email: session.user.email ?? null });
         get().refreshProfile();
       } else {
-        set({ userId: null, email: null, tier: "free" });
+        set({ userId: null, email: null, tier: "free", devTierOverride: null });
       }
     });
   },
@@ -66,7 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    set({ userId: null, email: null, tier: "free", magicLinkSent: false });
+    set({ userId: null, email: null, tier: "free", devTierOverride: null, magicLinkSent: false });
   },
 
   refreshProfile: async () => {
@@ -75,11 +81,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const supabase = createClient();
     const { data } = await supabase
       .from("profiles")
-      .select("tier, pro_current_period_end")
+      .select("tier, pro_current_period_end, email, dev_tier_override")
       .eq("id", userId)
       .single();
     if (data) {
-      set({ tier: effectiveTier({ tier: data.tier, proCurrentPeriodEnd: data.pro_current_period_end }) });
+      set({
+        tier: effectiveTier({
+          tier: data.tier,
+          proCurrentPeriodEnd: data.pro_current_period_end,
+          email: data.email,
+          devTierOverride: data.dev_tier_override,
+        }),
+        devTierOverride: data.dev_tier_override,
+      });
     }
+  },
+
+  // Client-side check here is only for the UI (don't render the buttons for
+  // anyone else) — the real, non-bypassable gate is server-side in
+  // app/api/dev-tier/route.ts, which independently verifies the signed-in
+  // email before writing anything.
+  setDevTierOverride: async (tier) => {
+    const { email } = get();
+    if (!isDevAccount(email)) {
+      return { error: "Not authorized" };
+    }
+    const res = await fetch("/api/dev-tier", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tier }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error ?? "Failed to set dev tier" };
+    await get().refreshProfile();
+    return { error: null };
   },
 }));
