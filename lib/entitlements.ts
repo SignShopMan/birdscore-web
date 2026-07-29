@@ -25,6 +25,32 @@ export function isDevAccount(email: string | null): boolean {
 }
 
 /**
+ * A few free Pro accounts for beta testers — hardcoded emails rather than
+ * a promo/redemption code system, deliberately. That's real infrastructure
+ * (a codes table, a redemption API route, UI for entering one) for what's
+ * a one-time, known, small list of people. If this ever needs to become
+ * an ongoing self-serve thing (more testers added over time, distributed
+ * without collecting emails first), a promo code system becomes worth
+ * building — not for this.
+ *
+ * Add emails here, lowercase. BETA_GRANT_EXPIRES is a single fixed date
+ * for the whole list, not per-person — simplest thing that's still
+ * correct for a batch of people all being thanked at roughly the same
+ * time. Extend the date (or add more emails) any time; nothing else
+ * needs to change.
+ */
+const BETA_TESTER_EMAILS: string[] = [
+  // "kevin@example.com",
+  // "jared@example.com",
+  // "ryan@example.com",
+];
+const BETA_GRANT_EXPIRES = new Date("2027-07-29");
+
+export function isBetaTester(email: string | null): boolean {
+  return !!email && BETA_TESTER_EMAILS.includes(email.toLowerCase());
+}
+
+/**
  * What each tier unlocks — kept in one place so a UI component or an API
  * route never has to reimplement the tier logic itself, just call these.
  */
@@ -59,11 +85,16 @@ export function canUseEnhancedStats(tier: Tier): boolean {
  * Stripe's webhooks actually wrote, untouched by testing, so a real
  * purchase later isn't reading corrupted state.
  *
+ * The beta-tester grant sits between those two: applied after the real
+ * lapse-policy tier, but before the dev override (which always wins, so
+ * the dev account can still test the "free" or "plus" view even if that
+ * same email happened to be on the beta list).
+ *
  * This is the ONE function that should ever compute "what tier does this
  * account actually have right now" — call it wherever a raw profile.tier
- * would otherwise be read directly, so neither the lapse rule nor the dev
- * override can be accidentally bypassed by reading the stored column
- * straight.
+ * would otherwise be read directly, so neither the lapse rule, the beta
+ * grant, nor the dev override can be accidentally bypassed by reading the
+ * stored column straight.
  */
 export function effectiveTier(
   profile: Pick<Profile, "tier" | "proCurrentPeriodEnd" | "email" | "devTierOverride">
@@ -75,8 +106,11 @@ export function effectiveTier(
     return new Date(periodEnd) > new Date() ? "pro" : "plus";
   })();
 
+  const withBetaGrant =
+    isBetaTester(profile.email) && new Date() < BETA_GRANT_EXPIRES ? "pro" : real;
+
   if (isDevAccount(profile.email) && profile.devTierOverride) {
     return profile.devTierOverride;
   }
-  return real;
+  return withBetaGrant;
 }

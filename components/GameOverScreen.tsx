@@ -20,8 +20,7 @@ export function GameOverScreen({
   onOpenAccount: () => void;
   onOpenFaq: () => void;
 }) {
-  const { settings, rounds, winner, newGame, updateRound, deleteRound, syncStatus } =
-    useGameStore();
+  const { settings, rounds, winner, updateRound, deleteRound, syncStatus } = useGameStore();
   const { tier } = useAuthStore();
   const entitled = canSaveHistory(tier);
 
@@ -72,19 +71,10 @@ export function GameOverScreen({
       )}
 
       <button
-        onClick={() => {
-          newGame();
-          onNewGame();
-        }}
+        onClick={onNewGame}
         className="mt-8 w-full rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink shadow-card"
       >
         New Game
-      </button>
-      <button
-        onClick={onOpenSettings}
-        className="mt-3 w-full font-body text-xs text-parchment/75 underline underline-offset-4"
-      >
-        Change settings before the next game
       </button>
     </div>
   );

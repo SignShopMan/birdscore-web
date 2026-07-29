@@ -22,6 +22,43 @@ environment I built this in.
 
 ## Changelog
 
+**New Game separated from Settings, plus beta-tester Pro grants**:
+- The app's landing screen used to *be* Settings — every fresh visit or
+  rematch dropped straight into a full editable form (winning score, max
+  points, team names, appearance, all expanded). New `NewGameScreen.tsx`
+  is the actual landing screen now: a lightweight summary of what a new
+  game will use, with "Start Game" to confirm and "Change Settings" as the
+  deliberate opt-in to the detailed form.
+- This let a real simplification happen underneath: `SettingsScreen` no
+  longer needs its old `mode: "new" | "edit"` branching or the
+  `canCancel` conditional — it's always reached via an explicit
+  navigation action now (never the app's own default state), so there's
+  always a sensible place to cancel back to. It always just updates the
+  settings draft and hands control back to whoever opened it.
+- `page.tsx`'s navigation is unified too: Settings/Account/FAQ all share
+  one `openX()`/`goBack()` pattern that remembers whichever screen they
+  were opened from, instead of each having its own bespoke wiring.
+- `GameOverScreen`'s two buttons ("New Game" instant-rematch + a separate
+  "Change settings" link) collapsed into one "New Game" button that goes
+  through the same confirm screen — consistent with "confirm before
+  starting" applying everywhere, not just on first load. This made the
+  store's `newGame()` action genuinely redundant (`startGame()` with the
+  current settings does an identical reset), so it's gone — removed
+  rather than left as unused dead code.
+- **Beta-tester Pro grants**: `lib/entitlements.ts` gained
+  `BETA_TESTER_EMAILS` (currently an empty template — add real emails
+  when ready) and a single fixed `BETA_GRANT_EXPIRES` date for the whole
+  batch. Hardcoded-email, not a promo-code system — see the code comment
+  for the reasoning, short version: real infrastructure (a codes table, a
+  redemption flow) isn't justified for a one-time, known, small list of
+  people. Layered the same way as the existing dev override: applied
+  after the real lapse-policy tier, but the dev override still wins on
+  top of it, so testing as free/plus still works even if that email
+  happens to also be beta-listed. New `scripts/verify-entitlements.ts`
+  covers all three layers (real tier + lapse, beta grant, dev override) —
+  this logic didn't have dedicated tests before and was easy to get
+  subtly wrong.
+
 **The actual gap: no way to *use* a bare code** (reported: opened
 therealbirdscore.com fresh, not signed in, no "join a game" anywhere):
 - `/watch/[code]` only ever worked if someone clicked a pre-formed link —

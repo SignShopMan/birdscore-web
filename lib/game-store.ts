@@ -81,7 +81,6 @@ interface GameState {
   addAdjustment: (team: Team, points: number, label: string) => void;
   updateRound: (rowId: string, usScore: number, themScore: number) => void;
   deleteRound: (rowId: string) => void;
-  newGame: () => void;
   // Hydrates local state from a game fetched from Supabase — the Resume
   // action on AccountScreen's in-progress games list.
   loadGame: (settings: GameSettings, rounds: Round[], gameId: string) => void;
@@ -224,22 +223,6 @@ export const useGameStore = create<GameState>()(
           return { rounds, gameOver: over, winner };
         }),
 
-      newGame: () =>
-        set({
-          rounds: [],
-          gameOver: false,
-          winner: null,
-          trump: null,
-          bidTeam: null,
-          bid: null,
-          shootMoon: false,
-          dealerIndex: 0,
-          currentGameId: null,
-          joinCode: null,
-          syncStatus: "idle",
-          gameActive: true,
-          viewerCount: 0,
-        }),
 
       loadGame: (settings, rounds, gameId) =>
         set(() => {

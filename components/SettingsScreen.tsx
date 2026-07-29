@@ -14,25 +14,25 @@ import { BackendStatusBadge } from "./BackendStatusBadge";
 import { MainMenu } from "./MainMenu";
 import { TeamNamesCard } from "./TeamNamesCard";
 
+/**
+ * Always reached via a deliberate "Change Settings" action now — from
+ * NewGameScreen before a game starts, or from the menu mid-game — never
+ * the app's own landing screen anymore (that's NewGameScreen). Which
+ * means there's always a sensible place to go back to, so this no longer
+ * needs the old mode/canCancel branching: it always just updates the
+ * settings draft and hands control back to whoever opened it.
+ */
 export function SettingsScreen({
-  mode = "new",
-  canCancel = false,
   onDone,
   onOpenSettings,
   onOpenAccount,
   onOpenFaq,
 }: {
-  /** "new" resets to a fresh game; "edit" adjusts rules for the game already in
-   * progress without touching rounds already scored. Either way, the form starts
-   * pre-filled with whatever settings were last used, not hardcoded defaults. */
-  mode?: "new" | "edit";
-  canCancel?: boolean;
   onDone: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenFaq: () => void;
 }) {
-  const startGame = useGameStore((s) => s.startGame);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const current = useGameStore((s) => s.settings);
 
@@ -57,11 +57,7 @@ export function SettingsScreen({
       usTeamName: usTeamName.trim() || "Us",
       themTeamName: themTeamName.trim() || "Them",
     };
-    if (mode === "edit") {
-      updateSettings(settings);
-    } else {
-      startGame(settings);
-    }
+    updateSettings(settings);
     onDone();
   };
 
@@ -71,20 +67,15 @@ export function SettingsScreen({
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
-              {mode === "edit" ? "Game Settings" : "New Game"}
+              Game Settings
             </p>
-            <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
-              Beta
-            </span>
             <BackendStatusBadge />
           </div>
           <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">
-          {mode === "edit"
-            ? "Adjust the table rules — rounds already scored are untouched."
-            : "Set the table rules, then deal."}
+          Rounds already scored (if any) are untouched by anything here.
         </p>
 
         <div className="mt-8 space-y-3">
@@ -182,16 +173,14 @@ export function SettingsScreen({
           disabled={!canSave}
           className="w-full rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink shadow-card transition hover:bg-brass-light disabled:opacity-40"
         >
-          {mode === "edit" ? "Save Changes" : "Start Game"}
+          Save Changes
         </button>
-        {canCancel && (
-          <button
-            onClick={onDone}
-            className="w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment/75 ring-1 ring-parchment/20"
-          >
-            Cancel
-          </button>
-        )}
+        <button
+          onClick={onDone}
+          className="w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment/75 ring-1 ring-parchment/20"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
