@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
+import { APP_VERSION } from "@/lib/version";
 
 function MenuIcon() {
   return (
@@ -18,10 +19,12 @@ function MenuIcon() {
 export function MainMenu({
   onOpenSettings,
   onOpenAccount,
+  onOpenHistory,
   onOpenFaq,
 }: {
   onOpenSettings: () => void;
   onOpenAccount: () => void;
+  onOpenHistory: () => void;
   onOpenFaq: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -74,11 +77,23 @@ export function MainMenu({
               >
                 Settings
               </button>
+              <a
+                href="/watch"
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                Watch a Game
+              </a>
               <button
                 onClick={() => go(onOpenAccount)}
                 className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
               >
                 {userId ? `Account \u00B7 ${email}` : "Account \u00B7 Sign in"}
+              </button>
+              <button
+                onClick={() => go(onOpenHistory)}
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                History
               </button>
               <button
                 onClick={() => go(onOpenFaq)}
@@ -95,7 +110,7 @@ export function MainMenu({
             </nav>
 
             <p className="mt-6 font-body text-[10px] uppercase tracking-wide text-ink/50 lg:mt-4">
-              Beta
+              Beta &middot; {APP_VERSION}
             </p>
           </div>
         </>

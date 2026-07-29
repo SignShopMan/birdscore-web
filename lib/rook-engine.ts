@@ -26,6 +26,10 @@ export interface Round {
   bid?: number;
   dealerIndex?: number;
   shootMoon?: boolean;
+  // Which seat (0-3) held the Rook this round — Pro tier only ("enhanced
+  // stats"). Seat, not a player name directly, so it stays meaningful even
+  // if resolved against whichever players were in those seats.
+  rookHolderSeat?: number | null;
   // Present when rowType === "Adj" — free-text reason since house rules vary
   // table to table (misdeal, renege, moon bonus, etc.) with no fixed amounts.
   label?: string;
@@ -46,6 +50,34 @@ export interface GameSettings {
   // entitled accounts get an editable field), not in this type.
   usTeamName: string;
   themTeamName: string;
+  // Named individual players, one per seat, seat 0-3 — the seat ORDER is
+  // the dealing rotation order (0 deals first, then 1, 2, 3, back to 0).
+  // Partnerships follow the standard 4-player card-game convention of
+  // partners sitting across from each other, not next to each other:
+  // seats 0+2 are one team, seats 1+3 are the other. null means not using
+  // named players (the simple US/THEM-only flow, still the default and
+  // still fully supported). $3.99 tier and up, same gate as team names —
+  // when this is set, usTeamName/themTeamName get derived from the pairs
+  // ("Jon & Ryan") rather than typed manually.
+  players: [string, string, string, string] | null;
+}
+
+export const SEAT_LABELS = ["North", "East", "South", "West"] as const;
+
+/** Which team a seat belongs to, given the fixed across-the-table pairing. */
+export function seatTeam(seat: number): Team {
+  return seat % 2 === 0 ? "US" : "THEM";
+}
+
+/** Derives "PlayerA & PlayerB" team names from seated players — seats 0+2
+ * for one team, 1+3 for the other, matching seatTeam's pairing. */
+export function deriveTeamNamesFromPlayers(
+  players: [string, string, string, string]
+): Pick<GameSettings, "usTeamName" | "themTeamName"> {
+  return {
+    usTeamName: `${players[0]} & ${players[2]}`,
+    themTeamName: `${players[1]} & ${players[3]}`,
+  };
 }
 
 /** The one place "US"/"THEM" gets turned into a display string — every
@@ -62,6 +94,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   maxPointsPerRound: 180,
   usTeamName: "Us",
   themTeamName: "Them",
+  players: null,
 };
 
 /** Custom max-points input must be a positive multiple of 5, within a sane table-rules range. */

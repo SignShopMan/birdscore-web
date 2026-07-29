@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { effectiveTier, canSaveHistory, canHostRealtime } from "@/lib/entitlements";
-import { roundsToDbRows } from "@/lib/game-persistence";
+import { roundsToDbRows, createPlayers } from "@/lib/game-persistence";
 import { generateJoinCode } from "@/lib/join-code";
 
 /**
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("tier, pro_current_period_end, email, dev_tier_override")
+    .select("tier, pro_current_period_end, email, dev_tier_override, created_at")
     .eq("id", user.id)
     .single();
 
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     proCurrentPeriodEnd: profile.pro_current_period_end,
     email: profile.email,
     devTierOverride: profile.dev_tier_override,
+    createdAt: profile.created_at,
   });
   if (!canSaveHistory(tier)) {
     return NextResponse.json(
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
       maxPointsPerRound: number;
       usTeamName: string;
       themTeamName: string;
+      players: [string, string, string, string] | null;
     };
     rounds: Array<{
       round: number;
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
       bid?: number;
       dealerIndex?: number;
       shootMoon?: boolean;
+      rookHolderSeat?: number | null;
       label?: string;
     }>;
     winner: "US" | "THEM" | null;
@@ -111,10 +114,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: gameError?.message ?? "Failed to save game" }, { status: 500 });
   }
 
+  const seatToPlayerId = settings.players
+    ? await createPlayers(supabase, game.id, settings.players)
+    : undefined;
+
   if (rounds.length > 0) {
     const { error: roundsError } = await supabase
       .from("rounds")
-      .insert(roundsToDbRows(game.id, rounds as never));
+      .insert(roundsToDbRows(game.id, rounds as never, seatToPlayerId));
     if (roundsError) {
       return NextResponse.json({ error: roundsError.message }, { status: 500 });
     }
@@ -167,19 +174,49 @@ export async function GET() {
     totals.set(r.game_id, t);
   }
 
-  const result = games.map((g) => ({
-    id: g.id,
-    winningScore: g.winning_score,
-    maxPointsPerRound: g.max_points_per_round,
-    usTeamName: g.us_team_name,
-    themTeamName: g.them_team_name,
-    status: g.status,
-    winner: g.winner,
-    createdAt: g.created_at,
-    completedAt: g.completed_at,
-    usTotal: totals.get(g.id)?.us ?? 0,
-    themTotal: totals.get(g.id)?.them ?? 0,
-  }));
+  const { data: players, error: playersError } = await supabase
+    .from("players")
+    .select("game_id, seat, display_name")
+    .in(
+      "game_id",
+      games.map((g) => g.id)
+    );
+  if (playersError) {
+    return NextResponse.json({ error: playersError.message }, { status: 500 });
+  }
+  const playersByGame = new Map<string, { seat: number; display_name: string }[]>();
+  for (const p of players ?? []) {
+    const list = playersByGame.get(p.game_id) ?? [];
+    list.push({ seat: p.seat, display_name: p.display_name });
+    playersByGame.set(p.game_id, list);
+  }
+
+  const result = games.map((g) => {
+    const gamePlayers = playersByGame.get(g.id);
+    const sortedPlayers =
+      gamePlayers && gamePlayers.length === 4
+        ? (gamePlayers.sort((a, b) => a.seat - b.seat).map((p) => p.display_name) as [
+            string,
+            string,
+            string,
+            string
+          ])
+        : null;
+    return {
+      id: g.id,
+      winningScore: g.winning_score,
+      maxPointsPerRound: g.max_points_per_round,
+      usTeamName: g.us_team_name,
+      themTeamName: g.them_team_name,
+      status: g.status,
+      winner: g.winner,
+      createdAt: g.created_at,
+      completedAt: g.completed_at,
+      usTotal: totals.get(g.id)?.us ?? 0,
+      themTotal: totals.get(g.id)?.them ?? 0,
+      players: sortedPlayers,
+    };
+  });
 
   return NextResponse.json({ games: result });
 }

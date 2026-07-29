@@ -22,6 +22,142 @@ environment I built this in.
 
 ## Changelog
 
+**Cancel games, named players/seats/dealer rotation, Rook-holder tracking,
+and a real History page** — the biggest single round so far, three
+related asks that turned out to depend on each other:
+
+- **Cancel a game**: new `cancelled` status (migration
+  `0005_cancel_game_status.sql`), a minimal PATCH path that leaves
+  existing rounds untouched (still a real record of what was played) and
+  just flips status, and inline confirm-before-cancel on the new History
+  page. This is the cleanup half — orphaned games can now actually be
+  removed. The creation half (a "you have a game in progress, cancel it
+  first?" warning before starting a new one) is a known related gap I
+  didn't build this round — flagged, not fixed.
+- **Named players, seats, and dealer rotation**: `GameSettings.players`
+  is `[string,string,string,string] | null` — seat 0 deals first, seats
+  rotate 0→1→2→3→0, and partnerships follow the real-table convention of
+  sitting *across*, not next to each other (seats 0+2 vs 1+3). New
+  `PlayerSetupCard.tsx` replaces the old team-names-only card with a
+  toggle between the simple flow and full 4-player tracking; team names
+  auto-derive from the pairs ("Jon & Ryan") once players are set. The
+  dealer button on `GameScreen.tsx` shows the actual name now instead of
+  "Seat N".
+- **Rook-holder tracking**: Pro tier, shown in `ScorecardModal.tsx` only
+  when named players are in use — tap-to-select, optional, doesn't block
+  saving the round.
+- **The sync work underneath both of those** is what makes them actually
+  useful later, not just cosmetic: `players` rows get created once at
+  game creation (`lib/game-persistence.ts`'s new `createPlayers`), and
+  `dealer_player_id`/`rook_holder_player_id` on each round resolve
+  against them (`fetchSeatToPlayerId` on subsequent syncs). Players are
+  intentionally NOT editable mid-game — same as the real thing, you don't
+  swap partners partway through a hand.
+- **A real dedicated History page** (`HistoryScreen.tsx`), split out of
+  `AccountScreen.tsx` — account identity and game history are genuinely
+  different reasons to visit. Shows every game (in progress, completed,
+  cancelled) with Resume/Cancel, plus **Partner Performance**: win rate
+  per partnership pairing, computed by `lib/partner-stats.ts` (a pure,
+  independently-tested function — `scripts/verify-engine.ts` now covers
+  it directly). **Honest caveat**: this will show nothing meaningful
+  until games get played *with* named players from here forward — old
+  games, and any game using the simple team-names-only flow, don't have
+  the player-level data this needs.
+- "History" added as a new menu destination, right after Account.
+
+**Version number in the menu, and a beta-grant correction**:
+- Added `lib/version.ts`, showing next to "Beta" in the menu. Deliberately
+  NOT a manually-bumped number — that's exactly the kind of thing that
+  goes stale silently. Uses Vercel's own `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA`
+  (auto-injected at build time, no setup needed), so what's shown can be
+  compared directly against `git log -1` to know for certain whether a
+  deploy actually matches what was pushed — the exact question that's
+  come up repeatedly this session.
+- Corrected the beta-tester Pro grant: it was a single shared expiration
+  date for the whole batch; changed to 12 months **per person**, anchored
+  to `profiles.created_at` — i.e. from whenever that specific email
+  actually registers, not a fixed date for everyone. Needed no new
+  column: `created_at` is already set exactly at first sign-up. Threaded
+  through both callers (`lib/auth-store.ts`, `app/api/games/route.ts`).
+  `scripts/verify-entitlements.ts` now directly tests the date math
+  (12 months out, just past it, well within it) rather than just the
+  membership check.
+- On "NewGameScreen doesn't seem to be the landing screen" — I re-read
+  `page.tsx` carefully rather than assume, and the logic is correct: the
+  initial screen state is `"newgame"`, unconditionally, unless a game is
+  already in progress. The most likely explanation is a stale deploy
+  still running the previous round's code (whose landing screen genuinely
+  was Settings) — exactly the class of confusion the version number above
+  now makes checkable in one glance instead of guessing.
+
+**New Game separated from Settings, plus beta-tester Pro grants**:
+- The app's landing screen used to *be* Settings — every fresh visit or
+  rematch dropped straight into a full editable form (winning score, max
+  points, team names, appearance, all expanded). New `NewGameScreen.tsx`
+  is the actual landing screen now: a lightweight summary of what a new
+  game will use, with "Start Game" to confirm and "Change Settings" as the
+  deliberate opt-in to the detailed form.
+- This let a real simplification happen underneath: `SettingsScreen` no
+  longer needs its old `mode: "new" | "edit"` branching or the
+  `canCancel` conditional — it's always reached via an explicit
+  navigation action now (never the app's own default state), so there's
+  always a sensible place to cancel back to. It always just updates the
+  settings draft and hands control back to whoever opened it.
+- `page.tsx`'s navigation is unified too: Settings/Account/FAQ all share
+  one `openX()`/`goBack()` pattern that remembers whichever screen they
+  were opened from, instead of each having its own bespoke wiring.
+- `GameOverScreen`'s two buttons ("New Game" instant-rematch + a separate
+  "Change settings" link) collapsed into one "New Game" button that goes
+  through the same confirm screen — consistent with "confirm before
+  starting" applying everywhere, not just on first load. This made the
+  store's `newGame()` action genuinely redundant (`startGame()` with the
+  current settings does an identical reset), so it's gone — removed
+  rather than left as unused dead code.
+- **Beta-tester Pro grants**: `lib/entitlements.ts` gained
+  `BETA_TESTER_EMAILS` (currently an empty template — add real emails
+  when ready) and a single fixed `BETA_GRANT_EXPIRES` date for the whole
+  batch. Hardcoded-email, not a promo-code system — see the code comment
+  for the reasoning, short version: real infrastructure (a codes table, a
+  redemption flow) isn't justified for a one-time, known, small list of
+  people. Layered the same way as the existing dev override: applied
+  after the real lapse-policy tier, but the dev override still wins on
+  top of it, so testing as free/plus still works even if that email
+  happens to also be beta-listed. New `scripts/verify-entitlements.ts`
+  covers all three layers (real tier + lapse, beta grant, dev override) —
+  this logic didn't have dedicated tests before and was easy to get
+  subtly wrong.
+
+**The actual gap: no way to *use* a bare code** (reported: opened
+therealbirdscore.com fresh, not signed in, no "join a game" anywhere):
+- `/watch/[code]` only ever worked if someone clicked a pre-formed link —
+  the code already had to be embedded in the URL. Anyone who just had the
+  bare code (read aloud, texted as plain text, whatever) had no way to
+  actually use it; nothing in the app let you type one in.
+- New `app/watch/page.tsx` — a landing page with a 6-character code input
+  that navigates to `/watch/[code]` on submit. Added "Watch a Game" to
+  `MainMenu.tsx`, right after Settings since it's the one destination that
+  genuinely needs no account at all — likely the first thing a new
+  invitee wants, before anything else in the app.
+- Added a FAQ entry spelling out both paths (link or menu \u2192 code entry),
+  since this was a real question, not just a UI gap.
+
+**Two real bugs from a screenshot mid-game (Round 3, still "Generating…")**:
+- The invite banner had no failure state — if the sync genuinely failed,
+  it said "Generating invite code…" forever with no way to tell a slow
+  network apart from a real, persistent error. Now reads `syncStatus` from
+  the store: red-tinted with "Couldn't create invite" when it's actually
+  failed, and the invite modal itself explains why instead of silently
+  doing nothing when tapped. **This is diagnostic, not a root-cause fix**
+  — I can't reach `supabase.co` from this sandbox to see why the sync is
+  actually failing for this specific account/game. See below for what to
+  check.
+- The compact mobile Scoreboard strip ("Kevin/Jon 45 · Jared/Ryan 60") was
+  a single `justify-between` row sharing space with the "Scoreboard"
+  label — fine for the short "Us"/"Them" defaults it was built and tested
+  against, wraps badly the moment real names are longer. Restructured to
+  stacked rows (label above, totals below, full width), with `truncate`
+  as a safety net for pathologically long names.
+
 **Invite as its own flow, plus live viewer count** (from a screenshot — code
 existed but was invisible on the actual Game screen):
 - The real problem: `InviteCard` only ever lived *inside* the mobile
@@ -311,9 +447,10 @@ would mean redoing them if something in the foundation needs to change.
    traffic, worth a scheduled ping once this is live day-to-day). Then:
    - SQL Editor → paste and run `supabase/migrations/0001_init.sql`, then
      `0002_dev_tier_override.sql`, then `0003_realtime_broadcast.sql`, then
-     `0004_realtime_presence.sql` (if the GitHub↔Supabase integration is
-     connected, these may already be applied automatically — check
-     Database → Migrations first, same as with the others).
+     `0004_realtime_presence.sql`, then `0005_cancel_game_status.sql` (if
+     the GitHub↔Supabase integration is connected, these may already be
+     applied automatically — check Database → Migrations first, same as
+     with the others).
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.

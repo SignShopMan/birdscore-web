@@ -12,6 +12,7 @@ import {
   Round,
 } from "../lib/rook-engine";
 import { generateJoinCode, joinCodeChannel } from "../lib/join-code";
+import { computePartnershipStats } from "../lib/partner-stats";
 
 function assertEqual(label: string, actual: unknown, expected: unknown) {
   const pass = JSON.stringify(actual) === JSON.stringify(expected);
@@ -120,5 +121,22 @@ const code = generateJoinCode();
 assertEqual("join code length", code.length, 6);
 assertEqual("join code excludes ambiguous chars", /[0O1IL]/.test(code), false);
 assertEqual("join code channel format", joinCodeChannel("ABC123"), "game:ABC123");
+
+// Partner-pairing stats: North+South vs East+West, keyed regardless of
+// which seat each player sat in, only completed games with a winner count
+const games = [
+  { players: ["Jon", "Kevin", "Ryan", "Jared"] as const, winner: "US" as const, status: "completed" as const }, // Jon+Ryan win
+  { players: ["Kevin", "Jon", "Jared", "Ryan"] as const, winner: "THEM" as const, status: "completed" as const }, // Jon+Ryan win (different seats, same pair)
+  { players: ["Jon", "Jared", "Kevin", "Ryan"] as const, winner: "THEM" as const, status: "completed" as const }, // Jon+Kevin lose
+  { players: ["Jon", "Kevin", "Ryan", "Jared"] as const, winner: "THEM" as const, status: "in_progress" as const }, // excluded: not completed
+];
+const stats = computePartnershipStats(games as never);
+const jonRyan = stats.find((s) => s.players.includes("Jon") && s.players.includes("Ryan"));
+const jonKevin = stats.find((s) => s.players.includes("Jon") && s.players.includes("Kevin"));
+assertEqual("Jon+Ryan games played", jonRyan?.gamesPlayed, 2);
+assertEqual("Jon+Ryan wins", jonRyan?.wins, 2);
+assertEqual("Jon+Kevin games played", jonKevin?.gamesPlayed, 1);
+assertEqual("Jon+Kevin losses", jonKevin?.losses, 1);
+assertEqual("in-progress game excluded from stats (3 completed x 2 pairs each)", stats.reduce((n, s) => n + s.gamesPlayed, 0), 6);
 
 console.log("\nDone.");

@@ -3,12 +3,18 @@
 import { useMemo, useState } from "react";
 import { calculateRoundScores, isValidNonBidderScore, teamLabel } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
+import { useAuthStore } from "@/lib/auth-store";
+import { canUseEnhancedStats } from "@/lib/entitlements";
 
 export function ScorecardModal({ onClose }: { onClose: () => void }) {
   const { settings, trump, bid, bidTeam, shootMoon, saveRound } = useGameStore();
+  const { tier } = useAuthStore();
   const [input, setInput] = useState("");
+  const [rookHolderSeat, setRookHolderSeat] = useState<number | null>(null);
 
   if (!trump || !bidTeam || bid == null) return null;
+
+  const trackRookHolder = canUseEnhancedStats(tier) && settings.players !== null;
 
   const nonBidder = bidTeam === "US" ? "THEM" : "US";
   const bidderName = teamLabel(bidTeam, settings);
@@ -77,6 +83,29 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
           </p>
         )}
 
+        {trackRookHolder && (
+          <div className="mt-5">
+            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-ink/60">
+              Who had the Rook?
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {settings.players!.map((name, seat) => (
+                <button
+                  key={seat}
+                  onClick={() => setRookHolderSeat(rookHolderSeat === seat ? null : seat)}
+                  className={`truncate rounded-full py-2 font-body text-sm font-semibold ${
+                    rookHolderSeat === seat
+                      ? "bg-ink text-paper"
+                      : "bg-white text-ink ring-1 ring-ink/20"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 flex gap-3">
           <button
             onClick={onClose}
@@ -87,7 +116,7 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
           <button
             disabled={!valid}
             onClick={() => {
-              saveRound(nonBidderScore);
+              saveRound(nonBidderScore, trackRookHolder ? rookHolderSeat : null);
               onClose();
             }}
             className="flex-1 rounded-full bg-ink py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-paper disabled:opacity-40"

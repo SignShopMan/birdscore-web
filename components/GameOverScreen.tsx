@@ -13,15 +13,16 @@ export function GameOverScreen({
   onNewGame,
   onOpenSettings,
   onOpenAccount,
+  onOpenHistory,
   onOpenFaq,
 }: {
   onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
+  onOpenHistory: () => void;
   onOpenFaq: () => void;
 }) {
-  const { settings, rounds, winner, newGame, updateRound, deleteRound, syncStatus } =
-    useGameStore();
+  const { settings, rounds, winner, updateRound, deleteRound, syncStatus } = useGameStore();
   const { tier } = useAuthStore();
   const entitled = canSaveHistory(tier);
 
@@ -30,7 +31,7 @@ export function GameOverScreen({
       <div>
         <div className="flex items-center justify-between">
           <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">Game Over</p>
-          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
+          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
         </div>
         <h1 className="mt-1 font-display text-5xl font-semibold text-parchment lg:text-6xl">
           {winner && teamLabel(winner, settings)} wins
@@ -72,19 +73,10 @@ export function GameOverScreen({
       )}
 
       <button
-        onClick={() => {
-          newGame();
-          onNewGame();
-        }}
+        onClick={onNewGame}
         className="mt-8 w-full rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink shadow-card"
       >
         New Game
-      </button>
-      <button
-        onClick={onOpenSettings}
-        className="mt-3 w-full font-body text-xs text-parchment/75 underline underline-offset-4"
-      >
-        Change settings before the next game
       </button>
     </div>
   );

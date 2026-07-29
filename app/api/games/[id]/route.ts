@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { roundsToDbRows, dbRowsToRounds } from "@/lib/game-persistence";
+import { roundsToDbRows, dbRowsToRounds, fetchSeatToPlayerId } from "@/lib/game-persistence";
 
 /**
  * PATCH re-syncs an existing game's rounds and/or marks it completed.
@@ -8,9 +8,16 @@ import { roundsToDbRows, dbRowsToRounds } from "@/lib/game-persistence";
  * game in one delete+insert — simple and correct, and cheap at the round
  * counts a real Rook game actually has (dozens at most).
  *
- * GET fetches one game with full round detail — used by AccountScreen's
- * Resume action to hydrate an in-progress game back into the local store.
- * RLS on both games and rounds (see supabase/migrations/0001_init.sql)
+ * Players are NOT touched here — they're a one-time thing set at game
+ * creation (POST /api/games), not editable mid-game, same as real Rook
+ * (you don't swap players partway through a hand). PATCH just resolves
+ * dealer/rook-holder against whichever players already exist.
+ *
+ * GET fetches one game with full round + player detail — used by
+ * AccountScreen/HistoryScreen's Resume action and the partner-pairing
+ * stats on the History page.
+ *
+ * RLS on games/rounds/players (see supabase/migrations/0001_init.sql)
  * already scopes every query to the signed-in owner, so there's no
  * separate ownership check needed here beyond being signed in at all.
  */
@@ -24,8 +31,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   const body = await request.json();
-  const { rounds, winner, settings } = body as {
-    rounds: Parameters<typeof roundsToDbRows>[1];
+  const { rounds, winner, settings, cancel } = body as {
+    rounds?: Parameters<typeof roundsToDbRows>[1];
     winner?: "US" | "THEM" | null;
     settings?: {
       winningScore: number;
@@ -33,7 +40,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       usTeamName: string;
       themTeamName: string;
     };
+    cancel?: boolean;
   };
+
+  // Cancelling is a separate, minimal path — leaves whatever rounds already
+  // exist untouched (they're still a real historical record of what was
+  // played), just flips status. Doesn't touch anything else in the body.
+  if (cancel) {
+    const { error } = await supabase
+      .from("games")
+      .update({ status: "cancelled" })
+      .eq("id", params.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!rounds) {
+    return NextResponse.json({ error: "rounds is required unless cancel is true" }, { status: 400 });
+  }
 
   const { error: deleteError } = await supabase.from("rounds").delete().eq("game_id", params.id);
   if (deleteError) {
@@ -41,9 +67,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   if (rounds.length > 0) {
+    const seatToPlayerId = await fetchSeatToPlayerId(supabase, params.id);
     const { error: insertError } = await supabase
       .from("rounds")
-      .insert(roundsToDbRows(params.id, rounds));
+      .insert(roundsToDbRows(params.id, rounds, seatToPlayerId));
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
@@ -94,15 +121,31 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: gameError?.message ?? "Game not found" }, { status: 404 });
   }
 
+  const { data: players } = await supabase
+    .from("players")
+    .select("id, seat, display_name")
+    .eq("game_id", params.id)
+    .order("seat", { ascending: true });
+
   const { data: rounds, error: roundsError } = await supabase
     .from("rounds")
-    .select("id, round_number, row_type, us_score, them_score, trump, bid_team, bid, dealer_index, shoot_moon, label, created_at")
+    .select(
+      "id, round_number, row_type, us_score, them_score, trump, bid_team, bid, dealer_index, shoot_moon, label, rook_holder_player_id, created_at"
+    )
     .eq("game_id", params.id)
     .order("created_at", { ascending: true });
 
   if (roundsError) {
     return NextResponse.json({ error: roundsError.message }, { status: 500 });
   }
+
+  const playerIdToSeat = new Map((players ?? []).map((p) => [p.id, p.seat]));
+  const playerNames =
+    players && players.length === 4
+      ? (players
+          .sort((a, b) => a.seat - b.seat)
+          .map((p) => p.display_name) as [string, string, string, string])
+      : null;
 
   return NextResponse.json({
     game: {
@@ -113,7 +156,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       themTeamName: game.them_team_name,
       status: game.status,
       winner: game.winner,
+      players: playerNames,
     },
-    rounds: dbRowsToRounds(rounds ?? []),
+    rounds: dbRowsToRounds(rounds ?? [], playerIdToSeat),
   });
 }

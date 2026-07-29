@@ -8,6 +8,10 @@ const FAQS: { q: string; a: string }[] = [
     a: "The full game — bidding, trump, scoring, adjustments — is free forever, no account needed. $3.99 (one-time) adds saved game history and named players. $19.99/year adds realtime hosting (invite others to watch your game live) and deeper stats like who held the Rook and who dealt.",
   },
   {
+    q: "How do I actually watch a game someone invited me to?",
+    a: "Tap their invite link, or go to the menu \u2192 Watch a Game and type in the 6-character code they gave you. Either way, no account, no download \u2014 just the code.",
+  },
+  {
     q: "If I host a realtime game, do the people I invite need to pay too?",
     a: "No — only the host needs the $19.99/year tier. Anyone you invite can join and watch live for free, no account required.",
   },
@@ -32,11 +36,13 @@ const FAQS: { q: string; a: string }[] = [
 export function FaqScreen({
   onOpenSettings,
   onOpenAccount,
+  onOpenHistory,
   onOpenFaq,
   onBack,
 }: {
   onOpenSettings: () => void;
   onOpenAccount: () => void;
+  onOpenHistory: () => void;
   onOpenFaq: () => void;
   onBack: () => void;
 }) {
@@ -49,7 +55,7 @@ export function FaqScreen({
         >
           &larr; Back
         </button>
-        <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
+        <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">Questions</h1>
 

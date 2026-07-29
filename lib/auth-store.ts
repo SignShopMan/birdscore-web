@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const supabase = createClient();
     const { data } = await supabase
       .from("profiles")
-      .select("tier, pro_current_period_end, email, dev_tier_override")
+      .select("tier, pro_current_period_end, email, dev_tier_override, created_at")
       .eq("id", userId)
       .single();
     if (data) {
@@ -91,6 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           proCurrentPeriodEnd: data.pro_current_period_end,
           email: data.email,
           devTierOverride: data.dev_tier_override,
+          createdAt: data.created_at,
         }),
         devTierOverride: data.dev_tier_override,
       });

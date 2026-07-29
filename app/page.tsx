@@ -2,81 +2,78 @@
 
 import { useEffect, useState } from "react";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
+import { NewGameScreen } from "@/components/NewGameScreen";
 import { SettingsScreen } from "@/components/SettingsScreen";
 import { GameScreen } from "@/components/GameScreen";
 import { ScorecardModal } from "@/components/ScorecardModal";
 import { GameOverScreen } from "@/components/GameOverScreen";
 import { Scoreboard } from "@/components/Scoreboard";
 import { AccountScreen } from "@/components/AccountScreen";
+import { HistoryScreen } from "@/components/HistoryScreen";
 import { FaqScreen } from "@/components/FaqScreen";
 
-type Screen = "settings" | "game" | "account" | "faq";
-type SettingsMode = "new" | "edit";
+type Screen = "newgame" | "settings" | "game" | "account" | "history" | "faq";
 
 export default function Home() {
-  const [screen, setScreen] = useState<Screen>("settings");
-  const [returnScreen, setReturnScreen] = useState<Screen>("settings");
-  const [settingsMode, setSettingsMode] = useState<SettingsMode>("new");
-  const [hasStartedGame, setHasStartedGame] = useState(false);
+  const [screen, setScreen] = useState<Screen>("newgame");
+  const [returnScreen, setReturnScreen] = useState<Screen>("newgame");
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
-  const { hasHydrated, gameOver, settings, rounds, trump, bid, bidTeam, shootMoon, updateRound, deleteRound, addAdjustment, joinCode } =
+  const { hasHydrated, gameOver, settings, rounds, trump, bid, bidTeam, shootMoon, updateRound, deleteRound, addAdjustment } =
     useGameStore();
 
   // Resume a game already in progress after a reload — an interrupted game
-  // used to just vanish back to Settings, since screen state lived only in
-  // memory even though the game data itself is now persisted (localStorage,
-  // see game-store.ts). This is the fix for that: once the persisted state
-  // is actually readable, check whether there's a game to resume.
+  // used to just vanish back to the landing screen, since screen state
+  // lived only in memory even though the game data itself is persisted
+  // (localStorage, see game-store.ts). Once the persisted state is
+  // actually readable, check whether there's a game to resume.
   useEffect(() => {
     if (!hasHydrated) return;
     const gameInProgress =
       rounds.length > 0 || !!trump || !!bidTeam || bid != null || shootMoon || gameOver;
-    if (gameInProgress) {
-      setHasStartedGame(true);
-      setScreen("game");
-    }
+    if (gameInProgress) setScreen("game");
     // Only ever needs to run once, right after rehydration completes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHydrated]);
 
-  const openSettings = (mode: SettingsMode) => {
-    setSettingsMode(mode);
+  // Settings/Account/History/FAQ all remember whichever screen they were
+  // opened from, so "back" returns you to where you actually were rather
+  // than always landing in one fixed place.
+  const NAV_SCREENS: Screen[] = ["settings", "account", "history", "faq"];
+  const openSettings = () => {
+    if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
     setScreen("settings");
   };
-  const closeSettings = () => {
-    setHasStartedGame(true);
-    setScreen("game");
-  };
-
-  // Account/FAQ remember where they were opened from, so their "Back" link
-  // returns to Game (if a game was in progress) rather than always landing
-  // on Settings regardless of context.
   const openAccount = () => {
-    if (screen !== "account" && screen !== "faq") setReturnScreen(screen);
+    if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
     setScreen("account");
   };
+  const openHistory = () => {
+    if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
+    setScreen("history");
+  };
   const openFaq = () => {
-    if (screen !== "account" && screen !== "faq") setReturnScreen(screen);
+    if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
     setScreen("faq");
   };
   const goBack = () => setScreen(returnScreen);
 
-  // Brief, deliberately blank — avoids a flash of the Settings screen before
-  // flipping to Game the instant rehydration completes.
+  // Brief, deliberately blank — avoids a flash of the New Game screen
+  // before flipping to Game the instant rehydration completes.
   if (!hasHydrated) {
     return <div className="min-h-dvh bg-felt" />;
   }
 
   // gameOver takes over specifically when screen is "game" (the resumed/
-  // default state) — Settings, Account, and FAQ all stay freely reachable
-  // even with a finished game sitting there.
+  // default state) — Settings, Account, History, and FAQ all stay freely
+  // reachable even with a finished game sitting there.
   if (gameOver && screen === "game") {
     return (
       <GameOverScreen
-        onNewGame={() => setScreen("game")}
-        onOpenSettings={() => openSettings("new")}
+        onNewGame={() => setScreen("newgame")}
+        onOpenSettings={openSettings}
         onOpenAccount={openAccount}
+        onOpenHistory={openHistory}
         onOpenFaq={openFaq}
       />
     );
@@ -85,13 +82,22 @@ export default function Home() {
   return (
     <div className="mx-auto min-h-dvh max-w-5xl lg:grid lg:grid-cols-[minmax(0,32rem)_320px] lg:items-start lg:gap-10 lg:px-10 lg:py-10">
       <div>
+        {screen === "newgame" && (
+          <NewGameScreen
+            onStart={() => setScreen("game")}
+            onChangeSettings={openSettings}
+            onOpenSettings={openSettings}
+            onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
+            onOpenFaq={openFaq}
+          />
+        )}
         {screen === "settings" && (
           <SettingsScreen
-            mode={settingsMode}
-            canCancel={hasStartedGame}
-            onDone={closeSettings}
-            onOpenSettings={() => openSettings(settingsMode)}
+            onDone={goBack}
+            onOpenSettings={openSettings}
             onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
             onOpenFaq={openFaq}
           />
         )}
@@ -99,27 +105,36 @@ export default function Home() {
           <GameScreen
             onScoreRound={() => setScorecardOpen(true)}
             onOpenScoreboard={() => setScoreboardOpen(true)}
-            onOpenSettings={() => openSettings("edit")}
+            onOpenSettings={openSettings}
             onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
             onOpenFaq={openFaq}
           />
         )}
         {screen === "account" && (
           <AccountScreen
-            onOpenSettings={() => openSettings(hasStartedGame ? "edit" : "new")}
+            onOpenSettings={openSettings}
             onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
             onOpenFaq={openFaq}
             onBack={goBack}
-            onResumeGame={() => {
-              setHasStartedGame(true);
-              setScreen("game");
-            }}
+          />
+        )}
+        {screen === "history" && (
+          <HistoryScreen
+            onOpenSettings={openSettings}
+            onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
+            onOpenFaq={openFaq}
+            onBack={goBack}
+            onResumeGame={() => setScreen("game")}
           />
         )}
         {screen === "faq" && (
           <FaqScreen
-            onOpenSettings={() => openSettings(hasStartedGame ? "edit" : "new")}
+            onOpenSettings={openSettings}
             onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
             onOpenFaq={openFaq}
             onBack={goBack}
           />

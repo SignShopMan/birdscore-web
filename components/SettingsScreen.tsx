@@ -6,33 +6,36 @@ import {
   GameSettings,
   isValidCustomMaxPoints,
   isValidWinningScore,
+  deriveTeamNamesFromPlayers,
 } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
 import { ThemePicker } from "./ThemePicker";
 import { CollapsibleCard } from "./CollapsibleCard";
 import { BackendStatusBadge } from "./BackendStatusBadge";
 import { MainMenu } from "./MainMenu";
-import { TeamNamesCard } from "./TeamNamesCard";
+import { PlayerSetupCard } from "./PlayerSetupCard";
 
+/**
+ * Always reached via a deliberate "Change Settings" action now — from
+ * NewGameScreen before a game starts, or from the menu mid-game — never
+ * the app's own landing screen anymore (that's NewGameScreen). Which
+ * means there's always a sensible place to go back to, so this no longer
+ * needs the old mode/canCancel branching: it always just updates the
+ * settings draft and hands control back to whoever opened it.
+ */
 export function SettingsScreen({
-  mode = "new",
-  canCancel = false,
   onDone,
   onOpenSettings,
   onOpenAccount,
+  onOpenHistory,
   onOpenFaq,
 }: {
-  /** "new" resets to a fresh game; "edit" adjusts rules for the game already in
-   * progress without touching rounds already scored. Either way, the form starts
-   * pre-filled with whatever settings were last used, not hardcoded defaults. */
-  mode?: "new" | "edit";
-  canCancel?: boolean;
   onDone: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
+  onOpenHistory: () => void;
   onOpenFaq: () => void;
 }) {
-  const startGame = useGameStore((s) => s.startGame);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const current = useGameStore((s) => s.settings);
 
@@ -45,23 +48,38 @@ export function SettingsScreen({
   const [customInput, setCustomInput] = useState(String(current.maxPointsPerRound));
   const [usTeamName, setUsTeamName] = useState(current.usTeamName);
   const [themTeamName, setThemTeamName] = useState(current.themTeamName);
+  const [useNamedPlayers, setUseNamedPlayers] = useState(current.players !== null);
+  const [playerNames, setPlayerNames] = useState<[string, string, string, string]>(
+    current.players ?? ["", "", "", ""]
+  );
 
   const winningScoreValid = isValidWinningScore(winningScoreInput, maxPoints);
   const customValid = isValidCustomMaxPoints(customInput);
-  const canSave = winningScoreValid && (customMode ? customValid : true);
+  const playersValid = !useNamedPlayers || playerNames.every((n) => n.trim().length > 0);
+  const canSave = winningScoreValid && (customMode ? customValid : true) && playersValid;
+
+  const setPlayer = (seat: number, value: string) => {
+    setPlayerNames((prev) => {
+      const next = [...prev] as [string, string, string, string];
+      next[seat] = value;
+      return next;
+    });
+  };
 
   const handleSave = () => {
+    const players = useNamedPlayers
+      ? (playerNames.map((n) => n.trim()) as [string, string, string, string])
+      : null;
+    const derived = players ? deriveTeamNamesFromPlayers(players) : null;
+
     const settings: GameSettings = {
       winningScore: Number(winningScoreInput),
       maxPointsPerRound: maxPoints,
-      usTeamName: usTeamName.trim() || "Us",
-      themTeamName: themTeamName.trim() || "Them",
+      usTeamName: derived?.usTeamName ?? (usTeamName.trim() || "Us"),
+      themTeamName: derived?.themTeamName ?? (themTeamName.trim() || "Them"),
+      players,
     };
-    if (mode === "edit") {
-      updateSettings(settings);
-    } else {
-      startGame(settings);
-    }
+    updateSettings(settings);
     onDone();
   };
 
@@ -71,20 +89,15 @@ export function SettingsScreen({
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
-              {mode === "edit" ? "Game Settings" : "New Game"}
+              Game Settings
             </p>
-            <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
-              Beta
-            </span>
             <BackendStatusBadge />
           </div>
-          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
+          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">
-          {mode === "edit"
-            ? "Adjust the table rules — rounds already scored are untouched."
-            : "Set the table rules, then deal."}
+          Rounds already scored (if any) are untouched by anything here.
         </p>
 
         <div className="mt-8 space-y-3">
@@ -161,12 +174,20 @@ export function SettingsScreen({
             )}
           </CollapsibleCard>
 
-          <CollapsibleCard title="Team names" subtitle="Custom names instead of Us/Them.">
-            <TeamNamesCard
+          <CollapsibleCard
+            title="Team names & players"
+            subtitle="Custom names, or track all 4 players for dealer rotation and stats."
+            hasError={!playersValid}
+          >
+            <PlayerSetupCard
+              useNamedPlayers={useNamedPlayers}
+              onToggleNamedPlayers={setUseNamedPlayers}
               usTeamName={usTeamName}
               themTeamName={themTeamName}
               onChangeUs={setUsTeamName}
               onChangeThem={setThemTeamName}
+              playerNames={playerNames}
+              onChangePlayer={setPlayer}
             />
           </CollapsibleCard>
 
@@ -182,16 +203,14 @@ export function SettingsScreen({
           disabled={!canSave}
           className="w-full rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink shadow-card transition hover:bg-brass-light disabled:opacity-40"
         >
-          {mode === "edit" ? "Save Changes" : "Start Game"}
+          Save Changes
         </button>
-        {canCancel && (
-          <button
-            onClick={onDone}
-            className="w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment/75 ring-1 ring-parchment/20"
-          >
-            Cancel
-          </button>
-        )}
+        <button
+          onClick={onDone}
+          className="w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment/75 ring-1 ring-parchment/20"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
