@@ -1,53 +1,43 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { canSaveHistory } from "@/lib/entitlements";
 import { ScoreTotals } from "./ScoreTotals";
 import { Scoreboard } from "./Scoreboard";
 import { SaveGamePrompt } from "./SaveGamePrompt";
+import { MainMenu } from "./MainMenu";
 
 export function GameOverScreen({
   onNewGame,
   onOpenSettings,
+  onOpenAccount,
+  onOpenFaq,
 }: {
   onNewGame: () => void;
   onOpenSettings: () => void;
+  onOpenAccount: () => void;
+  onOpenFaq: () => void;
 }) {
-  const { settings, rounds, winner, newGame, updateRound, deleteRound } = useGameStore();
+  const { settings, rounds, winner, newGame, updateRound, deleteRound, syncStatus } =
+    useGameStore();
   const { tier } = useAuthStore();
   const entitled = canSaveHistory(tier);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
-    "idle"
-  );
-  const savedRef = useRef(false);
-
-  // Already-entitled accounts save automatically, no prompt needed — the
-  // prompt below is specifically the free-tier conversion moment.
-  useEffect(() => {
-    if (!entitled || savedRef.current) return;
-    savedRef.current = true;
-    setAutoSaveStatus("saving");
-    fetch("/api/games", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ settings, rounds, winner }),
-    })
-      .then((res) => setAutoSaveStatus(res.ok ? "saved" : "error"))
-      .catch(() => setAutoSaveStatus("error"));
-  }, [entitled, settings, rounds, winner]);
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 text-center lg:max-w-lg lg:py-14">
       <div>
-        <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">Game Over</p>
+        <div className="flex items-center justify-between">
+          <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">Game Over</p>
+          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
+        </div>
         <h1 className="mt-1 font-display text-5xl font-semibold text-parchment lg:text-6xl">
           {winner} wins
         </h1>
         <p className="mt-3 font-body text-sm text-parchment/75">
           Nicely played — here&rsquo;s the final tally.
-          {entitled && autoSaveStatus === "saved" && " Saved to your history."}
+          {entitled && syncStatus === "synced" && " Saved to your history."}
+          {entitled && syncStatus === "syncing" && " Saving\u2026"}
         </p>
 
         <div className="mt-8">

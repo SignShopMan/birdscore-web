@@ -5,6 +5,7 @@ import { bidOptions, roundsPlayed } from "@/lib/rook-engine";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { TrumpPicker } from "./TrumpPicker";
 import { BidSlider } from "./BidSlider";
+import { MainMenu } from "./MainMenu";
 
 const DEALER_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
 
@@ -12,10 +13,14 @@ export function GameScreen({
   onScoreRound,
   onOpenScoreboard,
   onOpenSettings,
+  onOpenAccount,
+  onOpenFaq,
 }: {
   onScoreRound: () => void;
   onOpenScoreboard: () => void;
   onOpenSettings: () => void;
+  onOpenAccount: () => void;
+  onOpenFaq: () => void;
 }) {
   const {
     settings,
@@ -49,24 +54,19 @@ export function GameScreen({
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 lg:max-w-xl lg:px-0">
-      <header className="flex items-center justify-between">
-        <div>
+      <header>
+        <div className="flex items-center justify-between">
+          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
           <button
-            onClick={onOpenSettings}
-            className="font-body text-xs uppercase tracking-[0.3em] text-brass underline underline-offset-4"
+            onClick={advanceDealer}
+            className="rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
           >
-            &larr; Settings
+            {DEALER_LABELS[dealerIndex]} &middot; override
           </button>
-          <h1 className="mt-1 font-display text-2xl font-semibold text-parchment lg:text-3xl">
-            Round {roundsPlayed(rounds) + 1}
-          </h1>
         </div>
-        <button
-          onClick={advanceDealer}
-          className="rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
-        >
-          {DEALER_LABELS[dealerIndex]} &middot; override
-        </button>
+        <h1 className="mt-3 font-display text-2xl font-semibold text-parchment lg:text-3xl">
+          Round {roundsPlayed(rounds) + 1}
+        </h1>
       </header>
 
       {/* Compact totals + scoreboard entry point — the sidebar covers this on desktop */}

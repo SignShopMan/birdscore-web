@@ -11,12 +11,15 @@ import { useGameStore } from "@/lib/game-store";
 import { ThemePicker } from "./ThemePicker";
 import { CollapsibleCard } from "./CollapsibleCard";
 import { BackendStatusBadge } from "./BackendStatusBadge";
-import { AccountCard } from "./AccountCard";
+import { MainMenu } from "./MainMenu";
 
 export function SettingsScreen({
   mode = "new",
   canCancel = false,
   onDone,
+  onOpenSettings,
+  onOpenAccount,
+  onOpenFaq,
 }: {
   /** "new" resets to a fresh game; "edit" adjusts rules for the game already in
    * progress without touching rounds already scored. Either way, the form starts
@@ -24,6 +27,9 @@ export function SettingsScreen({
   mode?: "new" | "edit";
   canCancel?: boolean;
   onDone: () => void;
+  onOpenSettings: () => void;
+  onOpenAccount: () => void;
+  onOpenFaq: () => void;
 }) {
   const startGame = useGameStore((s) => s.startGame);
   const updateSettings = useGameStore((s) => s.updateSettings);
@@ -57,15 +63,18 @@ export function SettingsScreen({
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-5 py-8 lg:max-w-lg lg:py-14">
       <div>
-        <div className="flex items-center gap-2">
-          <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
-            {mode === "edit" ? "Game Settings" : "New Game"}
-          </p>
-          <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
-            Beta
-          </span>
-          <BackendStatusBadge />
-        </div>
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
+              {mode === "edit" ? "Game Settings" : "New Game"}
+            </p>
+            <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
+              Beta
+            </span>
+            <BackendStatusBadge />
+          </div>
+          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
+        </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">
           {mode === "edit"
@@ -145,10 +154,6 @@ export function SettingsScreen({
                 )}
               </div>
             )}
-          </CollapsibleCard>
-
-          <CollapsibleCard title="Account" subtitle="Sign in to save history and unlock more.">
-            <AccountCard />
           </CollapsibleCard>
 
           <CollapsibleCard title="Appearance" subtitle="Theme and table felt color.">

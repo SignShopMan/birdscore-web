@@ -7,12 +7,15 @@ import { GameScreen } from "@/components/GameScreen";
 import { ScorecardModal } from "@/components/ScorecardModal";
 import { GameOverScreen } from "@/components/GameOverScreen";
 import { Scoreboard } from "@/components/Scoreboard";
+import { AccountScreen } from "@/components/AccountScreen";
+import { FaqScreen } from "@/components/FaqScreen";
 
-type Screen = "settings" | "game";
+type Screen = "settings" | "game" | "account" | "faq";
 type SettingsMode = "new" | "edit";
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("settings");
+  const [returnScreen, setReturnScreen] = useState<Screen>("settings");
   const [settingsMode, setSettingsMode] = useState<SettingsMode>("new");
   const [hasStartedGame, setHasStartedGame] = useState(false);
   const [scorecardOpen, setScorecardOpen] = useState(false);
@@ -46,19 +49,35 @@ export default function Home() {
     setScreen("game");
   };
 
+  // Account/FAQ remember where they were opened from, so their "Back" link
+  // returns to Game (if a game was in progress) rather than always landing
+  // on Settings regardless of context.
+  const openAccount = () => {
+    if (screen !== "account" && screen !== "faq") setReturnScreen(screen);
+    setScreen("account");
+  };
+  const openFaq = () => {
+    if (screen !== "account" && screen !== "faq") setReturnScreen(screen);
+    setScreen("faq");
+  };
+  const goBack = () => setScreen(returnScreen);
+
   // Brief, deliberately blank — avoids a flash of the Settings screen before
   // flipping to Game the instant rehydration completes.
   if (!hasHydrated) {
     return <div className="min-h-dvh bg-felt" />;
   }
 
-  // gameOver takes over the whole screen normally, but yields to Settings when
-  // someone backs out to fix the rules before the next game.
-  if (gameOver && screen !== "settings") {
+  // gameOver takes over specifically when screen is "game" (the resumed/
+  // default state) — Settings, Account, and FAQ all stay freely reachable
+  // even with a finished game sitting there.
+  if (gameOver && screen === "game") {
     return (
       <GameOverScreen
         onNewGame={() => setScreen("game")}
         onOpenSettings={() => openSettings("new")}
+        onOpenAccount={openAccount}
+        onOpenFaq={openFaq}
       />
     );
   }
@@ -67,13 +86,42 @@ export default function Home() {
     <div className="mx-auto min-h-dvh max-w-5xl lg:grid lg:grid-cols-[minmax(0,32rem)_320px] lg:items-start lg:gap-10 lg:px-10 lg:py-10">
       <div>
         {screen === "settings" && (
-          <SettingsScreen mode={settingsMode} canCancel={hasStartedGame} onDone={closeSettings} />
+          <SettingsScreen
+            mode={settingsMode}
+            canCancel={hasStartedGame}
+            onDone={closeSettings}
+            onOpenSettings={() => openSettings(settingsMode)}
+            onOpenAccount={openAccount}
+            onOpenFaq={openFaq}
+          />
         )}
         {screen === "game" && !gameOver && (
           <GameScreen
             onScoreRound={() => setScorecardOpen(true)}
             onOpenScoreboard={() => setScoreboardOpen(true)}
             onOpenSettings={() => openSettings("edit")}
+            onOpenAccount={openAccount}
+            onOpenFaq={openFaq}
+          />
+        )}
+        {screen === "account" && (
+          <AccountScreen
+            onOpenSettings={() => openSettings(hasStartedGame ? "edit" : "new")}
+            onOpenAccount={openAccount}
+            onOpenFaq={openFaq}
+            onBack={goBack}
+            onResumeGame={() => {
+              setHasStartedGame(true);
+              setScreen("game");
+            }}
+          />
+        )}
+        {screen === "faq" && (
+          <FaqScreen
+            onOpenSettings={() => openSettings(hasStartedGame ? "edit" : "new")}
+            onOpenAccount={openAccount}
+            onOpenFaq={openFaq}
+            onBack={goBack}
           />
         )}
       </div>

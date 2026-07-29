@@ -22,6 +22,45 @@ environment I built this in.
 
 ## Changelog
 
+**Navigation refactor: menu + real Account/profile page**:
+- Replaced the scattered per-screen "← Settings" links with `MainMenu.tsx` —
+  one consistent hamburger menu mounted the same way on every screen
+  (Settings, Game, Game Over, Account, FAQ). Extensible by construction:
+  Settings / Account / FAQ / Send Feedback are rows in a list, not one-off
+  UI chrome, so adding a destination later is one more row. "Send Feedback"
+  moved here from the old always-floating corner pill (`FeedbackLink.tsx`,
+  now removed) — one nav surface instead of two competing floating buttons.
+- **Account is now a real screen (`AccountScreen.tsx`), not a Settings
+  card.** Signed out: sign-in form. Signed in: email, tier, sign-out, and —
+  the part that didn't exist before — an actual list of saved games pulled
+  from Supabase, with a "Resume" button on in-progress ones.
+- **The bigger piece underneath that list**: `GameSync.tsx`. Before this,
+  nothing reached the database until Game Over — an interrupted device
+  mid-game meant a lost game even for paying accounts, the exact bug this
+  was supposed to prevent. Now an entitled, signed-in account's game syncs
+  continuously: `POST /api/games` creates the row the moment the first
+  round is scored, `PATCH /api/games/[id]` re-syncs on every subsequent
+  round/adjustment/edit and marks it complete at Game Over. Sends the full
+  current rounds array each time rather than diffing — simple and correct
+  at real Rook round-counts, and self-healing if one sync attempt overlaps
+  another (the next change resends the complete state anyway).
+- Removed `GameOverScreen`'s old standalone auto-save — it would have
+  created a duplicate game row once continuous sync existed. It now just
+  reads `syncStatus` from the store for "Saving…" / "Saved" feedback.
+  `PendingSaveSync` (the free-tier conversion path) is untouched and still
+  correct — it's a different population (someone who just converted,
+  never had continuous sync running) with no overlap.
+- New `GET /api/games/[id]` + `loadGame()` in the store power **Resume**:
+  fetches one game's full round detail and hydrates it back into local
+  state, currentGameId included, so the resumed game keeps syncing rather
+  than looking like a brand-new one.
+- `FaqScreen.tsx` ships with six real Q&As pulled from decisions made this
+  conversation (tier structure, realtime model, lapse policy) — a
+  placeholder would've been cheaper but wouldn't have proven the menu
+  pattern actually holds real content.
+- No new migration needed — `supabase/migrations/0001_init.sql`'s schema
+  from the Phase 2 foundation already covered everything this round needed.
+
 **Swatch visibility on selection** (from a screenshot — Monochrome selected in dark mode):
 - The accent swatch dot's ring (`ring-black/15`) assumed a white unselected
   pill background. Once selected, the pill itself goes dark (`bg-ink`), and

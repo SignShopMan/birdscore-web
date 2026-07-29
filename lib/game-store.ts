@@ -33,6 +33,17 @@ interface GameState {
   gameOver: boolean;
   winner: Team | null;
 
+  // Which Supabase games.id (if any) this local game maps to — set once a
+  // signed-in, entitled account's game gets its first sync. Null means
+  // either not entitled/signed-in, or not synced yet. See GameSync.tsx for
+  // the actual sync orchestration; the store just tracks the mapping.
+  currentGameId: string | null;
+  setCurrentGameId: (id: string | null) => void;
+  // UI-only status for "Saving…" / "Saved" feedback — set by GameSync.tsx,
+  // not persisted (always starts fresh each session).
+  syncStatus: "idle" | "syncing" | "synced" | "error";
+  setSyncStatus: (s: GameState["syncStatus"]) => void;
+
   // True once the persisted state has been read back from localStorage.
   // page.tsx waits for this before deciding whether to show Settings or
   // resume a game already in progress — otherwise there'd be a flash of
@@ -53,6 +64,9 @@ interface GameState {
   updateRound: (rowId: string, usScore: number, themScore: number) => void;
   deleteRound: (rowId: string) => void;
   newGame: () => void;
+  // Hydrates local state from a game fetched from Supabase — the Resume
+  // action on AccountScreen's in-progress games list.
+  loadGame: (settings: GameSettings, rounds: Round[], gameId: string) => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -67,6 +81,10 @@ export const useGameStore = create<GameState>()(
       dealerIndex: 0,
       gameOver: false,
       winner: null,
+      currentGameId: null,
+      setCurrentGameId: (id) => set({ currentGameId: id }),
+      syncStatus: "idle",
+      setSyncStatus: (syncStatus) => set({ syncStatus }),
       hasHydrated: false,
       setHasHydrated: (v) => set({ hasHydrated: v }),
 
@@ -81,6 +99,8 @@ export const useGameStore = create<GameState>()(
           dealerIndex: 0,
           gameOver: false,
           winner: null,
+          currentGameId: null,
+          syncStatus: "idle",
         }),
 
       // Adjusts rules for the game already in progress, without touching rounds already
@@ -188,6 +208,26 @@ export const useGameStore = create<GameState>()(
           bid: null,
           shootMoon: false,
           dealerIndex: 0,
+          currentGameId: null,
+          syncStatus: "idle",
+        }),
+
+      loadGame: (settings, rounds, gameId) =>
+        set(() => {
+          const { over, winner } = checkGameOver(rounds, settings.winningScore);
+          return {
+            settings,
+            rounds,
+            trump: null,
+            bid: null,
+            bidTeam: null,
+            shootMoon: false,
+            dealerIndex: 0,
+            gameOver: over,
+            winner,
+            currentGameId: gameId,
+            syncStatus: "synced",
+          };
         }),
     }),
     {
@@ -205,6 +245,7 @@ export const useGameStore = create<GameState>()(
         dealerIndex: state.dealerIndex,
         gameOver: state.gameOver,
         winner: state.winner,
+        currentGameId: state.currentGameId,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
