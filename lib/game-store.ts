@@ -55,6 +55,15 @@ interface GameState {
   hasHydrated: boolean;
   setHasHydrated: (v: boolean) => void;
 
+  // True from the moment Start Game (or New Game, or Resume) is pressed —
+  // distinct from rounds.length > 0, which was the old (wrong) signal
+  // GameSync used to decide whether to sync. That made "zero rounds
+  // played yet" indistinguishable from "no game has ever started",
+  // which meant an entitled host's join code didn't exist until their
+  // first round was scored — backwards from how invites actually get used
+  // (share the code first, then play).
+  gameActive: boolean;
+
   startGame: (settings: GameSettings) => void;
   updateSettings: (settings: GameSettings) => void;
   setTrump: (t: TrumpColor) => void;
@@ -92,6 +101,7 @@ export const useGameStore = create<GameState>()(
       syncStatus: "idle",
       setSyncStatus: (syncStatus) => set({ syncStatus }),
       hasHydrated: false,
+      gameActive: false,
       setHasHydrated: (v) => set({ hasHydrated: v }),
 
       startGame: (settings) =>
@@ -108,6 +118,7 @@ export const useGameStore = create<GameState>()(
           currentGameId: null,
           joinCode: null,
           syncStatus: "idle",
+          gameActive: true,
         }),
 
       // Adjusts rules for the game already in progress, without touching rounds already
@@ -218,6 +229,7 @@ export const useGameStore = create<GameState>()(
           currentGameId: null,
           joinCode: null,
           syncStatus: "idle",
+          gameActive: true,
         }),
 
       loadGame: (settings, rounds, gameId) =>
@@ -235,6 +247,7 @@ export const useGameStore = create<GameState>()(
             winner,
             currentGameId: gameId,
             syncStatus: "synced",
+            gameActive: true,
           };
         }),
     }),
@@ -255,6 +268,7 @@ export const useGameStore = create<GameState>()(
         winner: state.winner,
         currentGameId: state.currentGameId,
         joinCode: state.joinCode,
+        gameActive: state.gameActive,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

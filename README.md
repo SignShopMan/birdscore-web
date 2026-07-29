@@ -22,6 +22,23 @@ environment I built this in.
 
 ## Changelog
 
+**Invite code was there, just backwards** (reported: "not seeing the
+mechanism to activate realtime"):
+- `GameSync` gated all syncing on `rounds.length > 0` — meaning the join
+  code (assigned on that same first sync) didn't exist until *after* the
+  first round was scored. Nothing was missing; the invite mechanism just
+  couldn't appear until you'd already played a round, backwards from how
+  you'd actually want to use it (grab the code, share it, *then* play).
+- Fixed with a real signal instead of an ambiguous one: `gameActive` in
+  `game-store.ts`, set true the moment Start Game / New Game / Resume is
+  pressed — distinct from "zero rounds," which couldn't tell "never
+  started" apart from "just started." `GameSync` now syncs immediately on
+  `gameActive`, so a pro-tier host's code exists from the moment the game
+  begins.
+- Added a "Generating your invite code…" state on the host's Scoreboard
+  for the brief real network round-trip between Start Game and the code
+  actually arriving, so that gap is visible instead of a silent pause.
+
 **Realtime hosting + invite codes** — pro tier:
 
 - **Every pro-tier game gets an automatic join code** (`lib/join-code.ts` —

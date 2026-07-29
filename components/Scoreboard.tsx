@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Round, Team, TrumpColor } from "@/lib/rook-engine";
+import { useAuthStore } from "@/lib/auth-store";
+import { canHostRealtime } from "@/lib/entitlements";
 import { ScoreTotals } from "./ScoreTotals";
 import { InviteCard } from "./InviteCard";
 
@@ -270,6 +272,7 @@ export function Scoreboard({
 }) {
   const listEndRef = useRef<HTMLLIElement>(null);
   const [addingAdjustment, setAddingAdjustment] = useState(false);
+  const tier = useAuthStore((s) => s.tier);
 
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ block: "nearest" });
@@ -299,6 +302,11 @@ export function Scoreboard({
         <div className="mt-3">
           <InviteCard joinCode={joinCode} />
         </div>
+      )}
+      {!readOnly && !joinCode && canHostRealtime(tier) && (
+        <p className="mt-3 font-body text-xs text-parchment/60">
+          Generating your invite code&hellip;
+        </p>
       )}
 
       <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-paper-dim p-2 shadow-card">
