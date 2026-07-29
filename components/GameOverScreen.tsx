@@ -3,6 +3,7 @@
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { canSaveHistory } from "@/lib/entitlements";
+import { teamLabel } from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
 import { Scoreboard } from "./Scoreboard";
 import { SaveGamePrompt } from "./SaveGamePrompt";
@@ -32,7 +33,7 @@ export function GameOverScreen({
           <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenFaq={onOpenFaq} />
         </div>
         <h1 className="mt-1 font-display text-5xl font-semibold text-parchment lg:text-6xl">
-          {winner} wins
+          {winner && teamLabel(winner, settings)} wins
         </h1>
         <p className="mt-3 font-body text-sm text-parchment/75">
           Nicely played — here&rsquo;s the final tally.
@@ -41,7 +42,12 @@ export function GameOverScreen({
         </p>
 
         <div className="mt-8">
-          <ScoreTotals us={usTotal(rounds)} them={themTotal(rounds)} />
+          <ScoreTotals
+            us={usTotal(rounds)}
+            them={themTotal(rounds)}
+            usLabel={settings.usTeamName}
+            themLabel={settings.themTeamName}
+          />
         </div>
       </div>
 
@@ -50,6 +56,8 @@ export function GameOverScreen({
           rounds={rounds}
           usTotal={usTotal(rounds)}
           themTotal={themTotal(rounds)}
+          usLabel={settings.usTeamName}
+          themLabel={settings.themTeamName}
           onUpdateRound={updateRound}
           onDeleteRound={deleteRound}
           readOnly

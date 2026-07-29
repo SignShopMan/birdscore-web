@@ -1,6 +1,16 @@
 "use client";
 
-export function ScoreTotals({ us, them }: { us: number; them: number }) {
+export function ScoreTotals({
+  us,
+  them,
+  usLabel = "Us",
+  themLabel = "Them",
+}: {
+  us: number;
+  them: number;
+  usLabel?: string;
+  themLabel?: string;
+}) {
   const usLeads = us > them;
   const themLeads = them > us;
   return (
@@ -11,9 +21,11 @@ export function ScoreTotals({ us, them }: { us: number; them: number }) {
         }`}
       >
         <div className="flex items-center justify-center gap-1.5">
-          <span className="font-body text-xs uppercase tracking-[0.2em] text-ink/75">Us</span>
+          <span className="truncate font-body text-xs uppercase tracking-[0.2em] text-ink/75">
+            {usLabel}
+          </span>
           {usLeads && (
-            <span className="rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
+            <span className="shrink-0 rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
               Leading
             </span>
           )}
@@ -26,9 +38,11 @@ export function ScoreTotals({ us, them }: { us: number; them: number }) {
         }`}
       >
         <div className="flex items-center justify-center gap-1.5">
-          <span className="font-body text-xs uppercase tracking-[0.2em] text-ink/75">Them</span>
+          <span className="truncate font-body text-xs uppercase tracking-[0.2em] text-ink/75">
+            {themLabel}
+          </span>
           {themLeads && (
-            <span className="rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
+            <span className="shrink-0 rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
               Leading
             </span>
           )}

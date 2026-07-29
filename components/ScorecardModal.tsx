@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { calculateRoundScores, isValidNonBidderScore } from "@/lib/rook-engine";
+import { calculateRoundScores, isValidNonBidderScore, teamLabel } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
 
 export function ScorecardModal({ onClose }: { onClose: () => void }) {
@@ -11,6 +11,8 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
   if (!trump || !bidTeam || bid == null) return null;
 
   const nonBidder = bidTeam === "US" ? "THEM" : "US";
+  const bidderName = teamLabel(bidTeam, settings);
+  const nonBidderName = teamLabel(nonBidder, settings);
   const valid = isValidNonBidderScore(input, settings.maxPointsPerRound);
   const nonBidderScore = valid ? Number(input) : 0;
 
@@ -30,11 +32,11 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full max-w-md rounded-t-card bg-paper p-5 shadow-card sm:rounded-card">
         <h2 className="font-display text-xl font-semibold text-ink">
-          Enter {nonBidder}&rsquo;s score
+          Enter {nonBidderName}&rsquo;s score
         </h2>
         <p className="mt-1 font-body text-sm text-ink/75">
-          {bidTeam} bid {shootMoon ? `${bid} (Shoot the Moon)` : bid}. Enter what {nonBidder}{" "}
-          actually took — in multiples of 5.
+          {bidderName} bid {shootMoon ? `${bid} (Shoot the Moon)` : bid}. Enter what{" "}
+          {nonBidderName} actually took — in multiples of 5.
         </p>
 
         <input
@@ -53,13 +55,17 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-card bg-white p-3 text-center ring-1 ring-ink/10">
-            <div className="font-body text-xs uppercase tracking-wide text-ink/75">Us</div>
+            <div className="truncate font-body text-xs uppercase tracking-wide text-ink/75">
+              {settings.usTeamName}
+            </div>
             <div className="font-score tabular-score text-3xl font-bold text-ink">
               {bidTeam === "US" ? preview.usScore : nonBidderScore || 0}
             </div>
           </div>
           <div className="rounded-card bg-white p-3 text-center ring-1 ring-ink/10">
-            <div className="font-body text-xs uppercase tracking-wide text-ink/75">Them</div>
+            <div className="truncate font-body text-xs uppercase tracking-wide text-ink/75">
+              {settings.themTeamName}
+            </div>
             <div className="font-score tabular-score text-3xl font-bold text-ink">
               {bidTeam === "THEM" ? preview.themScore : nonBidderScore || 0}
             </div>
@@ -67,7 +73,7 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
         </div>
         {preview.bidderSet && valid && (
           <p className="mt-2 text-center font-body text-xs font-semibold text-trump-red">
-            {bidTeam} went set — takes &minus;{bid} for the round.
+            {bidderName} went set — takes &minus;{bid} for the round.
           </p>
         )}
 
@@ -84,7 +90,7 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
               saveRound(nonBidderScore);
               onClose();
             }}
-            className="flex-1 rounded-full bg-ink py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-parchment disabled:opacity-40"
+            className="flex-1 rounded-full bg-ink py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-paper disabled:opacity-40"
           >
             Save
           </button>

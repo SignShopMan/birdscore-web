@@ -13,8 +13,8 @@ import { canSaveHistory } from "@/lib/entitlements";
  * paying accounts.
  *
  * Fires after every meaningful local change (a round scored, an
- * adjustment, an edit, game over) via the rounds/gameOver/winner
- * dependencies. Sends the full current rounds array each time rather than
+ * adjustment, an edit, game over, or a settings/team-name edit) via the
+ * rounds/gameOver/winner/settings dependencies. Sends the full current rounds array each time rather than
  * a diff — simple and correct at the round counts a real game has (dozens
  * at most), and self-healing: if one sync attempt gets skipped because a
  * previous one was still in flight, the next change re-sends the complete
@@ -58,7 +58,7 @@ export function GameSync() {
           const res = await fetch(`/api/games/${currentGameId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rounds, winner: gameOver ? winner : null }),
+            body: JSON.stringify({ settings, rounds, winner: gameOver ? winner : null }),
           });
           if (!res.ok) throw new Error("update failed");
         }
@@ -70,10 +70,11 @@ export function GameSync() {
       }
     };
     run();
-    // settings/setCurrentGameId/setSyncStatus are stable/derived — the real
-    // triggers are the four state values that actually change during play.
+    // setCurrentGameId/setSyncStatus are stable — every other dependency is
+    // a real trigger, including settings (team names/rules can be edited
+    // mid-game via Settings "edit" mode and need to reach the saved copy).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated, userId, tier, rounds, gameOver, winner, currentGameId]);
+  }, [hasHydrated, userId, tier, rounds, gameOver, winner, currentGameId, settings]);
 
   return null;
 }

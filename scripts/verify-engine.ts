@@ -7,6 +7,8 @@ import {
   isValidWinningScore,
   teamTotal,
   roundsPlayed,
+  teamLabel,
+  DEFAULT_SETTINGS,
   Round,
 } from "../lib/rook-engine";
 
@@ -102,5 +104,14 @@ assertEqual(
 
 // Adjustment entries must not count toward round numbering
 assertEqual("roundsPlayed excludes adjustments", roundsPlayed(withAdjustment), 1);
+
+// teamLabel falls back to defaults, and reflects a custom name once set
+assertEqual("teamLabel default US", teamLabel("US", DEFAULT_SETTINGS), "Us");
+assertEqual("teamLabel default THEM", teamLabel("THEM", DEFAULT_SETTINGS), "Them");
+assertEqual(
+  "teamLabel custom name",
+  teamLabel("US", { usTeamName: "The Watkins", themTeamName: "Them" }),
+  "The Watkins"
+);
 
 console.log("\nDone.");

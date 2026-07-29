@@ -49,8 +49,13 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { settings, rounds, winner, usTeamName, themTeamName } = body as {
-    settings: { winningScore: number; maxPointsPerRound: number };
+  const { settings, rounds, winner } = body as {
+    settings: {
+      winningScore: number;
+      maxPointsPerRound: number;
+      usTeamName: string;
+      themTeamName: string;
+    };
     rounds: Array<{
       round: number;
       rowType: "Round" | "Adj";
@@ -64,8 +69,6 @@ export async function POST(request: NextRequest) {
       label?: string;
     }>;
     winner: "US" | "THEM" | null;
-    usTeamName?: string;
-    themTeamName?: string;
   };
 
   const { data: game, error: gameError } = await supabase
@@ -74,8 +77,8 @@ export async function POST(request: NextRequest) {
       owner_id: user.id,
       winning_score: settings.winningScore,
       max_points_per_round: settings.maxPointsPerRound,
-      us_team_name: usTeamName ?? "Us",
-      them_team_name: themTeamName ?? "Them",
+      us_team_name: settings.usTeamName ?? "Us",
+      them_team_name: settings.themTeamName ?? "Them",
       status: winner ? "completed" : "in_progress",
       winner,
       completed_at: winner ? new Date().toISOString() : null,

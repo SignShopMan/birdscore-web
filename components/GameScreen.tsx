@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { bidOptions, roundsPlayed } from "@/lib/rook-engine";
+import { bidOptions, roundsPlayed, teamLabel } from "@/lib/rook-engine";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { TrumpPicker } from "./TrumpPicker";
 import { BidSlider } from "./BidSlider";
@@ -79,11 +79,11 @@ export function GameScreen({
         </span>
         <span className="font-score tabular-score text-lg font-bold text-parchment">
           <span className={usTotal(rounds) > themTotal(rounds) ? "text-brass" : undefined}>
-            Us {usTotal(rounds)}
+            {settings.usTeamName} {usTotal(rounds)}
           </span>
           {" \u00B7 "}
           <span className={themTotal(rounds) > usTotal(rounds) ? "text-brass" : undefined}>
-            Them {themTotal(rounds)}
+            {settings.themTeamName} {themTotal(rounds)}
           </span>
         </span>
       </button>
@@ -100,13 +100,13 @@ export function GameScreen({
                 key={team}
                 disabled={locked}
                 onClick={() => setBidTeam(team)}
-                className={`rounded-card py-3 font-body text-sm font-semibold uppercase tracking-wide transition disabled:opacity-50 ${
+                className={`truncate rounded-card py-3 font-body text-sm font-semibold uppercase tracking-wide transition disabled:opacity-50 ${
                   bidTeam === team
                     ? "bg-brass text-ink"
                     : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
                 }`}
               >
-                {team}
+                {teamLabel(team, settings)}
               </button>
             ))}
           </div>

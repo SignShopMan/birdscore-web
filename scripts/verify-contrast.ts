@@ -85,4 +85,35 @@ check("ink/75 on paper (muted labels)", blend(ink, paper, 0.75), paper, 4.5);
 check("ink/75 on paper-dim (muted labels)", blend(ink, paperDim, 0.75), paperDim, 4.5);
 
 console.log(`\n${failures === 0 ? "All contrast checks passed." : `${failures} FAILURE(S) — fix before shipping.`}`);
+
+// --- Automated structural scan ---
+// The numeric checks above only cover pairings someone remembered to list.
+// That's failed twice now (ScorecardModal.tsx and two spots in
+// Scoreboard.tsx all shipped with bg-ink + text-parchment — invisible
+// navy-on-navy in light mode — despite two prior manual sweeps). This scans
+// every actual component file for that literal className co-occurrence
+// instead of relying on a maintained list, so it can't be missed a third
+// time by forgetting to check a file.
+import { readdirSync, readFileSync } from "fs";
+import { join } from "path";
+
+console.log("\n--- Automated scan: bg-ink + text-parchment co-occurrence (the recurring bug) ---");
+let structuralFailures = 0;
+for (const dir of ["components", "app"]) {
+  for (const file of readdirSync(dir, { recursive: true }) as string[]) {
+    if (!file.endsWith(".tsx")) continue;
+    const path = join(dir, file);
+    const lines = readFileSync(path, "utf-8").split("\n");
+    lines.forEach((line, i) => {
+      if (line.includes("bg-ink") && line.includes("text-parchment")) {
+        console.log(`FAIL  ${path}:${i + 1} has both bg-ink and text-parchment — will be invisible in light mode`);
+        structuralFailures++;
+      }
+    });
+  }
+}
+if (structuralFailures === 0) console.log("PASS  no bg-ink + text-parchment found in any component");
+failures += structuralFailures;
+
+console.log(`\n${failures === 0 ? "All checks passed." : `${failures} total FAILURE(S) — fix before shipping.`}`);
 process.exitCode = failures === 0 ? 0 : 1;

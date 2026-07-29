@@ -12,6 +12,7 @@ import { ThemePicker } from "./ThemePicker";
 import { CollapsibleCard } from "./CollapsibleCard";
 import { BackendStatusBadge } from "./BackendStatusBadge";
 import { MainMenu } from "./MainMenu";
+import { TeamNamesCard } from "./TeamNamesCard";
 
 export function SettingsScreen({
   mode = "new",
@@ -42,6 +43,8 @@ export function SettingsScreen({
   const [maxPoints, setMaxPoints] = useState<number>(current.maxPointsPerRound);
   const [customMode, setCustomMode] = useState(!presetMatch);
   const [customInput, setCustomInput] = useState(String(current.maxPointsPerRound));
+  const [usTeamName, setUsTeamName] = useState(current.usTeamName);
+  const [themTeamName, setThemTeamName] = useState(current.themTeamName);
 
   const winningScoreValid = isValidWinningScore(winningScoreInput, maxPoints);
   const customValid = isValidCustomMaxPoints(customInput);
@@ -51,6 +54,8 @@ export function SettingsScreen({
     const settings: GameSettings = {
       winningScore: Number(winningScoreInput),
       maxPointsPerRound: maxPoints,
+      usTeamName: usTeamName.trim() || "Us",
+      themTeamName: themTeamName.trim() || "Them",
     };
     if (mode === "edit") {
       updateSettings(settings);
@@ -154,6 +159,15 @@ export function SettingsScreen({
                 )}
               </div>
             )}
+          </CollapsibleCard>
+
+          <CollapsibleCard title="Team names" subtitle="Custom names instead of Us/Them.">
+            <TeamNamesCard
+              usTeamName={usTeamName}
+              themTeamName={themTeamName}
+              onChangeUs={setUsTeamName}
+              onChangeThem={setThemTeamName}
+            />
           </CollapsibleCard>
 
           <CollapsibleCard title="Appearance" subtitle="Theme and table felt color.">

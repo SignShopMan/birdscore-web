@@ -5,10 +5,12 @@
 // finish the save once sign-in + payment complete, regardless of whether
 // the magic link opened in the original tab or a new one.
 
+import { GameSettings } from "./rook-engine";
+
 const KEY = "birdscore-pending-save";
 
 export interface PendingSave {
-  settings: { winningScore: number; maxPointsPerRound: number };
+  settings: GameSettings;
   rounds: unknown[];
   winner: "US" | "THEM" | null;
 }

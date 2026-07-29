@@ -67,7 +67,12 @@ export function AccountScreen({
       const data = await res.json();
       if (data.game && data.rounds) {
         loadGame(
-          { winningScore: data.game.winningScore, maxPointsPerRound: data.game.maxPointsPerRound },
+          {
+            winningScore: data.game.winningScore,
+            maxPointsPerRound: data.game.maxPointsPerRound,
+            usTeamName: data.game.usTeamName,
+            themTeamName: data.game.themTeamName,
+          },
           data.rounds,
           data.game.id
         );

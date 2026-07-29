@@ -37,11 +37,15 @@ function TrashIcon() {
 function RoundRow({
   round,
   readOnly,
+  usLabel,
+  themLabel,
   onUpdate,
   onDelete,
 }: {
   round: Round;
   readOnly?: boolean;
+  usLabel: string;
+  themLabel: string;
   onUpdate: (rowId: string, us: number, them: number) => void;
   onDelete: (rowId: string) => void;
 }) {
@@ -82,7 +86,7 @@ function RoundRow({
               if (Number.isFinite(us) && Number.isFinite(them)) onUpdate(round.rowId, us, them);
               setEditing(false);
             }}
-            className="rounded bg-ink px-2 py-1 font-body text-xs font-semibold text-parchment"
+            className="rounded bg-ink px-2 py-1 font-body text-xs font-semibold text-paper"
           >
             Save
           </button>
@@ -104,7 +108,7 @@ function RoundRow({
       <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/75">
         {isAdj
           ? round.label || "Adjustment"
-          : `${round.bidTeam} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
+          : `${round.bidTeam === "US" ? usLabel : themLabel} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
       </span>
       <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
         {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}
@@ -135,9 +139,13 @@ function RoundRow({
 }
 
 function AdjustmentForm({
+  usLabel,
+  themLabel,
   onAdd,
   onCancel,
 }: {
+  usLabel: string;
+  themLabel: string;
   onAdd: (team: Team, points: number, label: string) => void;
   onCancel: () => void;
 }) {
@@ -159,15 +167,18 @@ function AdjustmentForm({
       </p>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        {(["US", "THEM"] as const).map((t) => (
+        {([
+          ["US", usLabel],
+          ["THEM", themLabel],
+        ] as const).map(([t, name]) => (
           <button
             key={t}
             onClick={() => setTeam(t)}
-            className={`rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
+            className={`truncate rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
               team === t ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
             }`}
           >
-            {t}
+            {name}
           </button>
         ))}
       </div>
@@ -220,7 +231,7 @@ function AdjustmentForm({
             const signed = kind === "penalty" ? -Number(pointsInput) : Number(pointsInput);
             onAdd(team, signed, label.trim() || "Adjustment");
           }}
-          className="flex-1 rounded-full bg-ink py-2 font-body text-xs font-semibold uppercase tracking-wide text-parchment disabled:opacity-40"
+          className="flex-1 rounded-full bg-ink py-2 font-body text-xs font-semibold uppercase tracking-wide text-paper disabled:opacity-40"
         >
           Add
         </button>
@@ -233,6 +244,8 @@ export function Scoreboard({
   rounds,
   usTotal,
   themTotal,
+  usLabel = "Us",
+  themLabel = "Them",
   onUpdateRound,
   onDeleteRound,
   onAddAdjustment,
@@ -243,6 +256,8 @@ export function Scoreboard({
   rounds: Round[];
   usTotal: number;
   themTotal: number;
+  usLabel?: string;
+  themLabel?: string;
   onUpdateRound: (rowId: string, us: number, them: number) => void;
   onDeleteRound: (rowId: string) => void;
   onAddAdjustment?: (team: Team, points: number, label: string) => void;
@@ -273,7 +288,7 @@ export function Scoreboard({
 
       {!hideTotals && (
         <div className="mt-3">
-          <ScoreTotals us={usTotal} them={themTotal} />
+          <ScoreTotals us={usTotal} them={themTotal} usLabel={usLabel} themLabel={themLabel} />
         </div>
       )}
 
@@ -297,6 +312,8 @@ export function Scoreboard({
                 key={r.rowId}
                 round={r}
                 readOnly={readOnly}
+                usLabel={usLabel}
+                themLabel={themLabel}
                 onUpdate={onUpdateRound}
                 onDelete={onDeleteRound}
               />
@@ -310,6 +327,8 @@ export function Scoreboard({
         <div className="mt-3">
           {addingAdjustment ? (
             <AdjustmentForm
+              usLabel={usLabel}
+              themLabel={themLabel}
               onAdd={(team, points, label) => {
                 onAddAdjustment(team, points, label);
                 setAddingAdjustment(false);

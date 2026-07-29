@@ -22,6 +22,42 @@ environment I built this in.
 
 ## Changelog
 
+**Menu, contrast, mobile bid input, team names** (four items in one round):
+
+- **Menu on desktop** (`MainMenu.tsx`) was a full-screen edge-anchored
+  drawer at every breakpoint — fine on mobile, disconnected from the
+  trigger button on wide screens. Now a compact dropdown anchored directly
+  under the button at `lg:` and up; mobile keeps the drawer.
+- **Contrast**: re-auditing found three more real instances of the
+  `bg-ink` + `text-parchment` bug (invisible navy-on-navy in light mode) —
+  including the **Save button in the score-entry modal**, the single
+  most-used interactive element in the app. Manually checking files has
+  now missed this twice, so `verify-contrast.ts` gained an automated
+  structural scan that greps every component for the literal pattern
+  instead of relying on a maintained list — it will catch this class of
+  bug going forward rather than needing to be rediscovered by eye.
+- **Bid input on mobile** (`BidSlider.tsx`): the drag-slider stays on
+  desktop (works well with a mouse), replaced on mobile with tap-to-edit
+  the number directly (opens a keyboard input) plus a \u00b15 stepper —
+  dragging a thin track with a fingertip across 40+ possible positions was
+  the actual problem, not the slider concept itself. Shortcuts kept on both.
+- **Team names**, $3.99 tier and up: `GameSettings` now carries
+  `usTeamName`/`themTeamName` (default "Us"/"Them"), editable via a new
+  Settings card (`TeamNamesCard.tsx`, tier-gated with an upsell message for
+  free accounts) and threaded through every display surface — the winner
+  headline, score totals, the bidding-team picker, the scorecard modal, and
+  the round-by-round ledger's description text (column headers stay
+  generic for space; the totals directly above them already carry the
+  custom name). Also fixed a real gap this surfaced: `GameSync` wasn't
+  watching `settings` at all, so a team-name (or even a winning-score)
+  edit mid-game via Settings "edit" mode was never reaching Supabase — only
+  rounds/game-over triggered a sync before. `PATCH /api/games/[id]` now
+  accepts and applies settings updates too.
+- Full named individual **players** (not just team names — the "who dealt,
+  who held the Rook" stats layer) is still deferred; the schema
+  (`players` table) has supported it since the Phase 2 foundation, but
+  actually building that UI is its own round given everything else here.
+
 **Dev-only tier switch**, locked to one account:
 - New `dev_tier_override` column on `profiles`
   (`supabase/migrations/0002_dev_tier_override.sql`) — deliberately a

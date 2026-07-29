@@ -33,7 +33,7 @@ export function MainMenu({
   };
 
   return (
-    <>
+    <div className="relative inline-block">
       <button
         onClick={() => setOpen(true)}
         aria-label="Open menu"
@@ -43,9 +43,17 @@ export function MainMenu({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-start bg-black/60" onClick={() => setOpen(false)}>
+        <>
+          {/* Backdrop: heavy dimming on mobile (full-screen drawer feel),
+              just an invisible click-catcher on desktop (anchored dropdown
+              shouldn't dim the whole page behind it). */}
           <div
-            className="h-full w-72 max-w-[85vw] bg-paper p-5 shadow-card"
+            className="fixed inset-0 z-40 bg-black/60 lg:bg-transparent"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            className="fixed inset-y-0 left-0 z-50 h-full w-72 max-w-[85vw] bg-paper p-5 shadow-card
+              lg:absolute lg:inset-auto lg:left-0 lg:top-full lg:mt-2 lg:h-auto lg:w-64 lg:rounded-card"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -53,13 +61,13 @@ export function MainMenu({
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="rounded-full bg-white px-3 py-1 font-body text-xs text-ink ring-1 ring-ink/15"
+                className="rounded-full bg-white px-3 py-1 font-body text-xs text-ink ring-1 ring-ink/15 lg:hidden"
               >
                 Close
               </button>
             </div>
 
-            <nav className="mt-6 space-y-1">
+            <nav className="mt-6 space-y-1 lg:mt-4">
               <button
                 onClick={() => go(onOpenSettings)}
                 className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
@@ -86,10 +94,12 @@ export function MainMenu({
               </a>
             </nav>
 
-            <p className="mt-6 font-body text-[10px] uppercase tracking-wide text-ink/50">Beta</p>
+            <p className="mt-6 font-body text-[10px] uppercase tracking-wide text-ink/50 lg:mt-4">
+              Beta
+            </p>
           </div>
-        </div>
+        </>
       )}
-    </>
+    </div>
   );
 }

@@ -39,12 +39,29 @@ export function roundsPlayed(rounds: Round[]): number {
 export interface GameSettings {
   winningScore: number; // original default: 500
   maxPointsPerRound: number; // original default: 180 (options: 120/150/180/200/250)
+  // Custom team names — $3.99 tier and up (see canUseNamedPlayers in
+  // lib/entitlements.ts). Always present with sensible defaults so every
+  // display call site can use them unconditionally rather than checking
+  // for undefined everywhere; the tier gate lives in the Settings UI (only
+  // entitled accounts get an editable field), not in this type.
+  usTeamName: string;
+  themTeamName: string;
+}
+
+/** The one place "US"/"THEM" gets turned into a display string — every
+ * component should call this instead of hardcoding "Us"/"Them" or showing
+ * the raw Team value, so a custom team name actually shows up everywhere
+ * instead of in some places and not others. */
+export function teamLabel(team: Team, settings: Pick<GameSettings, "usTeamName" | "themTeamName">): string {
+  return team === "US" ? settings.usTeamName : settings.themTeamName;
 }
 
 export const MAX_POINTS_OPTIONS = [120, 150, 180, 200, 250] as const;
 export const DEFAULT_SETTINGS: GameSettings = {
   winningScore: 500,
   maxPointsPerRound: 180,
+  usTeamName: "Us",
+  themTeamName: "Them",
 };
 
 /** Custom max-points input must be a positive multiple of 5, within a sane table-rules range. */

@@ -24,9 +24,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   const body = await request.json();
-  const { rounds, winner } = body as {
+  const { rounds, winner, settings } = body as {
     rounds: Parameters<typeof roundsToDbRows>[1];
     winner?: "US" | "THEM" | null;
+    settings?: {
+      winningScore: number;
+      maxPointsPerRound: number;
+      usTeamName: string;
+      themTeamName: string;
+    };
   };
 
   const { error: deleteError } = await supabase.from("rounds").delete().eq("game_id", params.id);
@@ -43,14 +49,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
   }
 
-  const gameUpdate =
-    winner !== undefined
-      ? {
-          status: winner ? "completed" : "in_progress",
-          winner,
-          completed_at: winner ? new Date().toISOString() : null,
-        }
-      : {};
+  const gameUpdate: Record<string, unknown> = {};
+  if (winner !== undefined) {
+    gameUpdate.status = winner ? "completed" : "in_progress";
+    gameUpdate.winner = winner;
+    gameUpdate.completed_at = winner ? new Date().toISOString() : null;
+  }
+  if (settings) {
+    gameUpdate.winning_score = settings.winningScore;
+    gameUpdate.max_points_per_round = settings.maxPointsPerRound;
+    gameUpdate.us_team_name = settings.usTeamName;
+    gameUpdate.them_team_name = settings.themTeamName;
+  }
 
   if (Object.keys(gameUpdate).length > 0) {
     const { error: gameError } = await supabase
