@@ -35,6 +35,7 @@ export function GameScreen({
     dealerIndex,
     joinCode,
     viewerCount,
+    syncStatus,
     setTrump,
     clearTrump,
     setBidTeam,
@@ -85,10 +86,18 @@ export function GameScreen({
       {isHost && (
         <button
           onClick={() => setInviteOpen(true)}
-          className="mt-4 flex items-center justify-between rounded-card bg-brass/20 px-4 py-3 ring-1 ring-brass/50"
+          className={`mt-4 flex items-center justify-between rounded-card px-4 py-3 ring-1 ${
+            !joinCode && syncStatus === "error"
+              ? "bg-trump-red/20 ring-trump-red/50"
+              : "bg-brass/20 ring-brass/50"
+          }`}
         >
           <span className="font-body text-xs font-semibold uppercase tracking-[0.15em] text-parchment">
-            {joinCode ? "Invite others to watch" : "Generating invite code\u2026"}
+            {joinCode
+              ? "Invite others to watch"
+              : syncStatus === "error"
+              ? "Couldn't create invite \u2014 tap for details"
+              : "Generating invite code\u2026"}
           </span>
           {joinCode && (
             <span className="font-score tabular-score text-lg font-bold text-parchment">
@@ -105,20 +114,26 @@ export function GameScreen({
 
       {inviteOpen && <InviteScreen onClose={() => setInviteOpen(false)} />}
 
-      {/* Compact totals + scoreboard entry point — the sidebar covers this on desktop */}
+      {/* Compact totals + scoreboard entry point — the sidebar covers this on desktop.
+          Stacked (label above totals) rather than one crowded line — a single
+          "Scoreboard" + "Kevin/Jon 45 · Jared/Ryan 60" row wraps badly the moment
+          team names are longer than the original "Us"/"Them" defaults. */}
       <button
         onClick={onOpenScoreboard}
-        className="mt-5 flex items-center justify-between rounded-card bg-parchment/10 px-4 py-3 ring-1 ring-parchment/20 lg:hidden"
+        className="mt-5 flex flex-col gap-1 rounded-card bg-parchment/10 px-4 py-3 ring-1 ring-parchment/20 lg:hidden"
       >
         <span className="font-body text-xs uppercase tracking-[0.15em] text-parchment/75">
           Scoreboard
         </span>
-        <span className="font-score tabular-score text-lg font-bold text-parchment">
-          <span className={usTotal(rounds) > themTotal(rounds) ? "text-brass" : undefined}>
+        <span className="flex items-center justify-between gap-3 font-score tabular-score text-lg font-bold text-parchment">
+          <span
+            className={`truncate ${usTotal(rounds) > themTotal(rounds) ? "text-brass" : ""}`}
+          >
             {settings.usTeamName} {usTotal(rounds)}
           </span>
-          {" \u00B7 "}
-          <span className={themTotal(rounds) > usTotal(rounds) ? "text-brass" : undefined}>
+          <span
+            className={`shrink-0 truncate ${themTotal(rounds) > usTotal(rounds) ? "text-brass" : ""}`}
+          >
             {settings.themTeamName} {themTotal(rounds)}
           </span>
         </span>

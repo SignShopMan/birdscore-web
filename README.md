@@ -22,6 +22,37 @@ environment I built this in.
 
 ## Changelog
 
+**The actual gap: no way to *use* a bare code** (reported: opened
+therealbirdscore.com fresh, not signed in, no "join a game" anywhere):
+- `/watch/[code]` only ever worked if someone clicked a pre-formed link —
+  the code already had to be embedded in the URL. Anyone who just had the
+  bare code (read aloud, texted as plain text, whatever) had no way to
+  actually use it; nothing in the app let you type one in.
+- New `app/watch/page.tsx` — a landing page with a 6-character code input
+  that navigates to `/watch/[code]` on submit. Added "Watch a Game" to
+  `MainMenu.tsx`, right after Settings since it's the one destination that
+  genuinely needs no account at all — likely the first thing a new
+  invitee wants, before anything else in the app.
+- Added a FAQ entry spelling out both paths (link or menu \u2192 code entry),
+  since this was a real question, not just a UI gap.
+
+**Two real bugs from a screenshot mid-game (Round 3, still "Generating…")**:
+- The invite banner had no failure state — if the sync genuinely failed,
+  it said "Generating invite code…" forever with no way to tell a slow
+  network apart from a real, persistent error. Now reads `syncStatus` from
+  the store: red-tinted with "Couldn't create invite" when it's actually
+  failed, and the invite modal itself explains why instead of silently
+  doing nothing when tapped. **This is diagnostic, not a root-cause fix**
+  — I can't reach `supabase.co` from this sandbox to see why the sync is
+  actually failing for this specific account/game. See below for what to
+  check.
+- The compact mobile Scoreboard strip ("Kevin/Jon 45 · Jared/Ryan 60") was
+  a single `justify-between` row sharing space with the "Scoreboard"
+  label — fine for the short "Us"/"Them" defaults it was built and tested
+  against, wraps badly the moment real names are longer. Restructured to
+  stacked rows (label above, totals below, full width), with `truncate`
+  as a safety net for pathologically long names.
+
 **Invite as its own flow, plus live viewer count** (from a screenshot — code
 existed but was invisible on the actual Game screen):
 - The real problem: `InviteCard` only ever lived *inside* the mobile

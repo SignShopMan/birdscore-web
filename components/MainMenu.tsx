@@ -74,6 +74,12 @@ export function MainMenu({
               >
                 Settings
               </button>
+              <a
+                href="/watch"
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                Watch a Game
+              </a>
               <button
                 onClick={() => go(onOpenAccount)}
                 className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"

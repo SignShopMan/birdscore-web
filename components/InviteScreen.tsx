@@ -4,10 +4,34 @@ import { useState } from "react";
 import { useGameStore } from "@/lib/game-store";
 
 export function InviteScreen({ onClose }: { onClose: () => void }) {
-  const { joinCode, viewerCount } = useGameStore();
+  const { joinCode, viewerCount, syncStatus } = useGameStore();
   const [copied, setCopied] = useState(false);
 
-  if (!joinCode) return null;
+  if (!joinCode) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+        <div className="w-full max-w-md rounded-t-card bg-paper p-6 text-center shadow-card sm:rounded-card">
+          <p className="font-body text-xs uppercase tracking-[0.3em] text-trump-red">
+            {syncStatus === "error" ? "Couldn't create your invite" : "Still generating\u2026"}
+          </p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink">
+            {syncStatus === "error" ? "Something went wrong" : "One moment"}
+          </h2>
+          <p className="mt-2 font-body text-xs text-ink/70">
+            {syncStatus === "error"
+              ? "The invite code couldn't be saved — this usually means the backend isn't reachable or isn't fully set up yet. Scoring another round will retry automatically, or check your connection."
+              : "This should only take a second on a normal connection."}
+          </p>
+          <button
+            onClick={onClose}
+            className="mt-5 w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-ink ring-1 ring-ink/20"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const link =
     typeof window !== "undefined" ? `${window.location.origin}/watch/${joinCode}` : `/watch/${joinCode}`;
