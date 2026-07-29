@@ -43,6 +43,11 @@ interface GameState {
   // null for everyone else. Displayed as the "invite" code/link.
   joinCode: string | null;
   setJoinCode: (code: string | null) => void;
+  // Live count of connected /watch viewers, via Supabase Presence — never
+  // persisted, always starts at 0 and gets rebuilt from the actual
+  // channel state on each connection (see RealtimeHost.tsx).
+  viewerCount: number;
+  setViewerCount: (n: number) => void;
   // UI-only status for "Saving…" / "Saved" feedback — set by GameSync.tsx,
   // not persisted (always starts fresh each session).
   syncStatus: "idle" | "syncing" | "synced" | "error";
@@ -98,6 +103,8 @@ export const useGameStore = create<GameState>()(
       setCurrentGameId: (id) => set({ currentGameId: id }),
       joinCode: null,
       setJoinCode: (code) => set({ joinCode: code }),
+      viewerCount: 0,
+      setViewerCount: (n) => set({ viewerCount: n }),
       syncStatus: "idle",
       setSyncStatus: (syncStatus) => set({ syncStatus }),
       hasHydrated: false,
@@ -119,6 +126,7 @@ export const useGameStore = create<GameState>()(
           joinCode: null,
           syncStatus: "idle",
           gameActive: true,
+          viewerCount: 0,
         }),
 
       // Adjusts rules for the game already in progress, without touching rounds already
@@ -230,6 +238,7 @@ export const useGameStore = create<GameState>()(
           joinCode: null,
           syncStatus: "idle",
           gameActive: true,
+          viewerCount: 0,
         }),
 
       loadGame: (settings, rounds, gameId) =>

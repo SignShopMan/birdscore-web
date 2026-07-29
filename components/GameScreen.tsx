@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { bidOptions, roundsPlayed, teamLabel } from "@/lib/rook-engine";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
+import { useAuthStore } from "@/lib/auth-store";
+import { canHostRealtime } from "@/lib/entitlements";
 import { TrumpPicker } from "./TrumpPicker";
 import { BidSlider } from "./BidSlider";
 import { MainMenu } from "./MainMenu";
+import { InviteScreen } from "./InviteScreen";
 
 const DEALER_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
 
@@ -30,6 +33,8 @@ export function GameScreen({
     bidTeam,
     shootMoon,
     dealerIndex,
+    joinCode,
+    viewerCount,
     setTrump,
     clearTrump,
     setBidTeam,
@@ -37,6 +42,9 @@ export function GameScreen({
     toggleShootMoon,
     advanceDealer,
   } = useGameStore();
+  const { tier } = useAuthStore();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const isHost = canHostRealtime(tier);
 
   const bids = bidOptions(settings.maxPointsPerRound);
   const bidChosen = bid != null || shootMoon;
@@ -68,6 +76,34 @@ export function GameScreen({
           Round {roundsPlayed(rounds) + 1}
         </h1>
       </header>
+
+      {/* Prominent by design — this used to only live inside the mobile
+          Scoreboard sheet, which meant a pro host had no visible way to
+          find their own invite code without an extra tap into a sub-sheet.
+          Now it's the first thing under the header, same on mobile and
+          desktop. */}
+      {isHost && (
+        <button
+          onClick={() => setInviteOpen(true)}
+          className="mt-4 flex items-center justify-between rounded-card bg-brass/20 px-4 py-3 ring-1 ring-brass/50"
+        >
+          <span className="font-body text-xs font-semibold uppercase tracking-[0.15em] text-parchment">
+            {joinCode ? "Invite others to watch" : "Generating invite code\u2026"}
+          </span>
+          {joinCode && (
+            <span className="font-score tabular-score text-lg font-bold text-parchment">
+              {joinCode}
+              {viewerCount > 0 && (
+                <span className="ml-2 font-body text-xs font-normal text-parchment/75">
+                  &middot; {viewerCount} watching
+                </span>
+              )}
+            </span>
+          )}
+        </button>
+      )}
+
+      {inviteOpen && <InviteScreen onClose={() => setInviteOpen(false)} />}
 
       {/* Compact totals + scoreboard entry point — the sidebar covers this on desktop */}
       <button

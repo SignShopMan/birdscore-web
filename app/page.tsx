@@ -138,7 +138,6 @@ export default function Home() {
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
-            joinCode={joinCode}
           />
         </aside>
       )}
@@ -155,7 +154,6 @@ export default function Home() {
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
-            joinCode={joinCode}
             onClose={() => setScoreboardOpen(false)}
           />
         </div>

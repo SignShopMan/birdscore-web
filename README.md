@@ -22,6 +22,33 @@ environment I built this in.
 
 ## Changelog
 
+**Invite as its own flow, plus live viewer count** (from a screenshot — code
+existed but was invisible on the actual Game screen):
+- The real problem: `InviteCard` only ever lived *inside* the mobile
+  Scoreboard sheet — a surface that needs an extra tap to even open, and
+  even then the code was easy to miss among totals and the round ledger.
+  On desktop it wasn't reachable at all in any obvious way. Removed it
+  from `Scoreboard.tsx` entirely and centralized on one clear surface
+  instead: a prominent banner right under the header on `GameScreen.tsx`
+  — same position on mobile and desktop, impossible to miss, showing
+  "Generating invite code…" during the brief real sync and the code itself
+  once it exists.
+- Tapping the banner opens **`InviteScreen.tsx`**, a dedicated modal — big
+  code, one-tap copy link, and a **live viewer count**.
+- The viewer count uses Supabase **Presence** (Broadcast's sibling
+  primitive, built exactly for "who's connected right now") — a new
+  migration, `0004_realtime_presence.sql`, rather than editing
+  `0003_realtime_broadcast.sql` (migrations are append-only once shipped).
+  Deliberately more permissive than the broadcast policies: viewers need
+  to *write* their own presence (`channel.track()` on `/watch/[code]`),
+  not just read it, so both directions are open to `anon` here — scoped
+  the same way as broadcast, only on a channel matching a real
+  `is_realtime` game. The host never calls `.track()` itself, so the count
+  naturally reflects only actual viewers, no manual subtraction needed.
+- Checked: Supabase's free tier allows 200 concurrent realtime connections
+  project-wide. For a niche card game, that's not a practical ceiling —
+  didn't build an artificial cap into the app.
+
 **Invite code was there, just backwards** (reported: "not seeing the
 mechanism to activate realtime"):
 - `GameSync` gated all syncing on `rounds.length > 0` — meaning the join
@@ -283,10 +310,10 @@ would mean redoing them if something in the foundation needs to change.
    50K MAU, no card required; note it auto-pauses after 7 days with no API
    traffic, worth a scheduled ping once this is live day-to-day). Then:
    - SQL Editor → paste and run `supabase/migrations/0001_init.sql`, then
-     `0002_dev_tier_override.sql`, then `0003_realtime_broadcast.sql` (if
-     the GitHub↔Supabase integration is connected, these may already be
-     applied automatically — check Database → Migrations first, same as
-     with the others).
+     `0002_dev_tier_override.sql`, then `0003_realtime_broadcast.sql`, then
+     `0004_realtime_presence.sql` (if the GitHub↔Supabase integration is
+     connected, these may already be applied automatically — check
+     Database → Migrations first, same as with the others).
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.

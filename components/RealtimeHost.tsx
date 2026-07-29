@@ -21,10 +21,25 @@ import { joinCodeChannel } from "@/lib/join-code";
  * time rather than a diff, same self-healing simplicity as GameSync: if a
  * send happens before the channel finishes subscribing, the next state
  * change re-sends everything anyway.
+ *
+ * Also tracks Presence on the same channel to compute a live viewer count
+ * — the host never calls .track() itself, so presenceState() naturally
+ * reflects only connected /watch viewers, no manual subtraction needed.
  */
 export function RealtimeHost() {
-  const { joinCode, settings, rounds, trump, bid, bidTeam, shootMoon, dealerIndex, gameOver, winner } =
-    useGameStore();
+  const {
+    joinCode,
+    settings,
+    rounds,
+    trump,
+    bid,
+    bidTeam,
+    shootMoon,
+    dealerIndex,
+    gameOver,
+    winner,
+    setViewerCount,
+  } = useGameStore();
   const { tier } = useAuthStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const activeCodeRef = useRef<string | null>(null);
@@ -37,6 +52,7 @@ export function RealtimeHost() {
         channelRef.current.unsubscribe();
         channelRef.current = null;
         activeCodeRef.current = null;
+        setViewerCount(0);
       }
       return;
     }
@@ -45,6 +61,9 @@ export function RealtimeHost() {
       channelRef.current?.unsubscribe();
       const supabase = createClient();
       const channel = supabase.channel(joinCodeChannel(joinCode));
+      channel.on("presence", { event: "sync" }, () => {
+        setViewerCount(Object.keys(channel.presenceState()).length);
+      });
       channel.subscribe();
       channelRef.current = channel;
       activeCodeRef.current = joinCode;

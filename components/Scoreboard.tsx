@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Round, Team, TrumpColor } from "@/lib/rook-engine";
-import { useAuthStore } from "@/lib/auth-store";
-import { canHostRealtime } from "@/lib/entitlements";
 import { ScoreTotals } from "./ScoreTotals";
-import { InviteCard } from "./InviteCard";
 
 const TRUMP_DOT: Record<TrumpColor, string> = {
   Black: "bg-trump-black",
@@ -255,7 +252,6 @@ export function Scoreboard({
   readOnly,
   onClose,
   hideTotals,
-  joinCode,
 }: {
   rounds: Round[];
   usTotal: number;
@@ -268,11 +264,9 @@ export function Scoreboard({
   readOnly?: boolean;
   onClose?: () => void;
   hideTotals?: boolean;
-  joinCode?: string | null;
 }) {
   const listEndRef = useRef<HTMLLIElement>(null);
   const [addingAdjustment, setAddingAdjustment] = useState(false);
-  const tier = useAuthStore((s) => s.tier);
 
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ block: "nearest" });
@@ -296,17 +290,6 @@ export function Scoreboard({
         <div className="mt-3">
           <ScoreTotals us={usTotal} them={themTotal} usLabel={usLabel} themLabel={themLabel} />
         </div>
-      )}
-
-      {!readOnly && joinCode && (
-        <div className="mt-3">
-          <InviteCard joinCode={joinCode} />
-        </div>
-      )}
-      {!readOnly && !joinCode && canHostRealtime(tier) && (
-        <p className="mt-3 font-body text-xs text-parchment/60">
-          Generating your invite code&hellip;
-        </p>
       )}
 
       <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-paper-dim p-2 shadow-card">

@@ -40,7 +40,12 @@ export default function WatchPage({ params }: { params: { code: string } }) {
     const channel = supabase
       .channel(joinCodeChannel(params.code))
       .on("broadcast", { event: "state" }, ({ payload }) => setState(payload as LiveState))
-      .subscribe((status) => setConnected(status === "SUBSCRIBED"));
+      .subscribe(async (status) => {
+        setConnected(status === "SUBSCRIBED");
+        if (status === "SUBSCRIBED") {
+          await channel.track({ watching_since: new Date().toISOString() });
+        }
+      });
 
     return () => {
       channel.unsubscribe();

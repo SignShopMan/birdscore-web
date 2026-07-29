@@ -76,6 +76,12 @@ for (const t of THEMES) {
   check(`parchment on felt-dark (${t.name}, mobile sheet)`, t.parchment, t.feltDark, 4.5);
 }
 
+console.log("\n--- Invite banner: brass/20 tint over felt, parchment text ---");
+for (const t of THEMES) {
+  const bg = blend([201, 162, 39], t.felt, 0.2);
+  check(`parchment on brass/20-over-felt (${t.name})`, t.parchment, bg, 4.5);
+}
+
 console.log("\n--- Muted text: the 75% opacity floor established in round 8 ---");
 for (const t of THEMES) {
   const muted = blend(t.parchment, t.felt, 0.75);
