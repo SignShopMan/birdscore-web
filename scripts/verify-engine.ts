@@ -11,6 +11,7 @@ import {
   DEFAULT_SETTINGS,
   Round,
 } from "../lib/rook-engine";
+import { generateJoinCode, joinCodeChannel } from "../lib/join-code";
 
 function assertEqual(label: string, actual: unknown, expected: unknown) {
   const pass = JSON.stringify(actual) === JSON.stringify(expected);
@@ -113,5 +114,11 @@ assertEqual(
   teamLabel("US", { usTeamName: "The Watkins", themTeamName: "Them" }),
   "The Watkins"
 );
+
+// Join codes: right length, safe alphabet (no 0/O/1/I/L ambiguity), correct channel format
+const code = generateJoinCode();
+assertEqual("join code length", code.length, 6);
+assertEqual("join code excludes ambiguous chars", /[0O1IL]/.test(code), false);
+assertEqual("join code channel format", joinCodeChannel("ABC123"), "game:ABC123");
 
 console.log("\nDone.");

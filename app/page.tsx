@@ -20,7 +20,7 @@ export default function Home() {
   const [hasStartedGame, setHasStartedGame] = useState(false);
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
-  const { hasHydrated, gameOver, settings, rounds, trump, bid, bidTeam, shootMoon, updateRound, deleteRound, addAdjustment } =
+  const { hasHydrated, gameOver, settings, rounds, trump, bid, bidTeam, shootMoon, updateRound, deleteRound, addAdjustment, joinCode } =
     useGameStore();
 
   // Resume a game already in progress after a reload — an interrupted game
@@ -138,6 +138,7 @@ export default function Home() {
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
+            joinCode={joinCode}
           />
         </aside>
       )}
@@ -154,6 +155,7 @@ export default function Home() {
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
+            joinCode={joinCode}
             onClose={() => setScoreboardOpen(false)}
           />
         </div>

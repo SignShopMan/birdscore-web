@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { effectiveTier, canSaveHistory } from "@/lib/entitlements";
+import { effectiveTier, canSaveHistory, canHostRealtime } from "@/lib/entitlements";
 import { roundsToDbRows } from "@/lib/game-persistence";
+import { generateJoinCode } from "@/lib/join-code";
 
 /**
  * POST creates a new game row. Used two ways: (1) the moment an entitled,
@@ -71,22 +72,42 @@ export async function POST(request: NextRequest) {
     winner: "US" | "THEM" | null;
   };
 
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .insert({
-      owner_id: user.id,
-      winning_score: settings.winningScore,
-      max_points_per_round: settings.maxPointsPerRound,
-      us_team_name: settings.usTeamName ?? "Us",
-      them_team_name: settings.themTeamName ?? "Them",
-      status: winner ? "completed" : "in_progress",
-      winner,
-      completed_at: winner ? new Date().toISOString() : null,
-    })
-    .select("id")
-    .single();
+  // Pro tier gets an automatic join code — no separate "enable hosting"
+  // step. Every pro-tier game is shareable by default; the code just sits
+  // unused if nobody's watching.
+  const isHost = canHostRealtime(tier);
+  let game: { id: string; join_code: string | null } | null = null;
+  let gameError: { message: string } | null = null;
 
-  if (gameError || !game) {
+  for (let attempt = 0; attempt < 3 && !game; attempt++) {
+    const joinCode = isHost ? generateJoinCode() : null;
+    const { data, error } = await supabase
+      .from("games")
+      .insert({
+        owner_id: user.id,
+        winning_score: settings.winningScore,
+        max_points_per_round: settings.maxPointsPerRound,
+        us_team_name: settings.usTeamName ?? "Us",
+        them_team_name: settings.themTeamName ?? "Them",
+        status: winner ? "completed" : "in_progress",
+        winner,
+        completed_at: winner ? new Date().toISOString() : null,
+        is_realtime: isHost,
+        join_code: joinCode,
+      })
+      .select("id, join_code")
+      .single();
+
+    if (data) {
+      game = data;
+    } else if (error?.code === "23505" && attempt < 2) {
+      continue; // join_code collision (~1 in a billion) — regenerate and retry
+    } else {
+      gameError = error;
+    }
+  }
+
+  if (!game) {
     return NextResponse.json({ error: gameError?.message ?? "Failed to save game" }, { status: 500 });
   }
 
@@ -99,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ gameId: game.id });
+  return NextResponse.json({ gameId: game.id, joinCode: game.join_code });
 }
 
 export async function GET() {

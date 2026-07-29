@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Round, Team, TrumpColor } from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
+import { InviteCard } from "./InviteCard";
 
 const TRUMP_DOT: Record<TrumpColor, string> = {
   Black: "bg-trump-black",
@@ -252,6 +253,7 @@ export function Scoreboard({
   readOnly,
   onClose,
   hideTotals,
+  joinCode,
 }: {
   rounds: Round[];
   usTotal: number;
@@ -264,6 +266,7 @@ export function Scoreboard({
   readOnly?: boolean;
   onClose?: () => void;
   hideTotals?: boolean;
+  joinCode?: string | null;
 }) {
   const listEndRef = useRef<HTMLLIElement>(null);
   const [addingAdjustment, setAddingAdjustment] = useState(false);
@@ -289,6 +292,12 @@ export function Scoreboard({
       {!hideTotals && (
         <div className="mt-3">
           <ScoreTotals us={usTotal} them={themTotal} usLabel={usLabel} themLabel={themLabel} />
+        </div>
+      )}
+
+      {!readOnly && joinCode && (
+        <div className="mt-3">
+          <InviteCard joinCode={joinCode} />
         </div>
       )}
 

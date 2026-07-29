@@ -39,6 +39,10 @@ interface GameState {
   // the actual sync orchestration; the store just tracks the mapping.
   currentGameId: string | null;
   setCurrentGameId: (id: string | null) => void;
+  // Set alongside currentGameId when a pro-tier host's game first syncs —
+  // null for everyone else. Displayed as the "invite" code/link.
+  joinCode: string | null;
+  setJoinCode: (code: string | null) => void;
   // UI-only status for "Saving…" / "Saved" feedback — set by GameSync.tsx,
   // not persisted (always starts fresh each session).
   syncStatus: "idle" | "syncing" | "synced" | "error";
@@ -83,6 +87,8 @@ export const useGameStore = create<GameState>()(
       winner: null,
       currentGameId: null,
       setCurrentGameId: (id) => set({ currentGameId: id }),
+      joinCode: null,
+      setJoinCode: (code) => set({ joinCode: code }),
       syncStatus: "idle",
       setSyncStatus: (syncStatus) => set({ syncStatus }),
       hasHydrated: false,
@@ -100,6 +106,7 @@ export const useGameStore = create<GameState>()(
           gameOver: false,
           winner: null,
           currentGameId: null,
+          joinCode: null,
           syncStatus: "idle",
         }),
 
@@ -209,6 +216,7 @@ export const useGameStore = create<GameState>()(
           shootMoon: false,
           dealerIndex: 0,
           currentGameId: null,
+          joinCode: null,
           syncStatus: "idle",
         }),
 
@@ -246,6 +254,7 @@ export const useGameStore = create<GameState>()(
         gameOver: state.gameOver,
         winner: state.winner,
         currentGameId: state.currentGameId,
+        joinCode: state.joinCode,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

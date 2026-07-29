@@ -4,6 +4,7 @@ import { ThemeInit } from "@/components/ThemeInit";
 import { AuthInit } from "@/components/AuthInit";
 import { PendingSaveSync } from "@/components/PendingSaveSync";
 import { GameSync } from "@/components/GameSync";
+import { RealtimeHost } from "@/components/RealtimeHost";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthInit />
         <PendingSaveSync />
         <GameSync />
+        <RealtimeHost />
         {children}
       </body>
     </html>

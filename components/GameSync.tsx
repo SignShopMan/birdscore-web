@@ -30,6 +30,7 @@ export function GameSync() {
     winner,
     currentGameId,
     setCurrentGameId,
+    setJoinCode,
     setSyncStatus,
   } = useGameStore();
   const { userId, tier } = useAuthStore();
@@ -54,6 +55,7 @@ export function GameSync() {
           if (!res.ok) throw new Error("create failed");
           const data = await res.json();
           setCurrentGameId(data.gameId);
+          if (data.joinCode) setJoinCode(data.joinCode);
         } else {
           const res = await fetch(`/api/games/${currentGameId}`, {
             method: "PATCH",

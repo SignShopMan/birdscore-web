@@ -22,6 +22,48 @@ environment I built this in.
 
 ## Changelog
 
+**Realtime hosting + invite codes** — pro tier:
+
+- **Every pro-tier game gets an automatic join code** (`lib/join-code.ts` —
+  6 characters, alphabet excludes 0/O/1/I/L since codes get read aloud at a
+  table) generated the moment the game first syncs. No separate "enable
+  hosting" toggle — matches "keep it simple, let the invite code do the
+  heavy lifting."
+- **One scorekeeper, many watchers, enforced server-side, not just in the
+  UI.** New migration `0003_realtime_broadcast.sql` adds RLS policies on
+  Supabase's `realtime.messages` table — this turned out to be load-bearing
+  and not optional: current Supabase projects have Realtime Authorization
+  **enabled by default**, meaning without an explicit policy, broadcast
+  channels silently don't work for anyone, host included. The policies are
+  asymmetric on purpose: anyone (`anon` role, no account) can *receive* on
+  a channel that matches a real `is_realtime` game's join code; only the
+  account that actually *owns* that game can *send*. Viewers can watch,
+  only the host can write — enforced at the database layer.
+- **`RealtimeHost.tsx`** broadcasts live state (team names, running
+  totals, round history, and the in-progress bid/trump as it's being
+  decided — not just completed rounds) via Supabase Realtime Broadcast.
+  Deliberately separate from `GameSync.tsx`: that component does durable
+  persistence (POST/PATCH to our own API), this does ephemeral pub/sub —
+  different transport, different failure modes, no reason to tangle them.
+- **`app/watch/[code]/page.tsx`** is the actual viewer — a new public
+  route, fully read-only, no sign-in anywhere in the flow. Subscribes to
+  the host's channel and mirrors whatever it broadcasts.
+- **`InviteCard.tsx`** shows the code + a copyable link on the host's own
+  Scoreboard (sidebar and mobile sheet) — hidden on the read-only Game Over
+  recap, since inviting people to watch a finished game doesn't make sense.
+
+**One honest caveat, unlike everything else in this codebase**: this is
+the first piece of Phase 2 I genuinely could not verify end-to-end from
+this environment — `supabase.co` isn't reachable from this sandbox, so
+while the RLS policies are written correctly against current Supabase
+documentation and the whole thing type-checks and builds clean, the actual
+live behavior (does a real anonymous browser really connect, does the host
+really broadcast, does a real dropped connection recover) needs a real
+test with two actual devices once this is deployed. If watching doesn't
+work on the first try, start by checking the Supabase dashboard's Realtime
+logs for the channel — that'll show whether the RLS policy is rejecting
+the connection or something else entirely.
+
 **Menu, contrast, mobile bid input, team names** (four items in one round):
 
 - **Menu on desktop** (`MainMenu.tsx`) was a full-screen edge-anchored
@@ -224,9 +266,10 @@ would mean redoing them if something in the foundation needs to change.
    50K MAU, no card required; note it auto-pauses after 7 days with no API
    traffic, worth a scheduled ping once this is live day-to-day). Then:
    - SQL Editor → paste and run `supabase/migrations/0001_init.sql`, then
-     `0002_dev_tier_override.sql` (if the GitHub↔Supabase integration is
-     connected, this may already be applied automatically — check
-     Database → Migrations first, same as with the first one).
+     `0002_dev_tier_override.sql`, then `0003_realtime_broadcast.sql` (if
+     the GitHub↔Supabase integration is connected, these may already be
+     applied automatically — check Database → Migrations first, same as
+     with the others).
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.
