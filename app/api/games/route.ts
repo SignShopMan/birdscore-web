@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("tier, pro_current_period_end, email, dev_tier_override")
+    .select("tier, pro_current_period_end, email, dev_tier_override, created_at")
     .eq("id", user.id)
     .single();
 
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     proCurrentPeriodEnd: profile.pro_current_period_end,
     email: profile.email,
     devTierOverride: profile.dev_tier_override,
+    createdAt: profile.created_at,
   });
   if (!canSaveHistory(tier)) {
     return NextResponse.json(

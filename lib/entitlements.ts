@@ -8,6 +8,7 @@ export interface Profile {
   proCurrentPeriodEnd: string | null;
   stripeCustomerId: string | null;
   devTierOverride: Tier | null;
+  createdAt: string;
 }
 
 /**
@@ -33,21 +34,33 @@ export function isDevAccount(email: string | null): boolean {
  * without collecting emails first), a promo code system becomes worth
  * building — not for this.
  *
- * Add emails here, lowercase. BETA_GRANT_EXPIRES is a single fixed date
- * for the whole list, not per-person — simplest thing that's still
- * correct for a batch of people all being thanked at roughly the same
- * time. Extend the date (or add more emails) any time; nothing else
- * needs to change.
+ * Add emails here, lowercase, once collected. The grant is 12 months per
+ * person, anchored to profiles.created_at — i.e. whenever that email
+ * actually registers/signs in for the first time, not a shared date for
+ * the whole batch. That matches the intent directly (register → 12 months
+ * of Pro from that moment) and needs no extra column: created_at is
+ * already set exactly at first sign-up by the handle_new_user trigger in
+ * 0001_init.sql. One real edge case worth knowing: if someone already had
+ * a BirdScore account *before* being added here, their clock started at
+ * their original signup, not at whenever their email gets added to this
+ * list — fine for testers registering fresh after being added, worth
+ * double-checking if that's ever not the case.
  */
 const BETA_TESTER_EMAILS: string[] = [
   // "kevin@example.com",
   // "jared@example.com",
   // "ryan@example.com",
 ];
-const BETA_GRANT_EXPIRES = new Date("2027-07-29");
+const BETA_GRANT_MONTHS = 12;
 
 export function isBetaTester(email: string | null): boolean {
   return !!email && BETA_TESTER_EMAILS.includes(email.toLowerCase());
+}
+
+export function withinBetaGrantWindow(createdAt: string): boolean {
+  const expires = new Date(createdAt);
+  expires.setMonth(expires.getMonth() + BETA_GRANT_MONTHS);
+  return new Date() < expires;
 }
 
 /**
@@ -97,7 +110,7 @@ export function canUseEnhancedStats(tier: Tier): boolean {
  * stored column straight.
  */
 export function effectiveTier(
-  profile: Pick<Profile, "tier" | "proCurrentPeriodEnd" | "email" | "devTierOverride">
+  profile: Pick<Profile, "tier" | "proCurrentPeriodEnd" | "email" | "devTierOverride" | "createdAt">
 ): Tier {
   const real = ((): Tier => {
     if (profile.tier !== "pro") return profile.tier;
@@ -107,7 +120,7 @@ export function effectiveTier(
   })();
 
   const withBetaGrant =
-    isBetaTester(profile.email) && new Date() < BETA_GRANT_EXPIRES ? "pro" : real;
+    isBetaTester(profile.email) && withinBetaGrantWindow(profile.createdAt) ? "pro" : real;
 
   if (isDevAccount(profile.email) && profile.devTierOverride) {
     return profile.devTierOverride;

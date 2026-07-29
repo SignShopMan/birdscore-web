@@ -22,6 +22,31 @@ environment I built this in.
 
 ## Changelog
 
+**Version number in the menu, and a beta-grant correction**:
+- Added `lib/version.ts`, showing next to "Beta" in the menu. Deliberately
+  NOT a manually-bumped number — that's exactly the kind of thing that
+  goes stale silently. Uses Vercel's own `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA`
+  (auto-injected at build time, no setup needed), so what's shown can be
+  compared directly against `git log -1` to know for certain whether a
+  deploy actually matches what was pushed — the exact question that's
+  come up repeatedly this session.
+- Corrected the beta-tester Pro grant: it was a single shared expiration
+  date for the whole batch; changed to 12 months **per person**, anchored
+  to `profiles.created_at` — i.e. from whenever that specific email
+  actually registers, not a fixed date for everyone. Needed no new
+  column: `created_at` is already set exactly at first sign-up. Threaded
+  through both callers (`lib/auth-store.ts`, `app/api/games/route.ts`).
+  `scripts/verify-entitlements.ts` now directly tests the date math
+  (12 months out, just past it, well within it) rather than just the
+  membership check.
+- On "NewGameScreen doesn't seem to be the landing screen" — I re-read
+  `page.tsx` carefully rather than assume, and the logic is correct: the
+  initial screen state is `"newgame"`, unconditionally, unless a game is
+  already in progress. The most likely explanation is a stale deploy
+  still running the previous round's code (whose landing screen genuinely
+  was Settings) — exactly the class of confusion the version number above
+  now makes checkable in one glance instead of guessing.
+
 **New Game separated from Settings, plus beta-tester Pro grants**:
 - The app's landing screen used to *be* Settings — every fresh visit or
   rematch dropped straight into a full editable form (winning score, max

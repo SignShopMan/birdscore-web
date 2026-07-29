@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
+import { APP_VERSION } from "@/lib/version";
 
 function MenuIcon() {
   return (
@@ -101,7 +102,7 @@ export function MainMenu({
             </nav>
 
             <p className="mt-6 font-body text-[10px] uppercase tracking-wide text-ink/50 lg:mt-4">
-              Beta
+              Beta &middot; {APP_VERSION}
             </p>
           </div>
         </>
