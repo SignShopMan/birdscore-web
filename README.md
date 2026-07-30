@@ -22,6 +22,28 @@ environment I built this in.
 
 ## Changelog
 
+**"New Game" now actually prevents orphaning, not just cleans up after
+it** — confirmed the 540-0 duplicates were test data, not a real sync
+bug. This closes the other half of the orphaned-games problem:
+
+- Added "New Game" to the menu (`MainMenu.tsx`) — previously the only way
+  to reach a fresh game was finishing the current one or cleaning up via
+  History; there was no deliberate "abandon this and start over" path at
+  all despite that being exactly how games were getting orphaned.
+- Tapping it while a game is genuinely active shows a real confirmation
+  (`ConfirmDialog.tsx`, new reusable component) — and confirming doesn't
+  just warn, it actually cancels the abandoned game through the same
+  PATCH endpoint History's Cancel button uses, so nothing gets left
+  behind as a phantom "in_progress" row. Game Over's own New Game button
+  reuses this same handler; the confirmation naturally never triggers
+  there since the guard checks `gameActive && !gameOver`, which is always
+  false once a game has actually finished.
+- New `abandonGame()` in `game-store.ts` — resets the active-game fields
+  without touching settings (so the New Game screen still shows sensible
+  values to confirm) and without marking a fresh game active, so a reload
+  between confirming and actually pressing Start Game can't resurrect the
+  just-cancelled game through the resume-on-reload logic.
+
 **History page: two real bugs fixed, plus filters, delete, and a tier-gated
 drill-down** (from a screenshot review — brutal-assessment requested and
 delivered):

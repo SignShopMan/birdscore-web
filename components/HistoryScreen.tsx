@@ -35,6 +35,7 @@ function formatScore(us: number, them: number) {
 }
 
 export function HistoryScreen({
+  onNewGame,
   onOpenSettings,
   onOpenAccount,
   onOpenHistory,
@@ -42,6 +43,7 @@ export function HistoryScreen({
   onBack,
   onResumeGame,
 }: {
+  onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenHistory: () => void;
@@ -160,7 +162,7 @@ export function HistoryScreen({
           >
             &larr; Back
           </button>
-          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">History</h1>
         <p className="mt-4 font-body text-sm text-parchment/75">
@@ -179,7 +181,7 @@ export function HistoryScreen({
         >
           &larr; Back
         </button>
-        <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+        <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">History</h1>
 

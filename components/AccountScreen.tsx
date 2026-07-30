@@ -15,12 +15,14 @@ const TIER_LABEL: Record<string, string> = {
  * stats moved to their own HistoryScreen, since "my account" and "my game
  * history" are genuinely different things someone comes here for. */
 export function AccountScreen({
+  onNewGame,
   onOpenSettings,
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
   onBack,
 }: {
+  onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenHistory: () => void;
@@ -38,7 +40,7 @@ export function AccountScreen({
         >
           &larr; Back
         </button>
-        <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+        <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">Your Account</h1>
 

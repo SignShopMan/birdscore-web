@@ -25,12 +25,14 @@ import { PlayerSetupCard } from "./PlayerSetupCard";
  */
 export function SettingsScreen({
   onDone,
+  onNewGame,
   onOpenSettings,
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
 }: {
   onDone: () => void;
+  onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenHistory: () => void;
@@ -93,7 +95,7 @@ export function SettingsScreen({
             </p>
             <BackendStatusBadge />
           </div>
-          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">

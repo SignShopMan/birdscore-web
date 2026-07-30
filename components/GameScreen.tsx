@@ -15,6 +15,7 @@ const SEAT_FALLBACK_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 
 export function GameScreen({
   onScoreRound,
   onOpenScoreboard,
+  onNewGame,
   onOpenSettings,
   onOpenAccount,
   onOpenHistory,
@@ -22,6 +23,7 @@ export function GameScreen({
 }: {
   onScoreRound: () => void;
   onOpenScoreboard: () => void;
+  onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenHistory: () => void;
@@ -67,7 +69,7 @@ export function GameScreen({
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 lg:max-w-xl lg:px-0">
       <header>
         <div className="flex items-center justify-between">
-          <MainMenu onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
           <button
             onClick={advanceDealer}
             className="rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"

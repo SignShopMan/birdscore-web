@@ -70,6 +70,13 @@ interface GameState {
   gameActive: boolean;
 
   startGame: (settings: GameSettings) => void;
+  // Resets the active-game fields without touching settings or navigating
+  // anywhere — used when confirming "start new, abandon this one" from the
+  // menu. Deliberately doesn't set gameActive: true (that's startGame's
+  // job, once the person actually confirms on NewGameScreen), so there's
+  // no lingering local game a page reload could resurrect after its DB
+  // record has already been marked cancelled.
+  abandonGame: () => void;
   updateSettings: (settings: GameSettings) => void;
   setTrump: (t: TrumpColor) => void;
   clearTrump: () => void;
@@ -125,6 +132,23 @@ export const useGameStore = create<GameState>()(
           joinCode: null,
           syncStatus: "idle",
           gameActive: true,
+          viewerCount: 0,
+        }),
+
+      abandonGame: () =>
+        set({
+          rounds: [],
+          trump: null,
+          bid: null,
+          bidTeam: null,
+          shootMoon: false,
+          dealerIndex: 0,
+          gameOver: false,
+          winner: null,
+          currentGameId: null,
+          joinCode: null,
+          syncStatus: "idle",
+          gameActive: false,
           viewerCount: 0,
         }),
 

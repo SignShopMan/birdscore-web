@@ -11,6 +11,7 @@ import { Scoreboard } from "@/components/Scoreboard";
 import { AccountScreen } from "@/components/AccountScreen";
 import { HistoryScreen } from "@/components/HistoryScreen";
 import { FaqScreen } from "@/components/FaqScreen";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Screen = "newgame" | "settings" | "game" | "account" | "history" | "faq";
 
@@ -19,8 +20,24 @@ export default function Home() {
   const [returnScreen, setReturnScreen] = useState<Screen>("newgame");
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
-  const { hasHydrated, gameOver, settings, rounds, trump, bid, bidTeam, shootMoon, updateRound, deleteRound, addAdjustment } =
-    useGameStore();
+  const [confirmingNewGame, setConfirmingNewGame] = useState(false);
+  const [abandoning, setAbandoning] = useState(false);
+  const {
+    hasHydrated,
+    gameActive,
+    gameOver,
+    settings,
+    rounds,
+    trump,
+    bid,
+    bidTeam,
+    shootMoon,
+    currentGameId,
+    updateRound,
+    deleteRound,
+    addAdjustment,
+    abandonGame,
+  } = useGameStore();
 
   // Resume a game already in progress after a reload — an interrupted game
   // used to just vanish back to the landing screen, since screen state
@@ -58,6 +75,38 @@ export default function Home() {
   };
   const goBack = () => setScreen(returnScreen);
 
+  // "New Game" from the menu — the thing that used to silently orphan
+  // whatever game was already active (start fresh, leave the old one
+  // sitting as in_progress forever). Only confirms when there's actually
+  // something to lose: a game that's active and not already finished
+  // (Game Over's own New Game button reuses this same handler, but the
+  // condition is always false there since gameOver is true by definition
+  // on that screen — nothing to confirm, goes straight through).
+  const handleNewGame = () => {
+    if (gameActive && !gameOver) {
+      setConfirmingNewGame(true);
+    } else {
+      setScreen("newgame");
+    }
+  };
+  const confirmAbandonAndStartNew = async () => {
+    setAbandoning(true);
+    try {
+      if (currentGameId) {
+        await fetch(`/api/games/${currentGameId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cancel: true }),
+        });
+      }
+    } finally {
+      abandonGame();
+      setAbandoning(false);
+      setConfirmingNewGame(false);
+      setScreen("newgame");
+    }
+  };
+
   // Brief, deliberately blank — avoids a flash of the New Game screen
   // before flipping to Game the instant rehydration completes.
   if (!hasHydrated) {
@@ -70,7 +119,7 @@ export default function Home() {
   if (gameOver && screen === "game") {
     return (
       <GameOverScreen
-        onNewGame={() => setScreen("newgame")}
+        onNewGame={handleNewGame}
         onOpenSettings={openSettings}
         onOpenAccount={openAccount}
         onOpenHistory={openHistory}
@@ -86,6 +135,7 @@ export default function Home() {
           <NewGameScreen
             onStart={() => setScreen("game")}
             onChangeSettings={openSettings}
+            onNewGame={handleNewGame}
             onOpenSettings={openSettings}
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
@@ -95,6 +145,7 @@ export default function Home() {
         {screen === "settings" && (
           <SettingsScreen
             onDone={goBack}
+            onNewGame={handleNewGame}
             onOpenSettings={openSettings}
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
@@ -105,6 +156,7 @@ export default function Home() {
           <GameScreen
             onScoreRound={() => setScorecardOpen(true)}
             onOpenScoreboard={() => setScoreboardOpen(true)}
+            onNewGame={handleNewGame}
             onOpenSettings={openSettings}
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
@@ -113,6 +165,7 @@ export default function Home() {
         )}
         {screen === "account" && (
           <AccountScreen
+            onNewGame={handleNewGame}
             onOpenSettings={openSettings}
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
@@ -122,6 +175,7 @@ export default function Home() {
         )}
         {screen === "history" && (
           <HistoryScreen
+            onNewGame={handleNewGame}
             onOpenSettings={openSettings}
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
@@ -132,6 +186,7 @@ export default function Home() {
         )}
         {screen === "faq" && (
           <FaqScreen
+            onNewGame={handleNewGame}
             onOpenSettings={openSettings}
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
@@ -175,6 +230,19 @@ export default function Home() {
       )}
 
       {scorecardOpen && <ScorecardModal onClose={() => setScorecardOpen(false)} />}
+
+      {confirmingNewGame && (
+        <ConfirmDialog
+          title="Game in progress"
+          message="Starting a new game will cancel this one — it'll still show up in History as cancelled, just not resumable."
+          confirmLabel="Cancel it and start new"
+          cancelLabel="Keep playing"
+          danger
+          confirming={abandoning}
+          onConfirm={confirmAbandonAndStartNew}
+          onCancel={() => setConfirmingNewGame(false)}
+        />
+      )}
     </div>
   );
 }

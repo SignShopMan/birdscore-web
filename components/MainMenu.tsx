@@ -17,11 +17,13 @@ function MenuIcon() {
  * its own bespoke "back to Settings" link. Extensible by design: adding a
  * new destination later is one more row in the sheet, not new UI chrome. */
 export function MainMenu({
+  onNewGame,
   onOpenSettings,
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
 }: {
+  onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenHistory: () => void;
@@ -71,6 +73,12 @@ export function MainMenu({
             </div>
 
             <nav className="mt-6 space-y-1 lg:mt-4">
+              <button
+                onClick={() => go(onNewGame)}
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                New Game
+              </button>
               <button
                 onClick={() => go(onOpenSettings)}
                 className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
