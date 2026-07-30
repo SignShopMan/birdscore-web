@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useGameStore } from "@/lib/game-store";
 import { computePartnershipStats, GameForStats } from "@/lib/partner-stats";
 import { MainMenu } from "./MainMenu";
+import { GameDetailModal } from "./GameDetailModal";
 
 interface SavedGame {
   id: string;
@@ -19,8 +20,18 @@ interface SavedGame {
   players: [string, string, string, string] | null;
 }
 
+type StatusFilter = "all" | "in_progress" | "completed";
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+/** Score display that stays readable with negative totals — a plain
+ * hyphen ("635--45", "-155-600") reads as garbage the moment either side
+ * goes negative from a penalty adjustment. Spaced en dash never collides
+ * with a minus sign regardless of sign on either side. */
+function formatScore(us: number, them: number) {
+  return `${us} \u2013 ${them}`;
 }
 
 export function HistoryScreen({
@@ -45,6 +56,13 @@ export function HistoryScreen({
   const [resumingId, setResumingId] = useState<string | null>(null);
   const [confirmingCancelId, setConfirmingCancelId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [detailGameId, setDetailGameId] = useState<string | null>(null);
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [playerFilter, setPlayerFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!userId) return;
@@ -98,6 +116,38 @@ export function HistoryScreen({
     }
   };
 
+  const deleteGame = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/games/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setGames((prev) => prev?.filter((g) => g.id !== id) ?? null);
+      }
+    } finally {
+      setDeletingId(null);
+      setConfirmingDeleteId(null);
+    }
+  };
+
+  const allPlayerNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const g of games ?? []) {
+      g.players?.forEach((n) => names.add(n));
+    }
+    return Array.from(names).sort();
+  }, [games]);
+
+  const filteredGames = useMemo(() => {
+    return (games ?? []).filter((g) => {
+      if (g.status === "cancelled" && !showCancelled) return false;
+      if (statusFilter !== "all" && g.status !== statusFilter) return false;
+      if (playerFilter !== "all" && !(g.players?.includes(playerFilter) ?? false)) return false;
+      return true;
+    });
+  }, [games, statusFilter, showCancelled, playerFilter]);
+
+  // Partner stats always computed from the full unfiltered set — filtering
+  // the games list shouldn't secretly change the stats underneath it.
   const partnerStats = games ? computePartnershipStats(games as GameForStats[]) : [];
 
   if (!userId) {
@@ -166,9 +216,55 @@ export function HistoryScreen({
       )}
 
       <div className="mt-6 flex-1">
-        <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
-          All Games
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
+            All Games
+          </p>
+          <label className="flex items-center gap-1.5 font-body text-[11px] text-parchment/75">
+            <input
+              type="checkbox"
+              checked={showCancelled}
+              onChange={(e) => setShowCancelled(e.target.checked)}
+              className="accent-brass"
+            />
+            Show cancelled
+          </label>
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          {([
+            ["all", "All"],
+            ["in_progress", "In Progress"],
+            ["completed", "Completed"],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`rounded-full px-3 py-1 font-body text-[11px] font-semibold uppercase tracking-wide ${
+                statusFilter === key
+                  ? "bg-brass text-ink"
+                  : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          {allPlayerNames.length > 0 && (
+            <select
+              value={playerFilter}
+              onChange={(e) => setPlayerFilter(e.target.value)}
+              className="rounded-full bg-parchment/10 px-3 py-1 font-body text-[11px] font-semibold text-parchment ring-1 ring-parchment/30"
+            >
+              <option value="all">All players</option>
+              {allPlayerNames.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
         <div className="mt-3 rounded-card bg-paper-dim p-2 shadow-card">
           {games === null && !gamesError && (
             <p className="p-3 text-center font-body text-xs text-ink/60">Loading\u2026</p>
@@ -179,29 +275,35 @@ export function HistoryScreen({
               No saved games yet — they&rsquo;ll show up here once you play one.
             </p>
           )}
-          {games?.map((g) => (
+          {games && games.length > 0 && filteredGames.length === 0 && (
+            <p className="p-3 text-center font-body text-xs text-ink/60">
+              No games match these filters.
+            </p>
+          )}
+          {filteredGames.map((g) => (
             <div
               key={g.id}
-              className={`rounded-md px-2 py-2.5 hover:bg-white/50 ${
-                g.status === "cancelled" ? "opacity-50" : ""
-              }`}
+              className={`rounded-md px-2 py-2.5 ${g.status === "cancelled" ? "opacity-50" : ""}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
+                <button
+                  onClick={() => setDetailGameId(g.id)}
+                  className="min-w-0 flex-1 text-left hover:opacity-70"
+                >
                   <p className="truncate font-body text-sm font-semibold text-ink">
                     {g.status === "completed"
-                      ? `${g.winner} won`
+                      ? `${g.winner === "US" ? g.usTeamName : g.themTeamName} won`
                       : g.status === "cancelled"
                       ? "Cancelled"
                       : "In progress"}{" "}
                     <span className="font-score tabular-score font-normal text-ink/70">
-                      {g.usTotal}-{g.themTotal}
+                      {formatScore(g.usTotal, g.themTotal)}
                     </span>
                   </p>
                   <p className="font-body text-[11px] text-ink/50">
                     {formatDate(g.createdAt)} \u00B7 {g.usTeamName} vs {g.themTeamName}
                   </p>
-                </div>
+                </button>
                 <div className="flex shrink-0 gap-1.5">
                   {g.status === "in_progress" && (
                     <>
@@ -221,6 +323,14 @@ export function HistoryScreen({
                         </button>
                       )}
                     </>
+                  )}
+                  {g.status === "cancelled" && confirmingDeleteId !== g.id && (
+                    <button
+                      onClick={() => setConfirmingDeleteId(g.id)}
+                      className="rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-trump-red ring-1 ring-trump-red/30"
+                    >
+                      Delete
+                    </button>
                   )}
                 </div>
               </div>
@@ -246,10 +356,36 @@ export function HistoryScreen({
                   </div>
                 </div>
               )}
+              {confirmingDeleteId === g.id && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-md bg-trump-red/10 p-2">
+                  <p className="font-body text-xs text-ink">
+                    Permanently delete this game? This can&rsquo;t be undone.
+                  </p>
+                  <div className="flex shrink-0 gap-1.5">
+                    <button
+                      onClick={() => setConfirmingDeleteId(null)}
+                      className="rounded-full bg-white px-3 py-1 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
+                    >
+                      No
+                    </button>
+                    <button
+                      onClick={() => deleteGame(g.id)}
+                      disabled={deletingId === g.id}
+                      className="rounded-full bg-trump-red px-3 py-1 font-body text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {deletingId === g.id ? "Deleting\u2026" : "Yes, delete"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
+
+      {detailGameId && (
+        <GameDetailModal gameId={detailGameId} onClose={() => setDetailGameId(null)} />
+      )}
     </div>
   );
 }

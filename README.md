@@ -22,6 +22,38 @@ environment I built this in.
 
 ## Changelog
 
+**History page: two real bugs fixed, plus filters, delete, and a tier-gated
+drill-down** (from a screenshot review — brutal-assessment requested and
+delivered):
+
+- **Bug**: `${g.winner} won` printed the raw "US"/"THEM" constant instead
+  of the actual team name — every other screen in the app resolves this
+  through `teamLabel()`, this one was missed building a brand-new screen.
+  Fixed.
+- **Bug**: score display (`${us}-${them}`) produced unreadable strings
+  the moment either total went negative from a penalty adjustment —
+  "635--45", "-155-600". New `formatScore()` uses a spaced en dash, which
+  never collides with a minus sign regardless of sign on either side.
+- **Filters**: status chips (All/In Progress/Completed), a player
+  dropdown (built from every name that's appeared across named-player
+  games), and a "Show cancelled" checkbox — cancelled games are hidden by
+  default now instead of sitting in the list dimmed but still cluttering
+  it, which was the actual point of adding Cancel in the first place.
+  Partner Performance stats are computed from the full unfiltered set on
+  purpose — filtering the list view shouldn't quietly change the stats
+  underneath it.
+- **Permanent delete**, scoped to cancelled games only — new `DELETE
+  /api/games/[id]`, deliberately refuses anything not already cancelled
+  (a safety rail against the client accidentally nuking a completed
+  game's real history; RLS also means it can only ever touch your own
+  games regardless). rounds/players cascade-delete automatically.
+- **Drill-down**: tapping a game opens `GameDetailModal.tsx` — the actual
+  round-by-round scorecard, not just the final tally. Dealer and
+  Rook-holder per round are Pro tier, gated live against the viewer's
+  *current* tier (same pattern as every other entitlement in this app) —
+  not baked into the saved game, so it reflects whatever tier you have
+  right now, not whatever you had when the game was played.
+
 **Cancel games, named players/seats/dealer rotation, Rook-holder tracking,
 and a real History page** — the biggest single round so far, three
 related asks that turned out to depend on each other:

@@ -161,3 +161,44 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     rounds: dbRowsToRounds(rounds ?? [], playerIdToSeat),
   });
 }
+
+/**
+ * Permanently deletes a game — scoped to cancelled games only, on
+ * purpose. A cancelled game has no real historical value, but a
+ * completed (or even in-progress) one might, so this refuses to delete
+ * anything else rather than trusting the client to only ever call it in
+ * the right place. RLS also means this can only ever touch the caller's
+ * own game regardless. rounds/players cascade-delete automatically
+ * (on delete cascade in 0001_init.sql).
+ */
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  const { data: game } = await supabase
+    .from("games")
+    .select("status")
+    .eq("id", params.id)
+    .single();
+
+  if (!game) {
+    return NextResponse.json({ error: "Game not found" }, { status: 404 });
+  }
+  if (game.status !== "cancelled") {
+    return NextResponse.json(
+      { error: "Only cancelled games can be permanently deleted" },
+      { status: 400 }
+    );
+  }
+
+  const { error } = await supabase.from("games").delete().eq("id", params.id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
