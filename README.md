@@ -22,6 +22,32 @@ environment I built this in.
 
 ## Changelog
 
+**Two things from a screenshot: a literal "\u00B7" showing on screen, and
+no date on the game detail page**:
+- Root cause of the literal text: `\u00B7` only decodes to "·" inside a
+  JS string or template literal — used as bare JSX text (not wrapped in
+  quotes) it renders as the six literal characters instead. Found and
+  fixed four instances of this exact mistake across the codebase (the
+  middle dot in `HistoryScreen.tsx`, plus three separate "Loading…"
+  spinners in `HistoryScreen.tsx`, `GameDetailModal.tsx`, and
+  `AccountScreen.tsx`), all switched to the HTML entity form (`&middot;`,
+  `&hellip;`) that JSX actually decodes correctly in raw text — the
+  pattern already used correctly everywhere else in the app.
+- Tried adding an automated scan for this the same way the earlier
+  `bg-ink`/`text-parchment` one works, and pulled it back out — it
+  false-positived on the very first real file it touched, because
+  distinguishing "a `}` that closes a template-literal interpolation
+  (still inside the string)" from "a `}` that closes a JSX expression
+  (exits to raw text)" needs an actual parser, not a character-counting
+  heuristic. A check that cries wolf on legitimate code is worse than no
+  check — better to rely on having actually swept every instance by hand
+  this round than ship something unreliable.
+- `GameDetailModal.tsx` never showed a date at all — the API endpoint
+  backing it (`GET /api/games/[id]`) simply didn't return
+  `created_at`/`completed_at`. Added both, now shown as "Started ... ·
+  Finished ..." in the header, plus a per-round time next to each round
+  number — that data was already on every round, just never displayed.
+
 **"New Game" now actually prevents orphaning, not just cleans up after
 it** — confirmed the 540-0 duplicates were test data, not a real sync
 bug. This closes the other half of the orphaned-games problem:

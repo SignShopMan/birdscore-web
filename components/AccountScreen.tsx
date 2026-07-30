@@ -46,7 +46,7 @@ export function AccountScreen({
 
       <div className="mt-8 rounded-card bg-paper p-4 shadow-card">
         {loading ? (
-          <p className="font-body text-xs text-ink/70">Checking sign-in status\u2026</p>
+          <p className="font-body text-xs text-ink/70">Checking sign-in status&hellip;</p>
         ) : !userId ? (
           <div>
             <p className="mb-2 font-body text-xs text-ink/70">

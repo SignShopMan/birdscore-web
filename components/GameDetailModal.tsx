@@ -14,9 +14,25 @@ interface GameDetail {
   status: "in_progress" | "completed" | "cancelled";
   winner: "US" | "THEM" | null;
   players: [string, string, string, string] | null;
+  createdAt: string;
+  completedAt: string | null;
 }
 
 const SEAT_LABELS = ["North", "East", "South", "West"];
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
 
 /**
  * The actual scorecard behind a History row — round-by-round detail, not
@@ -69,6 +85,10 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
               <h2 className="mt-1 font-display text-2xl font-semibold text-ink">
                 {game.usTeamName} vs {game.themTeamName}
               </h2>
+              <p className="mt-0.5 font-body text-xs text-ink/50">
+                Started {formatDateTime(game.createdAt)}
+                {game.completedAt && <> &middot; Finished {formatDateTime(game.completedAt)}</>}
+              </p>
               <p className="mt-1 font-score tabular-score text-lg font-bold text-ink">
                 {usTotal} &ndash; {themTotal}
                 {game.winner && (
@@ -88,7 +108,7 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
 
         <div className="flex-1 overflow-y-auto p-5">
           {error && <p className="font-body text-sm text-trump-red">{error}</p>}
-          {!error && !rounds && <p className="font-body text-sm text-ink/60">Loading\u2026</p>}
+          {!error && !rounds && <p className="font-body text-sm text-ink/60">Loading&hellip;</p>}
           {rounds?.length === 0 && (
             <p className="font-body text-sm text-ink/60">No rounds were scored in this game.</p>
           )}
@@ -99,6 +119,7 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
                   <div className="flex items-center justify-between">
                     <p className="font-body text-xs font-semibold text-ink/70">
                       {r.rowType === "Adj" ? r.label || "Adjustment" : `Round ${i + 1}`}
+                      <span className="ml-1.5 font-normal text-ink/40">{formatTime(r.createdAt)}</span>
                     </p>
                     <p className="font-score tabular-score text-sm font-bold text-ink">
                       {r.usScore} &ndash; {r.themScore}

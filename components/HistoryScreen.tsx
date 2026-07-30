@@ -269,7 +269,7 @@ export function HistoryScreen({
 
         <div className="mt-3 rounded-card bg-paper-dim p-2 shadow-card">
           {games === null && !gamesError && (
-            <p className="p-3 text-center font-body text-xs text-ink/60">Loading\u2026</p>
+            <p className="p-3 text-center font-body text-xs text-ink/60">Loading&hellip;</p>
           )}
           {gamesError && <p className="p-3 text-center font-body text-xs text-trump-red">{gamesError}</p>}
           {games?.length === 0 && (
@@ -303,7 +303,7 @@ export function HistoryScreen({
                     </span>
                   </p>
                   <p className="font-body text-[11px] text-ink/50">
-                    {formatDate(g.createdAt)} \u00B7 {g.usTeamName} vs {g.themTeamName}
+                    {formatDate(g.createdAt)} &middot; {g.usTeamName} vs {g.themTeamName}
                   </p>
                 </button>
                 <div className="flex shrink-0 gap-1.5">

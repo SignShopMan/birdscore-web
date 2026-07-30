@@ -113,7 +113,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, winning_score, max_points_per_round, us_team_name, them_team_name, status, winner")
+    .select("id, winning_score, max_points_per_round, us_team_name, them_team_name, status, winner, created_at, completed_at")
     .eq("id", params.id)
     .single();
 
@@ -157,6 +157,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       status: game.status,
       winner: game.winner,
       players: playerNames,
+      createdAt: game.created_at,
+      completedAt: game.completed_at,
     },
     rounds: dbRowsToRounds(rounds ?? [], playerIdToSeat),
   });
