@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { canUseEnhancedStats } from "@/lib/entitlements";
-import { Round, teamLabel } from "@/lib/rook-engine";
+import { Round, TrumpColor, teamLabel, formatScore, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
 
 interface GameDetail {
   id: string;
@@ -30,8 +30,14 @@ function formatDateTime(iso: string) {
   });
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+/** Time since the previous round, not an absolute clock time — a round
+ * played 9:55:03 and the next at 9:55:41 both display as "9:55 PM" at
+ * minute precision, telling you nothing (this happened in testing: six
+ * rounds in a row, all showing the identical minute). Elapsed time is
+ * meaningful regardless of how close together rounds were scored. */
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `+${Math.round(seconds)}s`;
+  return `+${Math.round(seconds / 60)} min`;
 }
 
 /**
@@ -90,7 +96,7 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
                 {game.completedAt && <> &middot; Finished {formatDateTime(game.completedAt)}</>}
               </p>
               <p className="mt-1 font-score tabular-score text-lg font-bold text-ink">
-                {usTotal} &ndash; {themTotal}
+                {formatScore(usTotal, themTotal)}
                 {game.winner && (
                   <span className="ml-2 font-body text-xs font-normal text-ink/60">
                     {teamLabel(game.winner, game)} won
@@ -114,38 +120,59 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
           )}
           {rounds && rounds.length > 0 && (
             <ul className="space-y-2">
-              {rounds.map((r, i) => (
-                <li key={r.rowId} className="rounded-md bg-paper-dim p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-body text-xs font-semibold text-ink/70">
-                      {r.rowType === "Adj" ? r.label || "Adjustment" : `Round ${i + 1}`}
-                      <span className="ml-1.5 font-normal text-ink/40">{formatTime(r.createdAt)}</span>
-                    </p>
-                    <p className="font-score tabular-score text-sm font-bold text-ink">
-                      {r.usScore} &ndash; {r.themScore}
-                    </p>
-                  </div>
-                  {r.rowType === "Round" && (
-                    <p className="mt-0.5 font-body text-xs text-ink/60">
-                      {r.bidTeam && teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
-                      bid {r.bid} &middot; {r.trump}
-                      {r.shootMoon ? " \u00B7 Moon" : ""}
-                    </p>
-                  )}
-                  {showEnhanced && game?.players && r.rowType === "Round" && (
-                    <p className="mt-1 font-body text-[11px] text-ink/50">
-                      {r.dealerIndex != null && (
-                        <>
-                          Dealer: {game.players[r.dealerIndex]} ({SEAT_LABELS[r.dealerIndex]})
-                        </>
-                      )}
-                      {r.rookHolderSeat != null && (
-                        <> &middot; Rook: {game.players[r.rookHolderSeat]}</>
-                      )}
-                    </p>
-                  )}
-                </li>
-              ))}
+              {rounds.map((r, i) => {
+                const prev = i > 0 ? rounds[i - 1] : null;
+                const elapsedSeconds = prev
+                  ? (new Date(r.createdAt).getTime() - new Date(prev.createdAt).getTime()) / 1000
+                  : null;
+                return (
+                  <li key={r.rowId} className="rounded-md bg-paper-dim p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-body text-xs font-semibold text-ink/70">
+                        {/* r.round is the number saved at scoring time (see
+                            roundsPlayed in rook-engine.ts), which correctly
+                            skips adjustment rows — the array index i does not,
+                            and would misnumber every round after the first
+                            adjustment in a game. */}
+                        {r.rowType === "Adj" ? r.label || "Adjustment" : `Round ${r.round}`}
+                        {elapsedSeconds != null && (
+                          <span className="ml-1.5 font-normal text-ink/40">
+                            {formatElapsed(elapsedSeconds)}
+                          </span>
+                        )}
+                      </p>
+                      <p className="font-score tabular-score text-sm font-bold text-ink">
+                        {formatScore(r.usScore, r.themScore)}
+                      </p>
+                    </div>
+                    {r.rowType === "Round" && (
+                      <p className="mt-0.5 flex items-center gap-1.5 font-body text-xs text-ink/60">
+                        {r.trump && (
+                          <span
+                            className={`h-2 w-2 shrink-0 rounded-full ${TRUMP_DOT_CLASS[r.trump as TrumpColor]}`}
+                            aria-hidden
+                          />
+                        )}
+                        {r.bidTeam && teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
+                        bid {r.bid} &middot; {r.trump}
+                        {r.shootMoon ? " \u00B7 Moon" : ""}
+                      </p>
+                    )}
+                    {showEnhanced && game?.players && r.rowType === "Round" && (
+                      <p className="mt-1 font-body text-[11px] text-ink/50">
+                        {r.dealerIndex != null && (
+                          <>
+                            Dealer: {game.players[r.dealerIndex]} ({SEAT_LABELS[r.dealerIndex]})
+                          </>
+                        )}
+                        {r.rookHolderSeat != null && (
+                          <> &middot; Rook: {game.players[r.rookHolderSeat]}</>
+                        )}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -8,6 +8,7 @@ import {
   teamTotal,
   roundsPlayed,
   teamLabel,
+  formatScore,
   DEFAULT_SETTINGS,
   Round,
 } from "../lib/rook-engine";
@@ -138,5 +139,10 @@ assertEqual("Jon+Ryan wins", jonRyan?.wins, 2);
 assertEqual("Jon+Kevin games played", jonKevin?.gamesPlayed, 1);
 assertEqual("Jon+Kevin losses", jonKevin?.losses, 1);
 assertEqual("in-progress game excluded from stats (3 completed x 2 pairs each)", stats.reduce((n, s) => n + s.gamesPlayed, 0), 6);
+
+// formatScore: readable regardless of sign on either side
+assertEqual("formatScore both positive", formatScore(500, 190), "500 \u2013 190");
+assertEqual("formatScore negative second stays unambiguous", formatScore(500, -190), "500 \u2013 -190");
+assertEqual("formatScore negative first", formatScore(-45, 635), "-45 \u2013 635");
 
 console.log("\nDone.");

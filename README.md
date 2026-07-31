@@ -22,6 +22,39 @@ environment I built this in.
 
 ## Changelog
 
+**Game Detail improvements, from a screenshot review** ("what can we do to
+improve this screen?"):
+
+- **Real bug, verified by code not just guessed from the screenshot**:
+  round numbering used the raw array index (`i + 1`), not the actual
+  round number already stored on each round (`r.round`, correctly
+  computed at scoring time by `roundsPlayed()`, which skips adjustment
+  rows). This game happened to have zero adjustments, so it wasn't
+  visible here — but any game with an adjustment anywhere in it would
+  have every round after it mislabeled. Fixed by just using the field
+  that was already there and already correct.
+- **Consolidated three independently-drifting trump-color definitions**
+  into one (`TRUMP_DOT_CLASS`/`TRUMP_HEX` in `lib/rook-engine.ts`) — found
+  while fixing the round-detail view had no color indicator at all, just
+  plain gray text ("Red", "Green"), when `Scoreboard.tsx` already had a
+  small colored-dot pattern this screen never adopted. Rather than add a
+  *fourth* copy of the same mapping, moved the existing two
+  (`Scoreboard.tsx`'s Tailwind classes, the realtime viewer's hex values)
+  into one shared source and updated both call sites plus the new one.
+- **Per-round time switched from absolute clock time to elapsed time**
+  since the previous round — the screenshot showed all six rounds
+  labeled "9:55 PM" (true but useless at minute precision when rounds
+  are scored close together, which happens constantly in testing and
+  isn't rare in real play either). Now shows "+15s" / "+3 min" instead,
+  which stays meaningful regardless of how close together rounds were
+  scored.
+- Also moved `formatScore()` (the readable-with-negative-totals fixer
+  from a previous round) into `lib/rook-engine.ts` so `HistoryScreen.tsx`
+  and `GameDetailModal.tsx` share one implementation instead of each
+  formatting scores independently — the header total and the round list
+  in Game Detail were still using raw `{us} – {them}` locally and hadn't
+  actually gotten the earlier fix.
+
 **Magic link clicks doing nothing — a real, known Supabase gotcha, plus a
 real gap in my own error handling**:
 - Root cause: the old `/auth/callback` route consumed the sign-in code

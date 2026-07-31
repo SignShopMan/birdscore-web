@@ -1,15 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Round, Team, TrumpColor } from "@/lib/rook-engine";
+import { Round, Team, TrumpColor, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
-
-const TRUMP_DOT: Record<TrumpColor, string> = {
-  Black: "bg-trump-black",
-  Green: "bg-trump-green",
-  Red: "bg-trump-red",
-  Yellow: "bg-trump-yellow",
-};
 
 function PencilIcon() {
   return (
@@ -103,7 +96,7 @@ function RoundRow({
       {isAdj ? (
         <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-ink" />
       ) : (
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT[round.trump as TrumpColor]}`} />
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`} />
       )}
       <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/75">
         {isAdj

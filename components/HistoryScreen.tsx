@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useGameStore } from "@/lib/game-store";
+import { formatScore } from "@/lib/rook-engine";
 import { computePartnershipStats, GameForStats } from "@/lib/partner-stats";
 import { MainMenu } from "./MainMenu";
 import { GameDetailModal } from "./GameDetailModal";
@@ -24,14 +25,6 @@ type StatusFilter = "all" | "in_progress" | "completed";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-/** Score display that stays readable with negative totals — a plain
- * hyphen ("635--45", "-155-600") reads as garbage the moment either side
- * goes negative from a penalty adjustment. Spaced en dash never collides
- * with a minus sign regardless of sign on either side. */
-function formatScore(us: number, them: number) {
-  return `${us} \u2013 ${them}`;
 }
 
 export function HistoryScreen({

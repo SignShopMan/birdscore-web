@@ -84,6 +84,37 @@ export function deriveTeamNamesFromPlayers(
  * component should call this instead of hardcoding "Us"/"Them" or showing
  * the raw Team value, so a custom team name actually shows up everywhere
  * instead of in some places and not others. */
+/** Score display that stays readable with negative totals — a plain
+ * hyphen ("635-45", or worse "635--45") reads as garbage the moment
+ * either side goes negative from a penalty adjustment, since the minus
+ * sign collides with the separator. Spaced en dash never collides with a
+ * minus sign regardless of sign on either side. The one place this
+ * should be computed — HistoryScreen and GameDetailModal both use this
+ * rather than each formatting scores their own way. */
+export function formatScore(us: number, them: number): string {
+  return `${us} \u2013 ${them}`;
+}
+
+/** Canonical trump colors, in the two formats different rendering
+ * contexts actually need — a Tailwind class for elements already in the
+ * app's theme system, a hex value for contexts using inline styles (the
+ * realtime viewer page, which can't use the app's CSS custom properties
+ * the same way). Three components each had their own independent copy of
+ * this before; keeping it in one place means a color changing once
+ * updates everywhere instead of needing to be found and changed 3+ times. */
+export const TRUMP_DOT_CLASS: Record<TrumpColor, string> = {
+  Black: "bg-trump-black",
+  Green: "bg-trump-green",
+  Red: "bg-trump-red",
+  Yellow: "bg-trump-yellow",
+};
+export const TRUMP_HEX: Record<TrumpColor, string> = {
+  Black: "#1A1A1A",
+  Green: "#2F7A3D",
+  Red: "#B23A32",
+  Yellow: "#E3B23C",
+};
+
 export function teamLabel(team: Team, settings: Pick<GameSettings, "usTeamName" | "themTeamName">): string {
   return team === "US" ? settings.usTeamName : settings.themTeamName;
 }

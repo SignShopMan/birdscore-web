@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { joinCodeChannel } from "@/lib/join-code";
-import { Round, Team, TrumpColor } from "@/lib/rook-engine";
+import { Round, Team, TrumpColor, TRUMP_HEX } from "@/lib/rook-engine";
 import { ScoreTotals } from "@/components/ScoreTotals";
 import { Scoreboard } from "@/components/Scoreboard";
 
@@ -16,13 +16,6 @@ interface LiveState {
   gameOver: boolean;
   winner: Team | null;
 }
-
-const TRUMP_BG: Record<TrumpColor, string> = {
-  Black: "#1A1A1A",
-  Green: "#2F7A3D",
-  Red: "#B23A32",
-  Yellow: "#E3B23C",
-};
 
 /**
  * Read-only — nothing here ever writes back to the game. Subscribes to the
@@ -87,7 +80,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
 
       {!gameOver && current && (
         <div className="mt-4 rounded-card p-6 text-center shadow-card" style={{
-          backgroundColor: current.trump ? TRUMP_BG[current.trump] : "#1B2A3A",
+          backgroundColor: current.trump ? TRUMP_HEX[current.trump] : "#1B2A3A",
         }}>
           <div className="font-body text-sm uppercase tracking-[0.3em] text-white">
             {current.bidTeam === "US" ? usTeamName : themTeamName}
