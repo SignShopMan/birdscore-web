@@ -39,8 +39,13 @@ export function SignInForm() {
       }}
       className="space-y-2"
     >
+      <label htmlFor="signin-email" className="sr-only">
+        Email address
+      </label>
       <input
+        id="signin-email"
         type="email"
+        autoComplete="email"
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -55,6 +60,17 @@ export function SignInForm() {
       >
         {sending ? "Sending\u2026" : "Email me a sign-in link"}
       </button>
+      <p className="font-body text-[10px] text-ink/50">
+        By continuing, you agree to our{" "}
+        <a href="/terms" className="underline underline-offset-2">
+          Terms
+        </a>{" "}
+        and{" "}
+        <a href="/privacy" className="underline underline-offset-2">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </form>
   );
 }

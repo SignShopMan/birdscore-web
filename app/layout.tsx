@@ -8,6 +8,10 @@ import { RealtimeHost } from "@/components/RealtimeHost";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://therealbirdscore.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: "BirdScore — Rook Scorekeeper",
   description: "Live bid and score tracking for Rook, tableside.",
   appleWebApp: {

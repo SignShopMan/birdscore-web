@@ -84,6 +84,7 @@ interface GameState {
   setBid: (b: number) => void;
   toggleShootMoon: () => void;
   advanceDealer: () => void;
+  setDealerIndex: (index: number) => void;
   saveRound: (nonBidderScore: number, rookHolderSeat?: number | null) => void;
   addAdjustment: (team: Team, points: number, label: string) => void;
   updateRound: (rowId: string, updates: Partial<Round>) => void;
@@ -169,6 +170,7 @@ export const useGameStore = create<GameState>()(
 
       // Manual override only — normal rotation happens automatically in saveRound.
       advanceDealer: () => set((s) => ({ dealerIndex: nextDealerIndex(s.dealerIndex) })),
+      setDealerIndex: (index) => set({ dealerIndex: index }),
 
       saveRound: (nonBidderScore, rookHolderSeat) => {
         const s = get();

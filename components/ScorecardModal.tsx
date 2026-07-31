@@ -48,6 +48,7 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
         <input
           autoFocus
           inputMode="numeric"
+          aria-label={`${nonBidderName}'s score`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="0"

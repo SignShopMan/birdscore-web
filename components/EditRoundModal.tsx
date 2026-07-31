@@ -169,6 +169,7 @@ export function EditRoundModal({
         <input
           type="text"
           inputMode="numeric"
+          aria-label={`${teamLabel(nonBidder, settings)}'s score`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className="mt-1.5 w-full rounded-md border border-ink/20 bg-white px-3 py-2 font-score text-lg tabular-score text-ink"

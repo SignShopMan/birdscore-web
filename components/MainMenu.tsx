@@ -42,7 +42,7 @@ export function MainMenu({
       <button
         onClick={() => setOpen(true)}
         aria-label="Open menu"
-        className="rounded-full bg-parchment/10 p-2 text-parchment ring-1 ring-parchment/20"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-parchment/10 text-parchment ring-1 ring-parchment/20"
       >
         <MenuIcon />
       </button>

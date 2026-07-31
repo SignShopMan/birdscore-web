@@ -7,7 +7,7 @@ import { DevToolsCard } from "./DevToolsCard";
 
 const TIER_LABEL: Record<string, string> = {
   free: "Free",
-  plus: "Plus ($3.99)",
+  plus: "Plus ($3.99 one time)",
   pro: "Pro ($19.99/yr)",
 };
 

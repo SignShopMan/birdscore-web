@@ -9,6 +9,7 @@ import { TrumpPicker } from "./TrumpPicker";
 import { BidSlider } from "./BidSlider";
 import { MainMenu } from "./MainMenu";
 import { InviteScreen } from "./InviteScreen";
+import { DealerPickerModal } from "./DealerPickerModal";
 
 const SEAT_FALLBACK_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
 
@@ -45,10 +46,11 @@ export function GameScreen({
     setBidTeam,
     setBid,
     toggleShootMoon,
-    advanceDealer,
+    setDealerIndex,
   } = useGameStore();
   const { tier } = useAuthStore();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [dealerPickerOpen, setDealerPickerOpen] = useState(false);
   const isHost = canHostRealtime(tier);
 
   const bids = bidOptions(settings.maxPointsPerRound);
@@ -71,10 +73,10 @@ export function GameScreen({
         <div className="flex items-center justify-between">
           <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
           <button
-            onClick={advanceDealer}
-            className="rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
+            onClick={() => setDealerPickerOpen(true)}
+            className="min-h-[44px] rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
           >
-            {settings.players ? `Dealer: ${settings.players[dealerIndex]}` : SEAT_FALLBACK_LABELS[dealerIndex]} &middot; override
+            {settings.players ? `Dealer: ${settings.players[dealerIndex]}` : SEAT_FALLBACK_LABELS[dealerIndex]} &middot; change
           </button>
         </div>
         <h1 className="mt-3 font-display text-2xl font-semibold text-parchment lg:text-3xl">
@@ -117,6 +119,14 @@ export function GameScreen({
       )}
 
       {inviteOpen && <InviteScreen onClose={() => setInviteOpen(false)} />}
+      {dealerPickerOpen && (
+        <DealerPickerModal
+          currentIndex={dealerIndex}
+          players={settings.players}
+          onSelect={setDealerIndex}
+          onClose={() => setDealerPickerOpen(false)}
+        />
+      )}
 
       {/* Compact totals + scoreboard entry point — the sidebar covers this on desktop.
           Stacked (label above totals) rather than one crowded line — a single

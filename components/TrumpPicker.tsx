@@ -57,8 +57,13 @@ export function TrumpPicker({
             className={`relative aspect-[5/7] rounded-lg ${swatch.bg} ${swatch.text} shadow-card
               transition-transform disabled:opacity-40 disabled:cursor-not-allowed ring-1 ring-black/20`}
           >
-            <span className="absolute top-2 left-2 text-2xl font-display font-semibold">R</span>
-            <span className="absolute bottom-2 right-2 text-2xl font-display font-semibold rotate-180">
+            <span className="absolute top-2 left-2 text-2xl font-display font-semibold" aria-hidden="true">
+              R
+            </span>
+            <span
+              className="absolute bottom-2 right-2 text-2xl font-display font-semibold rotate-180"
+              aria-hidden="true"
+            >
               R
             </span>
             <span className="absolute inset-0 flex items-center justify-center font-body text-sm tracking-wide uppercase">

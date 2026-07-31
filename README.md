@@ -22,6 +22,64 @@ environment I built this in.
 
 ## Changelog
 
+**Second QA pass — accessibility, touch ergonomics, copy honesty, spectator
+pre-validation, and launch metadata** (confirmed the P0 redesign held up;
+this closes the rest of the list):
+
+- **Accessibility**: fixed the "R R Black" bug (the two decorative
+  playing-card corner marks in `TrumpPicker.tsx` had no `aria-hidden`, so
+  screen readers announced them as content). Added real accessible labels
+  to the winning-score input, custom max-points input, email input (plus
+  `autocomplete="email"`), the live round-score input, and the
+  historical-edit score input — all previously relying on a placeholder
+  or nearby visual text as their only "label." Rebuilt the FAQ as a real
+  accordion — `<h3>` headings wrapping disclosure buttons with
+  `aria-expanded`/`aria-controls`, so screen readers can navigate
+  question-to-question, which plain paragraphs never supported.
+- **Touch ergonomics**: menu trigger is a real 44×44px minimum now (was
+  36). The dealer control is fully redesigned, not just resized — new
+  `DealerPickerModal.tsx` opens an actual 4-seat picker instead of a
+  single tap silently advancing the dealer, closing something the
+  *first* report recommended and this one confirmed was still open.
+- **Copy honesty**: `HistoryScreen.tsx`'s signed-out state now embeds a
+  real `SignInForm` instead of pointing at the menu — was a genuine dead
+  end. The "starting a new game will cancel this one" warning is
+  conditional now — only claims History will show the cancelled game
+  when that's actually true (entitled + signed in); anonymous/free users
+  get honest wording that it's simply discarded, since nothing ever
+  reaches a database for them. A zero/empty adjustment amount now
+  explains why Add is disabled instead of just refusing silently.
+- **Spectator pre-validation**: `/watch` now validates code format live
+  as you type and disables Watch until it's actually valid, not just
+  non-empty. `/watch/[code]` splits "invalid format" from "no game
+  found" into two distinct messages instead of one that conflated them.
+- **Launch metadata**: `robots.txt`, `sitemap.xml`, and a canonical URL
+  via Next.js's file-based conventions. Security headers added in
+  `next.config.js` — CSP, X-Frame-Options, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy. **Honest flag on CSP
+  specifically**: it's the one header here genuinely risky to get
+  exactly right without a real browser to check for violations in —
+  scoped as tightly as I could reason through from the code (Supabase
+  REST + Realtime WebSocket, Stripe Checkout), but worth watching the
+  browser console after deploying, particularly around sign-in,
+  realtime, and checkout. Also checked `middleware.ts` directly for the
+  `Access-Control-Allow-Origin: *` the report keeps flagging — confirmed
+  it isn't coming from any app code, which points to a Vercel
+  platform-level default rather than something fixable here.
+- Real Privacy Policy and Terms pages (`/privacy`, `/terms`), linked
+  directly from `SignInForm.tsx` — the actual point where an email
+  address gets collected, not buried in a footer. Content is accurate to
+  what the app actually does (Supabase, Stripe, Resend, Vercel; no ad
+  trackers; Stripe handles card data directly). **Not a substitute for
+  actual legal review** — flagging this plainly since real money moves
+  through Stripe here.
+- Branded 404 page (`app/not-found.tsx`) replacing the generic Next.js
+  default.
+- Pricing-copy sweep: every "$3.99" now says "$3.99 one time" at every
+  point it appears, including the actual purchase-decision screen
+  (`SaveGamePrompt.tsx`), which previously showed a bare, unqualified
+  "$3.99."
+
 **QA report — all three P0s, plus the biggest P1s and a PWA first step**.
 Verified each finding by reading the actual code before fixing anything,
 not just trusting the report:

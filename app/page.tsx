@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
+import { useAuthStore } from "@/lib/auth-store";
+import { canSaveHistory } from "@/lib/entitlements";
 import { NewGameScreen } from "@/components/NewGameScreen";
 import { SettingsScreen } from "@/components/SettingsScreen";
 import { GameScreen } from "@/components/GameScreen";
@@ -16,6 +18,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 type Screen = "newgame" | "settings" | "game" | "account" | "history" | "faq";
 
 export default function Home() {
+  const { tier } = useAuthStore();
   const [screen, setScreen] = useState<Screen>("newgame");
   const [returnScreen, setReturnScreen] = useState<Screen>("newgame");
   const [scorecardOpen, setScorecardOpen] = useState(false);
@@ -236,7 +239,11 @@ export default function Home() {
       {confirmingNewGame && (
         <ConfirmDialog
           title="Game in progress"
-          message="Starting a new game will cancel this one — it'll still show up in History as cancelled, just not resumable."
+          message={
+            canSaveHistory(tier)
+              ? "Starting a new game will cancel this one — it'll still show up in History as cancelled, just not resumable."
+              : "Starting a new game will discard this one — it was never saved, so there's nothing to look back at afterward."
+          }
           confirmLabel="Cancel it and start new"
           cancelLabel="Keep playing"
           danger

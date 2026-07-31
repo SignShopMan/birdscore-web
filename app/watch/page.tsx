@@ -13,16 +13,17 @@ import { isValidJoinCodeFormat } from "@/lib/join-code";
 export default function WatchLandingPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+
+  const trimmed = code.trim().toUpperCase();
+  const isValid = isValidJoinCodeFormat(trimmed);
+  // Only flag as invalid once they've typed the full length — showing an
+  // error after every single keystroke on the way there would be noise,
+  // not help.
+  const showFormatError = trimmed.length === 6 && !isValid;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = code.trim().toUpperCase();
-    if (!isValidJoinCodeFormat(trimmed)) {
-      setError("That doesn't look like a real code — check for typos.");
-      return;
-    }
-    router.push(`/watch/${trimmed}`);
+    if (isValid) router.push(`/watch/${trimmed}`);
   };
 
   return (
@@ -40,10 +41,7 @@ export default function WatchLandingPage() {
         <input
           id="watch-code"
           value={code}
-          onChange={(e) => {
-            setCode(e.target.value.toUpperCase());
-            setError(null);
-          }}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="ABCDEF"
           maxLength={6}
           autoCapitalize="characters"
@@ -51,10 +49,14 @@ export default function WatchLandingPage() {
           autoFocus
           className="w-full rounded-md border border-parchment/30 bg-white/95 py-4 text-center font-score tabular-score text-3xl font-bold tracking-[0.3em] text-ink"
         />
-        {error && <p className="mt-2 font-body text-xs text-trump-red">{error}</p>}
+        {showFormatError && (
+          <p className="mt-2 font-body text-xs text-trump-red">
+            That doesn&rsquo;t look like a real code — check for typos.
+          </p>
+        )}
         <button
           type="submit"
-          disabled={code.trim().length === 0}
+          disabled={!isValid}
           className="mt-4 w-full rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink disabled:opacity-40"
         >
           Watch

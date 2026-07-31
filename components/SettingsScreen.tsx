@@ -111,6 +111,7 @@ export function SettingsScreen({
             <input
               type="text"
               inputMode="numeric"
+              aria-label="Winning score"
               value={winningScoreInput}
               onChange={(e) => setWinningScoreInput(e.target.value)}
               className="mt-1 w-32 rounded-md border border-ink/20 bg-white px-3 py-2 font-score text-lg tabular-score text-ink"
@@ -159,6 +160,7 @@ export function SettingsScreen({
                 <input
                   type="text"
                   inputMode="numeric"
+                  aria-label="Custom max points per hand"
                   value={customInput}
                   onChange={(e) => {
                     setCustomInput(e.target.value);

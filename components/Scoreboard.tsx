@@ -209,6 +209,7 @@ function AdjustmentForm({
     Number(pointsInput) > 0 &&
     Number(pointsInput) <= MAX_ADJUSTMENT_POINTS;
   const pointsTooLarge = /^\d+$/.test(pointsInput.trim()) && Number(pointsInput) > MAX_ADJUSTMENT_POINTS;
+  const pointsIsZeroOrEmpty = pointsInput.trim() === "" || Number(pointsInput) === 0;
 
   return (
     <div className="rounded-card bg-paper-dim p-3 ring-1 ring-ink/15">
@@ -273,6 +274,9 @@ function AdjustmentForm({
         <p className="mt-1 font-body text-xs text-trump-red">
           Keep it under {MAX_ADJUSTMENT_POINTS.toLocaleString()} points.
         </p>
+      )}
+      {pointsIsZeroOrEmpty && (
+        <p className="mt-1 font-body text-xs text-ink/50">Enter how many points, above 0.</p>
       )}
       <label htmlFor="adj-reason" className="sr-only">
         Adjustment reason

@@ -17,7 +17,7 @@ interface LiveState {
   winner: Team | null;
 }
 
-type GameCheck = "checking" | "not_found" | "found";
+type GameCheck = "checking" | "invalid_format" | "not_found" | "found";
 
 /**
  * Read-only — nothing here ever writes back to the game. Subscribes to the
@@ -45,7 +45,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
   useEffect(() => {
     const normalized = params.code.trim().toUpperCase();
     if (!isValidJoinCodeFormat(normalized)) {
-      setGameCheck("not_found");
+      setGameCheck("invalid_format");
       return;
     }
 
@@ -90,6 +90,27 @@ export default function WatchPage({ params }: { params: { code: string } }) {
     return <div className="min-h-dvh bg-felt" />;
   }
 
+  if (gameCheck === "invalid_format") {
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
+        <p className="font-body text-xs uppercase tracking-[0.3em] text-trump-red">Invalid Code</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold text-parchment">
+          That doesn&rsquo;t look like a real code
+        </h1>
+        <p className="mt-2 font-body text-sm text-parchment/75">
+          Codes are 6 characters, letters and numbers only — check for typos or extra
+          characters.
+        </p>
+        <a
+          href="/watch"
+          className="mt-6 rounded-full bg-brass px-6 py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink"
+        >
+          Try another code
+        </a>
+      </div>
+    );
+  }
+
   if (gameCheck === "not_found") {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
@@ -98,8 +119,8 @@ export default function WatchPage({ params }: { params: { code: string } }) {
           That code isn&rsquo;t connected to a live game
         </h1>
         <p className="mt-2 font-body text-sm text-parchment/75">
-          Double-check the code with whoever&rsquo;s hosting — it may have a typo, or the game
-          may have ended.
+          The code is shaped right, but nothing&rsquo;s using it right now — double-check with
+          whoever&rsquo;s hosting, or the game may have ended.
         </p>
         <a
           href="/watch"
