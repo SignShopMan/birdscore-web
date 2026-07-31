@@ -50,6 +50,8 @@ const BETA_TESTER_EMAILS: string[] = [
   // "kevin@example.com",
   // "jared@example.com",
   // "ryan@example.com",
+  "andy@andywatkins.com",
+  "dank@gmail.com"
 ];
 const BETA_GRANT_MONTHS = 12;
 
