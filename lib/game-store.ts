@@ -86,7 +86,7 @@ interface GameState {
   advanceDealer: () => void;
   saveRound: (nonBidderScore: number, rookHolderSeat?: number | null) => void;
   addAdjustment: (team: Team, points: number, label: string) => void;
-  updateRound: (rowId: string, usScore: number, themScore: number) => void;
+  updateRound: (rowId: string, updates: Partial<Round>) => void;
   deleteRound: (rowId: string) => void;
   // Hydrates local state from a game fetched from Supabase — the Resume
   // action on AccountScreen's in-progress games list.
@@ -232,10 +232,10 @@ export const useGameStore = create<GameState>()(
           return { rounds, gameOver: over, winner };
         }),
 
-      updateRound: (rowId, usScore, themScore) =>
+      updateRound: (rowId, updates) =>
         set((s) => {
           const rounds = s.rounds.map((r) =>
-            r.rowId === rowId ? { ...r, usScore, themScore } : r
+            r.rowId === rowId ? { ...r, ...updates } : r
           );
           const { over, winner } = checkGameOver(rounds, s.settings.winningScore);
           return { rounds, gameOver: over, winner };

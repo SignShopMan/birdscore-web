@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Round, Team, TrumpColor, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
+import { Round, Team, TrumpColor, GameSettings, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
+import { EditRoundModal } from "./EditRoundModal";
+
+// A QA report clocked penalty/bonus input at accepting values like
+// 999,999,999,999 with no real justification ("house rule" isn't a
+// blank check for unbounded numbers). No real Rook adjustment is ever
+// going to approach a normal winning score, let alone dwarf it —
+// capping well above any realistic winning score catches fat-finger and
+// bad-input cases without constraining anything a real house rule needs.
+const MAX_ADJUSTMENT_POINTS = 5000;
 
 function PencilIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M12 20h9" strokeLinecap="round" />
       <path
         d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
@@ -19,7 +28,7 @@ function PencilIcon() {
 
 function TrashIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M3 6h18" strokeLinecap="round" />
       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
       <path d="M10 11v6M14 11v6" strokeLinecap="round" />
@@ -29,6 +38,7 @@ function TrashIcon() {
 
 function RoundRow({
   round,
+  settings,
   readOnly,
   usLabel,
   themLabel,
@@ -36,50 +46,56 @@ function RoundRow({
   onDelete,
 }: {
   round: Round;
+  settings: GameSettings;
   readOnly?: boolean;
   usLabel: string;
   themLabel: string;
-  onUpdate: (rowId: string, us: number, them: number) => void;
+  onUpdate: (rowId: string, updates: Partial<Round>) => void;
   onDelete: (rowId: string) => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editingRound, setEditingRound] = useState(false);
+  const [editingAdj, setEditingAdj] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [usDraft, setUsDraft] = useState(String(round.usScore));
   const [themDraft, setThemDraft] = useState(String(round.themScore));
   const isAdj = round.rowType === "Adj";
 
-  if (editing) {
+  const adjValid = (v: string) => {
+    const n = Number(v);
+    return v.trim() !== "" && Number.isFinite(n) && Math.abs(n) <= MAX_ADJUSTMENT_POINTS;
+  };
+
+  if (editingAdj) {
+    const bothValid = adjValid(usDraft) && adjValid(themDraft);
     return (
       <li className="flex items-center gap-2 rounded-md bg-white/60 px-2 py-1.5 ring-1 ring-ink/15">
-        <span className="w-5 shrink-0 font-score text-xs text-ink/75">
-          {isAdj ? "\u00B1" : round.round}
-        </span>
+        <span className="w-5 shrink-0 font-score text-xs text-ink/75">&#177;</span>
         <input
           value={usDraft}
           onChange={(e) => setUsDraft(e.target.value)}
           inputMode="numeric"
-          className="w-14 rounded border border-ink/20 bg-white px-1 py-0.5 text-center font-score tabular-score text-sm text-ink"
+          className="w-16 rounded border border-ink/20 bg-white px-1 py-1 text-center font-score tabular-score text-sm text-ink"
         />
         <input
           value={themDraft}
           onChange={(e) => setThemDraft(e.target.value)}
           inputMode="numeric"
-          className="w-14 rounded border border-ink/20 bg-white px-1 py-0.5 text-center font-score tabular-score text-sm text-ink"
+          className="w-16 rounded border border-ink/20 bg-white px-1 py-1 text-center font-score tabular-score text-sm text-ink"
         />
         <div className="ml-auto flex gap-1">
           <button
-            onClick={() => setEditing(false)}
-            className="rounded px-2 py-1 font-body text-xs text-ink/75"
+            onClick={() => setEditingAdj(false)}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 font-body text-xs text-ink/75"
           >
             Cancel
           </button>
           <button
+            disabled={!bothValid}
             onClick={() => {
-              const us = Number(usDraft);
-              const them = Number(themDraft);
-              if (Number.isFinite(us) && Number.isFinite(them)) onUpdate(round.rowId, us, them);
-              setEditing(false);
+              if (bothValid) onUpdate(round.rowId, { usScore: Number(usDraft), themScore: Number(themDraft) });
+              setEditingAdj(false);
             }}
-            className="rounded bg-ink px-2 py-1 font-body text-xs font-semibold text-paper"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded bg-ink px-2 font-body text-xs font-semibold text-paper disabled:opacity-40"
           >
             Save
           </button>
@@ -89,45 +105,86 @@ function RoundRow({
   }
 
   return (
-    <li className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-white/50">
-      <span className="w-5 shrink-0 font-score text-xs text-ink/75">
-        {isAdj ? "\u00B1" : round.round}
-      </span>
-      {isAdj ? (
-        <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-ink" />
-      ) : (
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`} />
+    <>
+      <li className="group rounded-md px-2 py-1.5 hover:bg-white/50">
+        <div className="flex items-center gap-2">
+          <span className="w-5 shrink-0 font-score text-xs text-ink/75">
+            {isAdj ? "\u00B1" : round.round}
+          </span>
+          {isAdj ? (
+            <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-ink" />
+          ) : (
+            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`} />
+          )}
+          <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/75">
+            {isAdj
+              ? round.label || "Adjustment"
+              : `${round.bidTeam === "US" ? usLabel : themLabel} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
+          </span>
+          <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
+            {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}
+          </span>
+          <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
+            {isAdj && round.themScore === 0 ? "\u2013" : round.themScore}
+          </span>
+          {!readOnly && (
+            <span className="ml-1 flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 sm:opacity-100 sm:group-hover:opacity-100">
+              <button
+                onClick={() => {
+                  if (isAdj) {
+                    setUsDraft(String(round.usScore));
+                    setThemDraft(String(round.themScore));
+                    setEditingAdj(true);
+                  } else {
+                    setEditingRound(true);
+                  }
+                }}
+                aria-label={`Edit ${isAdj ? "adjustment" : `round ${round.round}`}`}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-ink/75 hover:bg-ink/10 hover:text-ink"
+              >
+                <PencilIcon />
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                aria-label={`Delete ${isAdj ? "adjustment" : `round ${round.round}`}`}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-ink/75 hover:bg-trump-red/10 hover:text-trump-red"
+              >
+                <TrashIcon />
+              </button>
+            </span>
+          )}
+        </div>
+        {confirmingDelete && (
+          <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md bg-trump-red/10 p-2">
+            <p className="font-body text-xs text-ink">
+              Delete this {isAdj ? "adjustment" : "round"}? This can&rsquo;t be undone.
+            </p>
+            <div className="flex shrink-0 gap-1.5">
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                className="min-h-[36px] rounded-full bg-white px-3 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
+              >
+                No
+              </button>
+              <button
+                onClick={() => onDelete(round.rowId)}
+                className="min-h-[36px] rounded-full bg-trump-red px-3 font-body text-xs font-semibold text-white"
+              >
+                Yes, delete
+              </button>
+            </div>
+          </div>
+        )}
+      </li>
+      {editingRound && !isAdj && (
+        <EditRoundModal
+          round={round}
+          settings={settings}
+          onClose={() => setEditingRound(false)}
+          onSave={(updated) => onUpdate(round.rowId, updated)}
+        />
       )}
-      <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/75">
-        {isAdj
-          ? round.label || "Adjustment"
-          : `${round.bidTeam === "US" ? usLabel : themLabel} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
-      </span>
-      <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
-        {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}
-      </span>
-      <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
-        {isAdj && round.themScore === 0 ? "\u2013" : round.themScore}
-      </span>
-      {!readOnly && (
-        <span className="ml-1 flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 sm:opacity-100 sm:group-hover:opacity-100">
-          <button
-            onClick={() => setEditing(true)}
-            aria-label={`Edit ${isAdj ? "adjustment" : `round ${round.round}`}`}
-            className="rounded p-1 text-ink/75 hover:bg-ink/10 hover:text-ink"
-          >
-            <PencilIcon />
-          </button>
-          <button
-            onClick={() => onDelete(round.rowId)}
-            aria-label={`Delete ${isAdj ? "adjustment" : `round ${round.round}`}`}
-            className="rounded p-1 text-ink/75 hover:bg-trump-red/10 hover:text-trump-red"
-          >
-            <TrashIcon />
-          </button>
-        </span>
-      )}
-    </li>
+    </>
   );
 }
 
@@ -147,7 +204,11 @@ function AdjustmentForm({
   const [pointsInput, setPointsInput] = useState("");
   const [label, setLabel] = useState("");
 
-  const pointsValid = /^\d+$/.test(pointsInput.trim()) && Number(pointsInput) > 0;
+  const pointsValid =
+    /^\d+$/.test(pointsInput.trim()) &&
+    Number(pointsInput) > 0 &&
+    Number(pointsInput) <= MAX_ADJUSTMENT_POINTS;
+  const pointsTooLarge = /^\d+$/.test(pointsInput.trim()) && Number(pointsInput) > MAX_ADJUSTMENT_POINTS;
 
   return (
     <div className="rounded-card bg-paper-dim p-3 ring-1 ring-ink/15">
@@ -167,7 +228,7 @@ function AdjustmentForm({
           <button
             key={t}
             onClick={() => setTeam(t)}
-            className={`truncate rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
+            className={`truncate rounded-full py-2 font-body text-xs font-semibold uppercase tracking-wide ${
               team === t ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
             }`}
           >
@@ -179,7 +240,7 @@ function AdjustmentForm({
       <div className="mt-2 grid grid-cols-2 gap-2">
         <button
           onClick={() => setKind("penalty")}
-          className={`rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
+          className={`rounded-full py-2 font-body text-xs font-semibold uppercase tracking-wide ${
             kind === "penalty"
               ? "bg-trump-red text-white"
               : "bg-white text-ink ring-1 ring-ink/20"
@@ -189,7 +250,7 @@ function AdjustmentForm({
         </button>
         <button
           onClick={() => setKind("bonus")}
-          className={`rounded-full py-1.5 font-body text-xs font-semibold uppercase tracking-wide ${
+          className={`rounded-full py-2 font-body text-xs font-semibold uppercase tracking-wide ${
             kind === "bonus" ? "bg-trump-green text-white" : "bg-white text-ink ring-1 ring-ink/20"
           }`}
         >
@@ -197,14 +258,27 @@ function AdjustmentForm({
         </button>
       </div>
 
+      <label htmlFor="adj-points" className="sr-only">
+        Adjustment points
+      </label>
       <input
+        id="adj-points"
         value={pointsInput}
         onChange={(e) => setPointsInput(e.target.value)}
         inputMode="numeric"
         placeholder="Points"
         className="mt-2 w-full rounded-md border border-ink/20 bg-white px-3 py-2 text-center font-score tabular-score text-ink"
       />
+      {pointsTooLarge && (
+        <p className="mt-1 font-body text-xs text-trump-red">
+          Keep it under {MAX_ADJUSTMENT_POINTS.toLocaleString()} points.
+        </p>
+      )}
+      <label htmlFor="adj-reason" className="sr-only">
+        Adjustment reason
+      </label>
       <input
+        id="adj-reason"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         placeholder="Reason (e.g. Renege, Misdeal)"
@@ -214,7 +288,7 @@ function AdjustmentForm({
       <div className="mt-3 flex gap-2">
         <button
           onClick={onCancel}
-          className="flex-1 rounded-full py-2 font-body text-xs font-semibold uppercase tracking-wide text-ink/75 ring-1 ring-ink/15"
+          className="flex-1 rounded-full py-2.5 font-body text-xs font-semibold uppercase tracking-wide text-ink/75 ring-1 ring-ink/15"
         >
           Cancel
         </button>
@@ -224,7 +298,7 @@ function AdjustmentForm({
             const signed = kind === "penalty" ? -Number(pointsInput) : Number(pointsInput);
             onAdd(team, signed, label.trim() || "Adjustment");
           }}
-          className="flex-1 rounded-full bg-ink py-2 font-body text-xs font-semibold uppercase tracking-wide text-paper disabled:opacity-40"
+          className="flex-1 rounded-full bg-ink py-2.5 font-body text-xs font-semibold uppercase tracking-wide text-paper disabled:opacity-40"
         >
           Add
         </button>
@@ -239,6 +313,7 @@ export function Scoreboard({
   themTotal,
   usLabel = "Us",
   themLabel = "Them",
+  settings,
   onUpdateRound,
   onDeleteRound,
   onAddAdjustment,
@@ -251,7 +326,8 @@ export function Scoreboard({
   themTotal: number;
   usLabel?: string;
   themLabel?: string;
-  onUpdateRound: (rowId: string, us: number, them: number) => void;
+  settings: GameSettings;
+  onUpdateRound: (rowId: string, updates: Partial<Round>) => void;
   onDeleteRound: (rowId: string) => void;
   onAddAdjustment?: (team: Team, points: number, label: string) => void;
   readOnly?: boolean;
@@ -272,7 +348,7 @@ export function Scoreboard({
         {onClose && (
           <button
             onClick={onClose}
-            className="rounded-full bg-parchment/10 px-3 py-1 font-body text-xs text-parchment ring-1 ring-parchment/30"
+            className="min-h-[44px] rounded-full bg-parchment/10 px-3 font-body text-xs text-parchment ring-1 ring-parchment/30"
           >
             Close
           </button>
@@ -298,12 +374,13 @@ export function Scoreboard({
               <span className="min-w-0 flex-1">Bid</span>
               <span className="w-10 text-right">Us</span>
               <span className="w-10 text-right">Them</span>
-              {!readOnly && <span className="ml-1 w-[52px] shrink-0" />}
+              {!readOnly && <span className="ml-1 w-[92px] shrink-0" />}
             </li>
             {rounds.map((r) => (
               <RoundRow
                 key={r.rowId}
                 round={r}
+                settings={settings}
                 readOnly={readOnly}
                 usLabel={usLabel}
                 themLabel={themLabel}
@@ -331,7 +408,7 @@ export function Scoreboard({
           ) : (
             <button
               onClick={() => setAddingAdjustment(true)}
-              className="w-full rounded-full bg-parchment/10 py-2 font-body text-xs font-semibold uppercase tracking-wide text-parchment ring-1 ring-parchment/20"
+              className="min-h-[44px] w-full rounded-full bg-parchment/10 py-2 font-body text-xs font-semibold uppercase tracking-wide text-parchment ring-1 ring-parchment/20"
             >
               + Penalty / Bonus
             </button>

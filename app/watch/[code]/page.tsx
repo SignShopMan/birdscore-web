@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { joinCodeChannel } from "@/lib/join-code";
+import { joinCodeChannel, isValidJoinCodeFormat } from "@/lib/join-code";
 import { Round, Team, TrumpColor, TRUMP_HEX } from "@/lib/rook-engine";
 import { ScoreTotals } from "@/components/ScoreTotals";
 import { Scoreboard } from "@/components/Scoreboard";
@@ -17,21 +17,62 @@ interface LiveState {
   winner: Team | null;
 }
 
+type GameCheck = "checking" | "not_found" | "found";
+
 /**
  * Read-only — nothing here ever writes back to the game. Subscribes to the
  * host's Broadcast channel (see RealtimeHost.tsx) and mirrors whatever it
  * sends. No account, no sign-in: knowing the code in the URL is the only
  * thing required to watch, by design (see supabase/migrations/
  * 0003_realtime_broadcast.sql for the RLS policy this depends on).
+ *
+ * Validates the code before ever subscribing to anything — a QA report
+ * found that typing pure punctuation, or any other nonsense string, into
+ * this page produced "Connected — Waiting for the host," because the old
+ * version only checked whether the Realtime *transport* subscribed
+ * successfully, which happens for any topic name at all regardless of
+ * whether it means anything. That's a WebSocket-layer success, not
+ * confirmation a real game exists. Format is checked locally
+ * (isValidJoinCodeFormat); actual existence needs a real lookup against
+ * the games table (0006_public_join_code_check.sql is what makes that
+ * lookup possible for an anonymous viewer at all).
  */
 export default function WatchPage({ params }: { params: { code: string } }) {
+  const [gameCheck, setGameCheck] = useState<GameCheck>("checking");
   const [state, setState] = useState<LiveState | null>(null);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
+    const normalized = params.code.trim().toUpperCase();
+    if (!isValidJoinCodeFormat(normalized)) {
+      setGameCheck("not_found");
+      return;
+    }
+
+    let cancelled = false;
+    const supabase = createClient();
+
+    supabase
+      .from("games")
+      .select("id")
+      .eq("join_code", normalized)
+      .eq("is_realtime", true)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setGameCheck(data ? "found" : "not_found");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [params.code]);
+
+  useEffect(() => {
+    if (gameCheck !== "found") return;
     const supabase = createClient();
     const channel = supabase
-      .channel(joinCodeChannel(params.code))
+      .channel(joinCodeChannel(params.code.trim().toUpperCase()))
       .on("broadcast", { event: "state" }, ({ payload }) => setState(payload as LiveState))
       .subscribe(async (status) => {
         setConnected(status === "SUBSCRIBED");
@@ -43,7 +84,32 @@ export default function WatchPage({ params }: { params: { code: string } }) {
     return () => {
       channel.unsubscribe();
     };
-  }, [params.code]);
+  }, [gameCheck, params.code]);
+
+  if (gameCheck === "checking") {
+    return <div className="min-h-dvh bg-felt" />;
+  }
+
+  if (gameCheck === "not_found") {
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
+        <p className="font-body text-xs uppercase tracking-[0.3em] text-trump-red">Game Not Found</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold text-parchment">
+          That code isn&rsquo;t connected to a live game
+        </h1>
+        <p className="mt-2 font-body text-sm text-parchment/75">
+          Double-check the code with whoever&rsquo;s hosting — it may have a typo, or the game
+          may have ended.
+        </p>
+        <a
+          href="/watch"
+          className="mt-6 rounded-full bg-brass px-6 py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-ink"
+        >
+          Try another code
+        </a>
+      </div>
+    );
+  }
 
   if (!state) {
     return (
@@ -57,6 +123,12 @@ export default function WatchPage({ params }: { params: { code: string } }) {
         <p className="mt-2 font-body text-sm text-parchment/75">
           Nothing to show yet — this updates the moment they bid their first round.
         </p>
+        <a
+          href="/watch"
+          className="mt-6 font-body text-xs text-parchment/60 underline underline-offset-4"
+        >
+          Try another code
+        </a>
       </div>
     );
   }
@@ -99,6 +171,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
           themTotal={themTotal}
           usLabel={usTeamName}
           themLabel={themTeamName}
+          settings={{ winningScore: 0, maxPointsPerRound: 0, usTeamName, themTeamName, players: null }}
           onUpdateRound={() => {}}
           onDeleteRound={() => {}}
           readOnly

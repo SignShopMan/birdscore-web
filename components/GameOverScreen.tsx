@@ -59,6 +59,7 @@ export function GameOverScreen({
           themTotal={themTotal(rounds)}
           usLabel={settings.usTeamName}
           themLabel={settings.themTeamName}
+          settings={settings}
           onUpdateRound={updateRound}
           onDeleteRound={deleteRound}
           readOnly

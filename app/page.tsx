@@ -205,6 +205,7 @@ export default function Home() {
             themTotal={themTotal(rounds)}
             usLabel={settings.usTeamName}
             themLabel={settings.themTeamName}
+            settings={settings}
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
@@ -221,6 +222,7 @@ export default function Home() {
             themTotal={themTotal(rounds)}
             usLabel={settings.usTeamName}
             themLabel={settings.themTeamName}
+            settings={settings}
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}

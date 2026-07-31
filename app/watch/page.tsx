@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isValidJoinCodeFormat } from "@/lib/join-code";
 
 /**
  * The missing entry point: /watch/[code] only ever worked if someone
@@ -12,11 +13,16 @@ import { useRouter } from "next/navigation";
 export default function WatchLandingPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length > 0) router.push(`/watch/${trimmed}`);
+    if (!isValidJoinCodeFormat(trimmed)) {
+      setError("That doesn't look like a real code — check for typos.");
+      return;
+    }
+    router.push(`/watch/${trimmed}`);
   };
 
   return (
@@ -28,9 +34,16 @@ export default function WatchLandingPage() {
       </p>
 
       <form onSubmit={submit} className="mt-6 w-full">
+        <label htmlFor="watch-code" className="sr-only">
+          Game code
+        </label>
         <input
+          id="watch-code"
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onChange={(e) => {
+            setCode(e.target.value.toUpperCase());
+            setError(null);
+          }}
           placeholder="ABCDEF"
           maxLength={6}
           autoCapitalize="characters"
@@ -38,6 +51,7 @@ export default function WatchLandingPage() {
           autoFocus
           className="w-full rounded-md border border-parchment/30 bg-white/95 py-4 text-center font-score tabular-score text-3xl font-bold tracking-[0.3em] text-ink"
         />
+        {error && <p className="mt-2 font-body text-xs text-trump-red">{error}</p>}
         <button
           type="submit"
           disabled={code.trim().length === 0}

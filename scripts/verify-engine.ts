@@ -12,7 +12,7 @@ import {
   DEFAULT_SETTINGS,
   Round,
 } from "../lib/rook-engine";
-import { generateJoinCode, joinCodeChannel } from "../lib/join-code";
+import { generateJoinCode, joinCodeChannel, isValidJoinCodeFormat } from "../lib/join-code";
 import { computePartnershipStats } from "../lib/partner-stats";
 
 function assertEqual(label: string, actual: unknown, expected: unknown) {
@@ -78,6 +78,32 @@ const over = checkGameOver(
 );
 assertEqual("game over at 500", over, { over: true, winner: "US", usTotal: 520, themTotal: 40 });
 
+// Regression: the QA report's exact tie scenario — 180 winning score,
+// two rounds of 90-90, final 180-180. The old logic declared "US wins"
+// unconditionally whenever US crossed the threshold, without checking
+// whether THEM had too. Ties this exact continue playing (see the
+// comment on checkGameOver for why).
+const exactTie = checkGameOver(
+  [
+    { rowId: "1", round: 1, trump: "Red", bidTeam: "US", bid: 90, dealerIndex: 0, shootMoon: false, usScore: 90, themScore: 90, rowType: "Round", createdAt: "" },
+    { rowId: "2", round: 2, trump: "Green", bidTeam: "THEM", bid: 90, dealerIndex: 1, shootMoon: false, usScore: 90, themScore: 90, rowType: "Round", createdAt: "" },
+  ],
+  180
+);
+assertEqual("exact tie at winning score continues, no winner declared", exactTie, { over: false, winner: null, usTotal: 180, themTotal: 180 });
+
+// Regression: both teams crossed the threshold, but THEM is actually
+// ahead — the old bug declared US the winner here too, since it never
+// compared the two totals against each other, only against the
+// threshold. This is the more serious case: not a tie at all, just wrong.
+const bothCrossedThemAhead = checkGameOver(
+  [
+    { rowId: "1", round: 1, trump: "Black", bidTeam: "THEM", bid: 180, dealerIndex: 0, shootMoon: false, usScore: 180, themScore: 200, rowType: "Round", createdAt: "" },
+  ],
+  180
+);
+assertEqual("both crossed, THEM actually ahead, THEM wins", bothCrossedThemAhead, { over: true, winner: "THEM", usTotal: 180, themTotal: 200 });
+
 // Bid options respect the max-points ceiling
 assertEqual("bid options capped at 150", bidOptions(150), [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150]);
 
@@ -122,6 +148,15 @@ const code = generateJoinCode();
 assertEqual("join code length", code.length, 6);
 assertEqual("join code excludes ambiguous chars", /[0O1IL]/.test(code), false);
 assertEqual("join code channel format", joinCodeChannel("ABC123"), "game:ABC123");
+
+// Regression: the QA report's exact examples of nonsense codes the watch
+// page previously accepted as if they were real
+assertEqual("rejects punctuation (QA report example)", isValidJoinCodeFormat("!!!!!!"), false);
+assertEqual("rejects wrong length", isValidJoinCodeFormat("AB12CD1"), false);
+assertEqual("rejects ambiguous excluded chars", isValidJoinCodeFormat("O0IL1X"), false);
+assertEqual("accepts a real-shaped code", isValidJoinCodeFormat("ABCDEF"), true);
+assertEqual("normalizes lowercase", isValidJoinCodeFormat("abcdef"), true);
+assertEqual("normalizes surrounding whitespace", isValidJoinCodeFormat("  ABCDEF  "), true);
 
 // Partner-pairing stats: North+South vs East+West, keyed regardless of
 // which seat each player sat in, only completed games with a winner count

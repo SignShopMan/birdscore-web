@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { ThemeInit } from "@/components/ThemeInit";
 import { AuthInit } from "@/components/AuthInit";
@@ -10,6 +10,25 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BirdScore — Rook Scorekeeper",
   description: "Live bid and score tracking for Rook, tableside.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "BirdScore",
+  },
+  openGraph: {
+    title: "BirdScore — Rook Scorekeeper",
+    description: "Live bid and score tracking for Rook, tableside.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "BirdScore — Rook Scorekeeper",
+    description: "Live bid and score tracking for Rook, tableside.",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#173C31",
 };
 
 const THEME_INIT_SCRIPT = `

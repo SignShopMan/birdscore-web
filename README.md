@@ -22,6 +22,52 @@ environment I built this in.
 
 ## Changelog
 
+**QA report — all three P0s, plus the biggest P1s and a PWA first step**.
+Verified each finding by reading the actual code before fixing anything,
+not just trusting the report:
+
+- **P0, winner logic** (confirmed, worse than described): `checkGameOver`
+  defaulted to declaring US the winner whenever US crossed the winning
+  score, without ever checking whether THEM had too — meaning THEM could
+  legitimately be ahead, even by a lot, and US still won. Not just a tie
+  bug. Fixed to actually compare both totals; exact ties (both cross,
+  same total) now continue the game rather than picking a winner —
+  per-conversation, ties this close are rare enough in real play that the
+  simplest defensible rule is to keep playing, not invent a tiebreaker.
+  Two new regression tests cover the report's exact tie scenario and the
+  more serious both-crossed-different-totals case.
+- **P0, round-edit integrity** (confirmed): editing accepted any two
+  numbers with no relationship to each other — for a made bid, bidder +
+  non-bidder should always sum to maxPoints, and the old edit UI had no
+  way to enforce that. New `EditRoundModal.tsx` reopens the actual
+  original inputs (team, bid, trump, shoot the moon, Rook-holder, the
+  non-bidder's raw score) and always recomputes both scores through the
+  same `calculateRoundScores()` live scoring uses — there's no path to
+  save a pair of numbers that couldn't actually happen.
+- **P0/P1, spectator codes** (confirmed): the watch page's "Connected"
+  state was set by whether the Realtime *transport* subscribed
+  successfully, which happens for any string at all — a WebSocket-layer
+  success, not confirmation a real game exists. New
+  `isValidJoinCodeFormat()` rejects malformed codes locally, and a new
+  migration (`0006_public_join_code_check.sql`) opens a narrow, existence
+  only anonymous read path so the watch page can check a code actually
+  maps to a live game *before* ever subscribing to anything — distinct
+  "Game not found" vs "Waiting for the host" now, plus a way back
+  ("Try another code") that didn't exist before.
+- **P1s**: delete on rounds/adjustments now asks for confirmation instead
+  of firing immediately; edit/delete touch targets are a real 44×44px
+  minimum (were ~23×23); adjustment values are capped at 5,000 points
+  (were unbounded — 999999999999 was genuinely accepted before).
+- **PWA, the cheap first slice**: `app/manifest.ts` using the icon assets
+  already built — makes the app actually installable now. True offline
+  scoring needs a service worker and real caching strategy, meaningfully
+  separate scope, staying queued as its own round.
+- Also added while touching layout metadata anyway: theme-color
+  (matching the app's actual felt color, not a guess — checked
+  `globals.css`), Apple web-app tags, and basic OpenGraph/Twitter
+  metadata. `robots.txt`, `sitemap.xml`, and security headers are real
+  gaps the report also found — not done this round, still queued.
+
 **Favicon** — using the crow illustration you sent:
 - `app/apple-icon.png` (180×180) uses the full illustration, padded to a
   square (transparent, not cropped) rather than resized to fit — the
@@ -604,10 +650,10 @@ would mean redoing them if something in the foundation needs to change.
    traffic, worth a scheduled ping once this is live day-to-day). Then:
    - SQL Editor → paste and run `supabase/migrations/0001_init.sql`, then
      `0002_dev_tier_override.sql`, then `0003_realtime_broadcast.sql`, then
-     `0004_realtime_presence.sql`, then `0005_cancel_game_status.sql` (if
-     the GitHub↔Supabase integration is connected, these may already be
-     applied automatically — check Database → Migrations first, same as
-     with the others).
+     `0004_realtime_presence.sql`, then `0005_cancel_game_status.sql`, then
+     `0006_public_join_code_check.sql` (if the GitHub↔Supabase integration
+     is connected, these may already be applied automatically — check
+     Database → Migrations first, same as with the others).
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.

@@ -219,9 +219,34 @@ export function checkGameOver(
 ): { over: boolean; winner: Team | null; usTotal: number; themTotal: number } {
   const usTotal = teamTotal(rounds, "US");
   const themTotal = teamTotal(rounds, "THEM");
-  const over = usTotal >= winningScore || themTotal >= winningScore;
-  const winner = over ? (usTotal >= winningScore ? "US" : "THEM") : null;
-  return { over, winner, usTotal, themTotal };
+  const usCrossed = usTotal >= winningScore;
+  const themCrossed = themTotal >= winningScore;
+
+  if (!usCrossed && !themCrossed) {
+    return { over: false, winner: null, usTotal, themTotal };
+  }
+
+  if (usTotal === themTotal) {
+    // Both crossed the winning score in the same round, exactly tied.
+    // This is the one real product decision in this function, not just a
+    // bug fix: per the house's own account, a tie this close is rare
+    // enough in real play (per-round splits essentially never happen,
+    // since bidding dynamics push toward one side taking more than half)
+    // that the simplest defensible rule is to just keep playing rather
+    // than invent an arbitrary tiebreaker. Change here if that ever
+    // stops being the right call.
+    return { over: false, winner: null, usTotal, themTotal };
+  }
+
+  // Both may have crossed the threshold in the same round (a big
+  // adjustment, or a round that pushes one team over while the other was
+  // already past it) — whoever actually has the higher total wins. The
+  // previous version of this function defaulted to US whenever US had
+  // crossed at all, without checking THEM's total — meaning THEM could
+  // legitimately be ahead, even by a lot, and US would still be declared
+  // the winner. That was the actual bug, not just mishandled ties.
+  const winner: Team = usTotal > themTotal ? "US" : "THEM";
+  return { over: true, winner, usTotal, themTotal };
 }
 
 /** Dealer rotates through 4 seats; only advances automatically once the first dealer is set. */
