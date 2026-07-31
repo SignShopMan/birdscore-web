@@ -22,6 +22,34 @@ environment I built this in.
 
 ## Changelog
 
+**Magic link clicks doing nothing — a real, known Supabase gotcha, plus a
+real gap in my own error handling**:
+- Root cause: the old `/auth/callback` route consumed the sign-in code
+  the instant the URL was hit — no click required, just loading the page.
+  Supabase's own docs name this as a known issue: some mail providers and
+  security scanners *prefetch* links inside emails before a human ever
+  clicks them, and since the token is single-use, that automated prefetch
+  silently burns it. By the time the person actually clicks, it's already
+  dead — exactly matching "the link arrived, but clicking it does
+  nothing."
+- Fixed using Supabase's own recommended mitigation: `/auth/callback` is
+  now a real interstitial page, not an auto-redirecting route. It shows a
+  "Complete Sign In" button and does nothing until that's actually
+  clicked — a prefetch visiting the URL doesn't consume anything, only a
+  genuine click does, via a new `POST /api/auth/exchange`.
+- This also closes a gap that existed independent of the root cause: the
+  old flow redirected to `/?auth=error` on failure, but nothing in the
+  app ever read that parameter — a failed sign-in looked *exactly* like a
+  successful one from the outside, just silently landing back on the
+  normal app with no explanation. The interstitial now shows a real error
+  message ("This link has expired or was already used…") instead of
+  nothing.
+- Separately flagged (not a code fix): the two emails just added to
+  `BETA_TESTER_EMAILS` don't exactly match the actual signed-up accounts
+  seen in Supabase's Users table — `isBetaTester()` does an exact string
+  match, so even one character off means no Pro grant, silently, with
+  nothing telling you why.
+
 **Two things from a screenshot: a literal "\u00B7" showing on screen, and
 no date on the game detail page**:
 - Root cause of the literal text: `\u00B7` only decodes to "·" inside a
