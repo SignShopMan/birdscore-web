@@ -22,6 +22,22 @@ environment I built this in.
 
 ## Changelog
 
+**Favicon** — using the crow illustration you sent:
+- `app/apple-icon.png` (180×180) uses the full illustration, padded to a
+  square (transparent, not cropped) rather than resized to fit — the
+  whole bird as given, since 180px has enough resolution for the
+  linework to actually read at that size.
+- `app/icon.png` (512×512 source) uses a tight crop on just the head and
+  beak instead — checked what the full illustration actually looks like
+  downscaled to real favicon size (16×16, 32×32) first rather than
+  assuming, and the fine feather linework across the whole body doesn't
+  survive that far down; a bold, zoomed silhouette does. Same image,
+  different crop for a size where legibility actually matters.
+- Both are Next.js App Router's file-based icon convention — placing them
+  at those exact paths is the whole implementation; no layout.tsx changes
+  or manual `<link>` tags needed, confirmed via a real build (`icon.png`
+  and `apple-icon.png` show up as their own routes).
+
 **Game Detail improvements, from a screenshot review** ("what can we do to
 improve this screen?"):
 
