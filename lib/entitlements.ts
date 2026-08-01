@@ -51,7 +51,8 @@ const BETA_TESTER_EMAILS: string[] = [
   "dankwatkins@gmail.com", // Dan Watkins
   "melikiehonda@gmail.com", // Ryan Sanders
   "thompsonhomeimprovements@outlook.com", // Jared Thompson
-  "barthkj@gmail.com", // Kevin Barth
+  "barthkj@gmail.com", // Kevin Barth,
+  "hmorris88@gmail.com", // Libby Platt
 ];
 const BETA_GRANT_MONTHS = 12;
 
