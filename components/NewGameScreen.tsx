@@ -2,6 +2,7 @@
 
 import { useGameStore } from "@/lib/game-store";
 import { MainMenu } from "./MainMenu";
+import { InstallPrompt } from "./InstallPrompt";
 
 /**
  * The actual landing screen now — was Settings before, which meant every
@@ -44,7 +45,11 @@ export function NewGameScreen({
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">Ready to deal?</p>
 
-        <div className="mt-8 rounded-card bg-paper p-4 shadow-card">
+        <div className="mt-4">
+          <InstallPrompt />
+        </div>
+
+        <div className="mt-4 rounded-card bg-paper p-4 shadow-card">
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-ink/60">
             Starting with
           </p>

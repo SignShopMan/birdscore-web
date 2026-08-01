@@ -22,6 +22,43 @@ environment I built this in.
 
 ## Changelog
 
+**Three real-device PWA issues, from actually installing it on an iPhone**:
+
+- **Icon too dark under iOS tinting**: researched this rather than guess —
+  confirmed that for a *PWA specifically* (unlike a native App Store app),
+  iOS currently has no supported way to provide separate light/dark/tinted
+  icon variants at all; that capability only exists for Xcode-built apps.
+  iOS just applies its own automatic processing to the one icon a PWA
+  provides, and dark linework on a transparent background is exactly the
+  combination that reads as "too dark to see" under that processing. Fixed
+  the only way actually available: regenerated both icons with a solid,
+  opaque background (the app's own `#F5EFDE` paper color, not a guess) —
+  no transparency anywhere now, which is also what Apple's own guidance
+  recommends regardless of the tinting question.
+- **Magic link signs into Safari, not the installed app** — this is a real
+  iOS platform constraint, not a bug: Safari and a standalone/installed
+  PWA are completely separate storage contexts on iOS, so tapping the
+  email link opens Safari and signs in *there*, leaving the home-screen
+  app stranded on its old session. No code trick bridges that isolation.
+  The actual fix real PWAs with magic-link auth use: also send a short
+  code the person types directly into the still-open app, never leaving
+  it. New `verifyOtpCode` in `auth-store.ts`, and `SignInForm.tsx` now
+  shows both options side by side once a link's been sent. **Requires one
+  manual step to actually work**: Supabase's Magic Link email template
+  needs `{{ .Token }}` added as visible text (Dashboard → Authentication
+  → Email Templates → Magic Link) — the OTP token exists either way, but
+  it's not shown as a readable code in the email unless the template
+  displays it. Without that change, the new UI has nothing for someone to
+  type.
+- **No install onboarding** — with no app store listing, there was
+  nothing anywhere telling a first-time visitor that installing was even
+  possible. New `InstallPrompt.tsx`, platform-aware since iOS and Android
+  genuinely need different UI: iOS has no programmatic install trigger at
+  all (Apple only exposes it through the Share sheet, so it's
+  instructions), Android/Chrome-family browsers get a real one-tap
+  Install button wired to the actual `beforeinstallprompt` event. Shown
+  on the landing screen, dismissible, remembers the dismissal.
+
 **Second QA pass — accessibility, touch ergonomics, copy honesty, spectator
 pre-validation, and launch metadata** (confirmed the P0 redesign held up;
 this closes the rest of the list):

@@ -18,6 +18,13 @@ interface AuthState {
 
   init: () => void;
   sendMagicLink: (email: string) => Promise<{ error: string | null }>;
+  // Types the code from the email directly, instead of clicking the link
+  // — the actual fix for PWA sign-in on iOS: Safari and an installed
+  // standalone PWA are completely separate storage contexts there, so
+  // clicking the link signs you into Safari, not the app icon you
+  // launched from. Typing a code never leaves the PWA at all, sidestepping
+  // the isolation entirely rather than trying to work around it.
+  verifyOtpCode: (email: string, code: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setDevTierOverride: (tier: Tier | null) => Promise<{ error: string | null }>;
@@ -66,6 +73,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (!error) set({ magicLinkSent: true });
+    return { error: error?.message ?? null };
+  },
+
+  verifyOtpCode: async (email: string, code: string) => {
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code.trim(),
+      type: "email",
+    });
     return { error: error?.message ?? null };
   },
 
