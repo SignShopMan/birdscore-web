@@ -47,9 +47,11 @@ export function isDevAccount(email: string | null): boolean {
  * double-checking if that's ever not the case.
  */
 const BETA_TESTER_EMAILS: string[] = [
-  // "kevin@example.com",
-  // "jared@example.com",
-  // "ryan@example.com",
+  "andyjwatkins@gmail.com", // Andy Watkins
+  "dankwatkins@gmail.com", // Dan Watkins
+  "melikiehonda@gmail.com", // Ryan Sanders
+  "thompsonhomeimprovements@outlook.com", // Jared Thompson
+  "barthkj@gmail.com", // Kevin Barth
 ];
 const BETA_GRANT_MONTHS = 12;
 

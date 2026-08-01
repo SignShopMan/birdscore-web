@@ -53,6 +53,12 @@ assertEqual("isDevAccount case-insensitive", isDevAccount("Watkins.Jonathan@Gmai
 assertEqual("isDevAccount rejects others", isDevAccount("someone-else@gmail.com"), false);
 assertEqual("isBetaTester rejects null", isBetaTester(null), false);
 assertEqual("isBetaTester rejects non-listed email", isBetaTester("random@example.com"), false);
+assertEqual("isBetaTester matches a real listed tester", isBetaTester("andyjwatkins@gmail.com"), true);
+assertEqual(
+  "isBetaTester matches regardless of the case they actually type",
+  isBetaTester("Thompsonhomeimprovements@Outlook.com"),
+  true
+);
 
 // Beta grant window: 12 months per person, anchored to createdAt — not a
 // shared date for everyone. Test the date math directly since that's
