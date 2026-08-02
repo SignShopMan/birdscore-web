@@ -22,6 +22,33 @@ environment I built this in.
 
 ## Changelog
 
+**Dev Stats: in-app key setup, and actual per-person detail**:
+
+- **"Editable fields" needed one honest caveat before building**: a
+  running app can't write to its own Vercel environment variables —
+  `process.env` is read-only at runtime. What's built instead reaches the
+  same practical outcome (paste a key, it works, no dashboard trip)
+  through a different real mechanism: a new `dev_config` table
+  (`0007_dev_config.sql`), locked down harder than anything else in this
+  app — zero RLS policies at all, not even a self-scoped one, so the
+  *only* way to touch it is the service-role client, and the routes using
+  that client independently re-check `isDevStatsViewer` first regardless.
+  `GET /api/dev-stats` checks that table before falling back to a real
+  env var, so either path works.
+- **Per-account detail**: every signed-up account now shows email, tier,
+  games hosted, and join date — not just aggregate counts. Directly
+  answers "who's actually behind these numbers" now that the beta list
+  is people you know by name, not anonymous signups.
+- **"Who's Actually Playing"**: named-player appearances counted across
+  *every* game, not just games you hosted — answers who's actually shown
+  up at the table, which account-level stats alone can't show (someone
+  could be named as a player in a game they never signed up to score
+  themselves). Deliberately raw string counts, not fuzzy-matched — "Kevin"
+  and "Kevin " would show as two separate entries, since nothing links
+  these names to real accounts yet. That's the verified-players idea
+  from an earlier conversation, not something to fake here by quietly
+  merging names that happen to look similar.
+
 **Resources screen — rules and scoring, deliberately version-agnostic**:
 
 - New "Resources" destination in the menu (`ResourcesScreen.tsx`), wired
@@ -805,9 +832,10 @@ would mean redoing them if something in the foundation needs to change.
    - SQL Editor → paste and run `supabase/migrations/0001_init.sql`, then
      `0002_dev_tier_override.sql`, then `0003_realtime_broadcast.sql`, then
      `0004_realtime_presence.sql`, then `0005_cancel_game_status.sql`, then
-     `0006_public_join_code_check.sql` (if the GitHub↔Supabase integration
-     is connected, these may already be applied automatically — check
-     Database → Migrations first, same as with the others).
+     `0006_public_join_code_check.sql`, then `0007_dev_config.sql` (if the
+     GitHub↔Supabase integration is connected, these may already be
+     applied automatically — check Database → Migrations first, same as
+     with the others).
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.

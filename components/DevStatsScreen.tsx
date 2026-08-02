@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+interface AccountDetail {
+  email: string | null;
+  tier: "free" | "plus" | "pro";
+  gamesHosted: number;
+  createdAt: string;
+}
+
+interface PlayerAppearance {
+  name: string;
+  count: number;
+}
+
 interface DevStats {
   supabase: {
     totalAccounts: number;
@@ -11,6 +23,8 @@ interface DevStats {
     gameStatusCounts: { in_progress: number; completed: number; cancelled: number };
     gamesLast7Days: number;
     totalRounds: number;
+    accounts: AccountDetail[];
+    playerAppearances: PlayerAppearance[];
   };
   resend:
     | { configured: false }
@@ -52,11 +66,80 @@ function formatDateTime(iso: string) {
   });
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+const TIER_LABEL: Record<string, string> = { free: "Free", plus: "Plus", pro: "Pro" };
+
+/** Shown in place of a "not connected" message — paste a key, it saves to
+ * a locked-down Supabase table and works immediately, no Vercel dashboard
+ * trip needed. Not literally editing an env var (a running app can't do
+ * that to itself), but the same practical outcome. */
+function KeySetupForm({
+  fields,
+  onSaved,
+}: {
+  fields: { key: string; label: string; placeholder: string }[];
+  onSaved: () => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/dev-stats/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Couldn't save");
+        return;
+      }
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {fields.map((f) => (
+        <div key={f.key}>
+          <label className="font-body text-[11px] font-semibold text-ink/70">{f.label}</label>
+          <input
+            type="password"
+            value={values[f.key] ?? ""}
+            onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+            placeholder={f.placeholder}
+            autoComplete="off"
+            className="mt-0.5 w-full rounded-md border border-ink/20 bg-white px-3 py-2 font-body text-xs text-ink"
+          />
+        </div>
+      ))}
+      {error && <p className="font-body text-xs text-trump-red">{error}</p>}
+      <button
+        onClick={save}
+        disabled={saving || Object.values(values).every((v) => !v?.trim())}
+        className="w-full rounded-full bg-ink py-2 font-body text-xs font-semibold text-paper disabled:opacity-50"
+      >
+        {saving ? "Saving\u2026" : "Save & Connect"}
+      </button>
+    </div>
+  );
+}
+
 export function DevStatsScreen({ onClose }: { onClose: () => void }) {
   const [stats, setStats] = useState<DevStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     fetch("/api/dev-stats")
       .then((res) => res.json())
       .then((data) => {
@@ -64,7 +147,15 @@ export function DevStatsScreen({ onClose }: { onClose: () => void }) {
         else setError(data.error ?? "Couldn't load stats");
       })
       .catch(() => setError("Couldn't load stats"));
-  }, []);
+  };
+
+  useEffect(load, []);
+
+  const visibleAccounts = stats
+    ? showAllAccounts
+      ? stats.supabase.accounts
+      : stats.supabase.accounts.slice(0, 5)
+    : [];
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-felt">
@@ -98,6 +189,36 @@ export function DevStatsScreen({ onClose }: { onClose: () => void }) {
               <p className="mt-2 font-body text-xs text-parchment/60">
                 {stats.supabase.signupsLast7Days} new in the last 7 days
               </p>
+
+              <div className="mt-3 rounded-card bg-paper-dim p-2 shadow-card">
+                {stats.supabase.accounts.length === 0 && (
+                  <p className="p-2 text-center font-body text-xs text-ink/60">No accounts yet.</p>
+                )}
+                {visibleAccounts.map((a) => (
+                  <div key={a.email ?? a.createdAt} className="flex items-center justify-between gap-2 rounded-md px-2 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-body text-xs font-semibold text-ink">
+                        {a.email ?? "(no email)"}
+                      </p>
+                      <p className="font-body text-[11px] text-ink/50">
+                        Joined {formatDate(a.createdAt)} &middot; {a.gamesHosted} game
+                        {a.gamesHosted === 1 ? "" : "s"} hosted
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white px-2 py-0.5 font-body text-[10px] font-semibold text-ink ring-1 ring-ink/15">
+                      {TIER_LABEL[a.tier]}
+                    </span>
+                  </div>
+                ))}
+                {stats.supabase.accounts.length > 5 && (
+                  <button
+                    onClick={() => setShowAllAccounts((v) => !v)}
+                    className="mt-1 w-full rounded-md py-1.5 font-body text-[11px] font-semibold text-ink/60"
+                  >
+                    {showAllAccounts ? "Show fewer" : `Show all ${stats.supabase.accounts.length}`}
+                  </button>
+                )}
+              </div>
             </section>
 
             <section>
@@ -115,15 +236,42 @@ export function DevStatsScreen({ onClose }: { onClose: () => void }) {
               </p>
             </section>
 
+            {stats.supabase.playerAppearances.length > 0 && (
+              <section>
+                <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
+                  Who&rsquo;s Actually Playing
+                </p>
+                <p className="mt-1 font-body text-[11px] text-parchment/50">
+                  Named-player appearances across every game, not just accounts — raw name
+                  matches, so slightly different spellings of the same person show up
+                  separately.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {stats.supabase.playerAppearances.map((p) => (
+                    <span
+                      key={p.name}
+                      className="rounded-full bg-paper px-3 py-1.5 font-body text-xs text-ink shadow-card"
+                    >
+                      <span className="font-semibold">{p.name}</span>{" "}
+                      <span className="text-ink/50">&middot; {p.count}</span>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section>
               <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
                 Email (Resend)
               </p>
               <div className="mt-2 rounded-card bg-paper p-3">
                 {!stats.resend.configured && (
-                  <p className="font-body text-xs text-ink/60">
-                    Not connected — add <code>RESEND_API_KEY</code> to enable.
-                  </p>
+                  <KeySetupForm
+                    fields={[
+                      { key: "resendApiKey", label: "Resend API Key", placeholder: "re_..." },
+                    ]}
+                    onSaved={load}
+                  />
                 )}
                 {stats.resend.configured && "error" in stats.resend && (
                   <p className="font-body text-xs text-trump-red">{stats.resend.error}</p>
@@ -158,10 +306,13 @@ export function DevStatsScreen({ onClose }: { onClose: () => void }) {
               </p>
               <div className="mt-2 rounded-card bg-paper p-3">
                 {!stats.vercel.configured && (
-                  <p className="font-body text-xs text-ink/60">
-                    Not connected — add <code>VERCEL_TOKEN</code> and <code>VERCEL_PROJECT_ID</code>{" "}
-                    to enable.
-                  </p>
+                  <KeySetupForm
+                    fields={[
+                      { key: "vercelToken", label: "Vercel Access Token", placeholder: "..." },
+                      { key: "vercelProjectId", label: "Vercel Project ID", placeholder: "prj_..." },
+                    ]}
+                    onSaved={load}
+                  />
                 )}
                 {stats.vercel.configured && "error" in stats.vercel && (
                   <p className="font-body text-xs text-trump-red">{stats.vercel.error}</p>
