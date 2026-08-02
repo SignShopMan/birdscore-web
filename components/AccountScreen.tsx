@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
+import { isDevStatsViewer } from "@/lib/entitlements";
 import { SignInForm } from "./SignInForm";
 import { MainMenu } from "./MainMenu";
 import { DevToolsCard } from "./DevToolsCard";
+import { DevStatsScreen } from "./DevStatsScreen";
 
 const TIER_LABEL: Record<string, string> = {
   free: "Free",
@@ -30,6 +33,7 @@ export function AccountScreen({
   onBack: () => void;
 }) {
   const { userId, email, tier, loading, signOut } = useAuthStore();
+  const [devStatsOpen, setDevStatsOpen] = useState(false);
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 lg:max-w-lg lg:py-14">
@@ -74,6 +78,16 @@ export function AccountScreen({
       </div>
 
       <DevToolsCard />
+
+      {isDevStatsViewer(email) && (
+        <button
+          onClick={() => setDevStatsOpen(true)}
+          className="mt-3 w-full rounded-full bg-white py-2.5 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
+        >
+          Dev Stats
+        </button>
+      )}
+      {devStatsOpen && <DevStatsScreen onClose={() => setDevStatsOpen(false)} />}
     </div>
   );
 }

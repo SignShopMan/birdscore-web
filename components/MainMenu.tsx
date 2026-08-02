@@ -110,6 +110,18 @@ export function MainMenu({
                 FAQ
               </button>
               <a
+                href="/privacy"
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="/terms"
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                Terms
+              </a>
+              <a
                 href="mailto:feedback@therealbirdscore.com?subject=BirdScore%20Beta%20Feedback"
                 className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
               >

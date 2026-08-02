@@ -22,6 +22,37 @@ environment I built this in.
 
 ## Changelog
 
+**Dev Stats screen, and Privacy/Terms in the menu**:
+
+- Privacy Policy and Terms were only ever linked from the sign-in form —
+  added to the main menu too, right after FAQ.
+- New Dev Stats screen (Account → Dev Stats), visible only to your
+  account — checked via a genuinely separate permission
+  (`isDevStatsViewer` / `DEV_STATS_EMAILS`) from the existing dev-tier
+  switcher, not the same allowlist. That's deliberate: you specifically
+  said you want to open this to teammates eventually, and tier-switching
+  and seeing aggregate account/revenue-adjacent stats are different
+  enough levels of access that conflating them now would mean untangling
+  two concerns later instead of just adding an email to the right list
+  when that day comes.
+- **Supabase stats work right now, no setup needed** — total accounts,
+  tier breakdown, games by status, total rounds scored, signups and
+  games in the last 7 days. This required a new service-role Supabase
+  client (`lib/supabase/admin.ts`) — deliberately a separate file from
+  the normal per-request client, since it bypasses RLS entirely, and the
+  API route independently re-checks `isDevStatsViewer` before ever using
+  it, same defense-in-depth pattern as every other dev-only route in
+  this app.
+- **Resend and Vercel sections need one-time setup** — both confirmed
+  against current, real API docs rather than guessed (Resend's
+  `GET /emails` list endpoint, Vercel's `GET /v6/deployments`), and both
+  degrade gracefully to "not connected" instead of breaking anything if
+  their env vars aren't set yet. See `.env.local.example` for exactly
+  what to add and where each token comes from.
+- GitHub stats were considered and deliberately skipped — for a private
+  solo repo, there wasn't enough value to justify the integration cost
+  over what you already see firsthand on every push.
+
 **Three real-device PWA issues, from actually installing it on an iPhone**:
 
 - **Icon too dark under iOS tinting**: researched this rather than guess —

@@ -2,7 +2,7 @@
 // tier + lapse policy, beta-tester grant, dev override) that are easy to
 // get subtly wrong. Run with `npx tsx scripts/verify-entitlements.ts`.
 
-import { effectiveTier, isBetaTester, isDevAccount, withinBetaGrantWindow } from "../lib/entitlements";
+import { effectiveTier, isBetaTester, isDevAccount, isDevStatsViewer, withinBetaGrantWindow } from "../lib/entitlements";
 
 function assertEqual(label: string, actual: unknown, expected: unknown) {
   const pass = JSON.stringify(actual) === JSON.stringify(expected);
@@ -51,6 +51,8 @@ assertEqual(
 assertEqual("isDevAccount matches exact", isDevAccount("watkins.jonathan@gmail.com"), true);
 assertEqual("isDevAccount case-insensitive", isDevAccount("Watkins.Jonathan@Gmail.com"), true);
 assertEqual("isDevAccount rejects others", isDevAccount("someone-else@gmail.com"), false);
+assertEqual("isDevStatsViewer matches the dev account", isDevStatsViewer("watkins.jonathan@gmail.com"), true);
+assertEqual("isDevStatsViewer rejects unlisted emails, including real beta testers", isDevStatsViewer("andyjwatkins@gmail.com"), false);
 assertEqual("isBetaTester rejects null", isBetaTester(null), false);
 assertEqual("isBetaTester rejects non-listed email", isBetaTester("random@example.com"), false);
 assertEqual("isBetaTester matches a real listed tester", isBetaTester("andyjwatkins@gmail.com"), true);

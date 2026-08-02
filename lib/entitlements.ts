@@ -26,6 +26,22 @@ export function isDevAccount(email: string | null): boolean {
 }
 
 /**
+ * Who can see the Dev Stats screen — deliberately a SEPARATE list from
+ * DEV_EMAIL/isDevAccount above, even though right now they're the same
+ * one person. Tier-switching (isDevAccount) and seeing aggregate
+ * signup/revenue-adjacent stats are genuinely different levels of access
+ * — the explicit plan is to eventually add teammates to this list without
+ * necessarily handing them the ability to fake being Pro for testing, so
+ * conflating the two now would mean untangling them later instead of
+ * just adding an email to the right list when that day comes.
+ */
+const DEV_STATS_EMAILS: string[] = ["watkins.jonathan@gmail.com"];
+
+export function isDevStatsViewer(email: string | null): boolean {
+  return !!email && DEV_STATS_EMAILS.includes(email.toLowerCase());
+}
+
+/**
  * A few free Pro accounts for beta testers — hardcoded emails rather than
  * a promo/redemption code system, deliberately. That's real infrastructure
  * (a codes table, a redemption API route, UI for entering one) for what's
@@ -52,6 +68,7 @@ const BETA_TESTER_EMAILS: string[] = [
   "melikiehonda@gmail.com", // Ryan Sanders
   "thompsonhomeimprovements@outlook.com", // Jared Thompson
   "barthkj@gmail.com", // Kevin Barth
+  "hmorris88@gmail.com", // Libby Platt
 ];
 const BETA_GRANT_MONTHS = 12;
 
