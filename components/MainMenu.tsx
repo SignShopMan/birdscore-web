@@ -22,12 +22,14 @@ export function MainMenu({
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
+  onOpenResources,
 }: {
   onNewGame: () => void;
   onOpenSettings: () => void;
   onOpenAccount: () => void;
   onOpenHistory: () => void;
   onOpenFaq: () => void;
+  onOpenResources: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const { userId, email } = useAuthStore();
@@ -108,6 +110,12 @@ export function MainMenu({
                 className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
               >
                 FAQ
+              </button>
+              <button
+                onClick={() => go(onOpenResources)}
+                className="block w-full rounded-md px-3 py-2.5 text-left font-body text-sm font-semibold text-ink hover:bg-paper-dim"
+              >
+                Resources
               </button>
               <a
                 href="/privacy"

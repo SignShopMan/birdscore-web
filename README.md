@@ -22,6 +22,34 @@ environment I built this in.
 
 ## Changelog
 
+**Resources screen — rules and scoring, deliberately version-agnostic**:
+
+- New "Resources" destination in the menu (`ResourcesScreen.tsx`), wired
+  through the same navigation pattern as History/FAQ.
+- Content is grounded in actual research, not written from memory —
+  searched current sources (Hasbro's official rules, tournament rule
+  sets, independent rules write-ups) specifically because real variation
+  exists between them (win targets of 300 vs 500, total counters of 120
+  vs 160 depending on deck/variant), which is exactly why "version-
+  agnostic" was the right ask rather than picking one source and
+  presenting it as definitive.
+- **The scoring section is verified against the app's own
+  `calculateRoundScores()`, not just general web consensus** — checked
+  first, rather than assumed, that what the page describes (non-bidder
+  always scores what they captured; bidder scores the full remainder if
+  they met their bid, or loses points equal to the bid if they didn't)
+  is literally what BirdScore calculates, so the rules page can't
+  contradict the app it's sitting inside of.
+- Renege, misdeal, and improper-nest-discard penalties are presented as
+  "the most common convention, not universal" — found genuinely
+  consistent figures across multiple independent tournament rule sets
+  (renege costs the bid amount; misdeal/improper discard commonly costs
+  40 points), but flagged clearly that these vary, with a direct pointer
+  to the Penalty/Bonus button already in the app for whatever a given
+  table actually uses.
+- Three external links for people who want the full, authoritative
+  version — real URLs, checked to actually exist, not guessed.
+
 **Dev Stats screen, and Privacy/Terms in the menu**:
 
 - Privacy Policy and Terms were only ever linked from the sign-in form —

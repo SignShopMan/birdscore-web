@@ -13,9 +13,10 @@ import { Scoreboard } from "@/components/Scoreboard";
 import { AccountScreen } from "@/components/AccountScreen";
 import { HistoryScreen } from "@/components/HistoryScreen";
 import { FaqScreen } from "@/components/FaqScreen";
+import { ResourcesScreen } from "@/components/ResourcesScreen";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-type Screen = "newgame" | "settings" | "game" | "account" | "history" | "faq";
+type Screen = "newgame" | "settings" | "game" | "account" | "history" | "faq" | "resources";
 
 export default function Home() {
   const { tier } = useAuthStore();
@@ -59,7 +60,7 @@ export default function Home() {
   // Settings/Account/History/FAQ all remember whichever screen they were
   // opened from, so "back" returns you to where you actually were rather
   // than always landing in one fixed place.
-  const NAV_SCREENS: Screen[] = ["settings", "account", "history", "faq"];
+  const NAV_SCREENS: Screen[] = ["settings", "account", "history", "faq", "resources"];
   const openSettings = () => {
     if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
     setScreen("settings");
@@ -75,6 +76,10 @@ export default function Home() {
   const openFaq = () => {
     if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
     setScreen("faq");
+  };
+  const openResources = () => {
+    if (!NAV_SCREENS.includes(screen)) setReturnScreen(screen);
+    setScreen("resources");
   };
   const goBack = () => setScreen(returnScreen);
 
@@ -127,6 +132,7 @@ export default function Home() {
         onOpenAccount={openAccount}
         onOpenHistory={openHistory}
         onOpenFaq={openFaq}
+        onOpenResources={openResources}
       />
     );
   }
@@ -143,6 +149,7 @@ export default function Home() {
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
             onOpenFaq={openFaq}
+            onOpenResources={openResources}
           />
         )}
         {screen === "settings" && (
@@ -153,6 +160,7 @@ export default function Home() {
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
             onOpenFaq={openFaq}
+            onOpenResources={openResources}
           />
         )}
         {screen === "game" && !gameOver && (
@@ -164,6 +172,7 @@ export default function Home() {
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
             onOpenFaq={openFaq}
+            onOpenResources={openResources}
           />
         )}
         {screen === "account" && (
@@ -173,6 +182,7 @@ export default function Home() {
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
             onOpenFaq={openFaq}
+            onOpenResources={openResources}
             onBack={goBack}
           />
         )}
@@ -183,6 +193,7 @@ export default function Home() {
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
             onOpenFaq={openFaq}
+            onOpenResources={openResources}
             onBack={goBack}
             onResumeGame={() => setScreen("game")}
           />
@@ -194,6 +205,18 @@ export default function Home() {
             onOpenAccount={openAccount}
             onOpenHistory={openHistory}
             onOpenFaq={openFaq}
+            onOpenResources={openResources}
+            onBack={goBack}
+          />
+        )}
+        {screen === "resources" && (
+          <ResourcesScreen
+            onNewGame={handleNewGame}
+            onOpenSettings={openSettings}
+            onOpenAccount={openAccount}
+            onOpenHistory={openHistory}
+            onOpenFaq={openFaq}
+            onOpenResources={openResources}
             onBack={goBack}
           />
         )}

@@ -34,6 +34,7 @@ export function HistoryScreen({
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
+  onOpenResources,
   onBack,
   onResumeGame,
 }: {
@@ -42,6 +43,7 @@ export function HistoryScreen({
   onOpenAccount: () => void;
   onOpenHistory: () => void;
   onOpenFaq: () => void;
+  onOpenResources: () => void;
   onBack: () => void;
   onResumeGame: () => void;
 }) {
@@ -156,7 +158,7 @@ export function HistoryScreen({
           >
             &larr; Back
           </button>
-          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">History</h1>
         <div className="mt-8 rounded-card bg-paper p-4 shadow-card">
@@ -178,7 +180,7 @@ export function HistoryScreen({
         >
           &larr; Back
         </button>
-        <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+        <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">History</h1>
 

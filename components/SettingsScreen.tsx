@@ -30,6 +30,7 @@ export function SettingsScreen({
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
+  onOpenResources,
 }: {
   onDone: () => void;
   onNewGame: () => void;
@@ -37,6 +38,7 @@ export function SettingsScreen({
   onOpenAccount: () => void;
   onOpenHistory: () => void;
   onOpenFaq: () => void;
+  onOpenResources: () => void;
 }) {
   const updateSettings = useGameStore((s) => s.updateSettings);
   const current = useGameStore((s) => s.settings);
@@ -95,7 +97,7 @@ export function SettingsScreen({
             </p>
             <BackendStatusBadge />
           </div>
-          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">

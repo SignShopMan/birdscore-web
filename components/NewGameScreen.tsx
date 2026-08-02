@@ -19,6 +19,7 @@ export function NewGameScreen({
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
+  onOpenResources,
 }: {
   onStart: () => void;
   onChangeSettings: () => void;
@@ -27,6 +28,7 @@ export function NewGameScreen({
   onOpenAccount: () => void;
   onOpenHistory: () => void;
   onOpenFaq: () => void;
+  onOpenResources: () => void;
 }) {
   const { settings, startGame } = useGameStore();
 
@@ -40,7 +42,7 @@ export function NewGameScreen({
               Beta
             </span>
           </div>
-          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
         <p className="mt-2 font-body text-sm text-parchment/75">Ready to deal?</p>

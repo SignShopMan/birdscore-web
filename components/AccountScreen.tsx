@@ -23,6 +23,7 @@ export function AccountScreen({
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
+  onOpenResources,
   onBack,
 }: {
   onNewGame: () => void;
@@ -30,6 +31,7 @@ export function AccountScreen({
   onOpenAccount: () => void;
   onOpenHistory: () => void;
   onOpenFaq: () => void;
+  onOpenResources: () => void;
   onBack: () => void;
 }) {
   const { userId, email, tier, loading, signOut } = useAuthStore();
@@ -44,7 +46,7 @@ export function AccountScreen({
         >
           &larr; Back
         </button>
-        <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+        <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">Your Account</h1>
 

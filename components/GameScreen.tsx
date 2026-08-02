@@ -21,6 +21,7 @@ export function GameScreen({
   onOpenAccount,
   onOpenHistory,
   onOpenFaq,
+  onOpenResources,
 }: {
   onScoreRound: () => void;
   onOpenScoreboard: () => void;
@@ -29,6 +30,7 @@ export function GameScreen({
   onOpenAccount: () => void;
   onOpenHistory: () => void;
   onOpenFaq: () => void;
+  onOpenResources: () => void;
 }) {
   const {
     settings,
@@ -71,7 +73,7 @@ export function GameScreen({
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 lg:max-w-xl lg:px-0">
       <header>
         <div className="flex items-center justify-between">
-          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} />
+          <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
           <button
             onClick={() => setDealerPickerOpen(true)}
             className="min-h-[44px] rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
