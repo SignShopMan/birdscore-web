@@ -216,7 +216,7 @@ export const useGameStore = create<GameState>()(
         };
 
         const rounds = [...s.rounds, round];
-        const { over, winner } = checkGameOver(rounds, s.settings.winningScore);
+        const { over, winner } = checkGameOver(rounds, s.settings.winningScore, s.settings.spreadWin);
 
         set({
           rounds,
@@ -246,7 +246,7 @@ export const useGameStore = create<GameState>()(
             createdAt: new Date().toISOString(),
           };
           const rounds = [...s.rounds, entry];
-          const { over, winner } = checkGameOver(rounds, s.settings.winningScore);
+          const { over, winner } = checkGameOver(rounds, s.settings.winningScore, s.settings.spreadWin);
           return { rounds, gameOver: over, winner };
         }),
 
@@ -255,21 +255,21 @@ export const useGameStore = create<GameState>()(
           const rounds = s.rounds.map((r) =>
             r.rowId === rowId ? { ...r, ...updates } : r
           );
-          const { over, winner } = checkGameOver(rounds, s.settings.winningScore);
+          const { over, winner } = checkGameOver(rounds, s.settings.winningScore, s.settings.spreadWin);
           return { rounds, gameOver: over, winner };
         }),
 
       deleteRound: (rowId) =>
         set((s) => {
           const rounds = s.rounds.filter((r) => r.rowId !== rowId);
-          const { over, winner } = checkGameOver(rounds, s.settings.winningScore);
+          const { over, winner } = checkGameOver(rounds, s.settings.winningScore, s.settings.spreadWin);
           return { rounds, gameOver: over, winner };
         }),
 
 
       loadGame: (settings, rounds, gameId) =>
         set(() => {
-          const { over, winner } = checkGameOver(rounds, settings.winningScore);
+          const { over, winner } = checkGameOver(rounds, settings.winningScore, settings.spreadWin);
           return {
             settings,
             rounds,

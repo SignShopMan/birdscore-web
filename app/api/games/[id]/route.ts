@@ -39,6 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       maxPointsPerRound: number;
       usTeamName: string;
       themTeamName: string;
+      spreadWin: boolean;
     };
     cancel?: boolean;
   };
@@ -103,6 +104,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     gameUpdate.max_points_per_round = settings.maxPointsPerRound;
     gameUpdate.us_team_name = settings.usTeamName;
     gameUpdate.them_team_name = settings.themTeamName;
+    gameUpdate.spread_win = settings.spreadWin;
   }
 
   if (Object.keys(gameUpdate).length > 0) {
@@ -129,7 +131,9 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, winning_score, max_points_per_round, us_team_name, them_team_name, status, winner, created_at, completed_at")
+    .select(
+      "id, winning_score, max_points_per_round, us_team_name, them_team_name, spread_win, status, winner, created_at, completed_at"
+    )
     .eq("id", params.id)
     .single();
 
@@ -170,6 +174,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       maxPointsPerRound: game.max_points_per_round,
       usTeamName: game.us_team_name,
       themTeamName: game.them_team_name,
+      spreadWin: game.spread_win,
       status: game.status,
       winner: game.winner,
       players: playerNames,

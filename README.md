@@ -22,6 +22,54 @@ environment I built this in.
 
 ## Changelog
 
+**"Win by spread" house rule, negative-score readability, and a running
+total per round** (from a real example: Jon & Kevin 380, Jared & Ryan -120
+— a 500-point spread on a 500-point game, which the old logic couldn't see
+since it only ever compared each team's own total to the winning score):
+
+- **New opt-in Settings toggle, off by default**: `spreadWin` on
+  `GameSettings` (`lib/rook-engine.ts`). `checkGameOver` now also ends the
+  game when `abs(usTotal - themTotal) >= winningScore`, alongside the
+  existing "either team's own total crosses it" check — same winner logic
+  either way (higher total wins), and a non-zero spread can't collide with
+  the existing exact-tie case. Off by default and per-game, same reasoning
+  as every other house-rule setting here: this changes when a game
+  actually ends, so it can't silently apply to tables that never asked for
+  it. Threaded through every `checkGameOver` call site in `game-store.ts`
+  by hand, since it's an optional parameter — TypeScript won't catch a
+  call site that forgets to pass it, only ones that get the shape of
+  `GameSettings` itself wrong.
+- **Persisted per-game**, not just client-side: new migration
+  `0008_spread_win.sql` (`games.spread_win`), so Resume reconstructs the
+  actual rule a game was being played under instead of silently reverting
+  to the default. `POST /api/games` and `PATCH /api/games/[id]` both
+  read/write it now.
+- **Negative-score readability**: `formatScore`'s combined "us – them"
+  display used a bare minus sign for negative values, which read as an odd
+  double-negative sitting right next to the en-dash separator ("250 –
+  -120"). Negative values now render in parens instead ("250 – (120)") —
+  accounting-style, and removes the second dash-like glyph entirely rather
+  than trying to further disambiguate two similar-looking symbols next to
+  each other.
+- **Three scores, not two**: the live Scoreboard and Game Detail's round
+  ledger already showed the per-round delta and the final total, but
+  nothing in between — no way to see how far back a team was at any given
+  point mid-game, which "win by spread" makes genuinely relevant to know
+  round-to-round, not just at the end. New `runningTotals()` in
+  `lib/rook-engine.ts` (the cumulative total immediately after each round,
+  distinct from both of the other two) now shows as a small "Total: X – Y"
+  line under every round, in both `Scoreboard.tsx` (live gameplay) and
+  `GameDetailModal.tsx` (History review) — same helper, one source of
+  truth, both places.
+- New engine tests for all of the above in `scripts/verify-engine.ts` —
+  spreadWin on/off/not-yet-reached, the parens formatting change, and
+  `runningTotals` accumulating correctly across rounds and adjustments.
+- **Needs a manual step**: run `supabase/migrations/0008_spread_win.sql`
+  in the Supabase SQL editor (or confirm the GitHub↔Supabase integration
+  already applied it) before this deploy's spread-win toggle will actually
+  persist — without it, `PATCH`/`POST` will fail on any game where the
+  toggle is touched.
+
 **Signal when a new version is available on the home-screen app**:
 
 - The real cause isn't stale caching to fix — there's no service worker in

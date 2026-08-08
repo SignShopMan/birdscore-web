@@ -192,7 +192,14 @@ export default function WatchPage({ params }: { params: { code: string } }) {
           themTotal={themTotal}
           usLabel={usTeamName}
           themLabel={themTeamName}
-          settings={{ winningScore: 0, maxPointsPerRound: 0, usTeamName, themTeamName, players: null }}
+          settings={{
+            winningScore: 0,
+            maxPointsPerRound: 0,
+            usTeamName,
+            themTeamName,
+            players: null,
+            spreadWin: false,
+          }}
           onUpdateRound={() => {}}
           onDeleteRound={() => {}}
           readOnly

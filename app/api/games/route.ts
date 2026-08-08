@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
       usTeamName: string;
       themTeamName: string;
       players: [string, string, string, string] | null;
+      spreadWin: boolean;
     };
     rounds: Parameters<typeof roundsToDbRows>[1];
     winner: "US" | "THEM" | null;
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
         max_points_per_round: settings.maxPointsPerRound,
         us_team_name: settings.usTeamName ?? "Us",
         them_team_name: settings.themTeamName ?? "Them",
+        spread_win: settings.spreadWin ?? false,
         status: winner ? "completed" : "in_progress",
         winner,
         completed_at: winner ? new Date().toISOString() : null,

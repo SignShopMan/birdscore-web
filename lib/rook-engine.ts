@@ -60,6 +60,14 @@ export interface GameSettings {
   // when this is set, usTeamName/themTeamName get derived from the pairs
   // ("Jon & Ryan") rather than typed manually.
   players: [string, string, string, string] | null;
+  // "Win by spread" house rule — some tables end the game the moment the
+  // point GAP between the two teams reaches winningScore, not just when
+  // either team's own total does (e.g. 380 vs -120 is a 500-point spread,
+  // ending a 500-point game even though neither raw total hit 500). Off by
+  // default — this changes when a game actually ends, so it needs to be an
+  // explicit per-game opt-in rather than silently changing behavior for
+  // every table. See checkGameOver.
+  spreadWin: boolean;
 }
 
 export const SEAT_LABELS = ["North", "East", "South", "West"] as const;
@@ -84,15 +92,23 @@ export function deriveTeamNamesFromPlayers(
  * component should call this instead of hardcoding "Us"/"Them" or showing
  * the raw Team value, so a custom team name actually shows up everywhere
  * instead of in some places and not others. */
-/** Score display that stays readable with negative totals — a plain
- * hyphen ("635-45", or worse "635--45") reads as garbage the moment
- * either side goes negative from a penalty adjustment, since the minus
- * sign collides with the separator. Spaced en dash never collides with a
- * minus sign regardless of sign on either side. The one place this
- * should be computed — HistoryScreen and GameDetailModal both use this
- * rather than each formatting scores their own way. */
+/** A single number for formatScore below — negative values in parens
+ * (accounting-style), e.g. -120 -> "(120)". The en dash separator alone
+ * already stops a negative number from reading as garbage next to a
+ * positive one ("635-45" / worse "635--45"), but it still leaves a minus
+ * sign sitting right next to the en dash ("250 – -120"), which reads as
+ * an odd double-negative even though it's not actually ambiguous. Parens
+ * remove the second dash-like glyph entirely. */
+function formatSignedScore(n: number): string {
+  return n < 0 ? `(${Math.abs(n)})` : `${n}`;
+}
+
+/** Score display that stays readable with negative totals. The one
+ * place this should be computed — HistoryScreen, GameDetailModal, and
+ * the per-round running-total display all use this rather than each
+ * formatting scores their own way. */
 export function formatScore(us: number, them: number): string {
-  return `${us} \u2013 ${them}`;
+  return `${formatSignedScore(us)} \u2013 ${formatSignedScore(them)}`;
 }
 
 /** Canonical trump colors, in the two formats different rendering
@@ -126,6 +142,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   usTeamName: "Us",
   themTeamName: "Them",
   players: null,
+  spreadWin: false,
 };
 
 /** Custom max-points input must be a positive multiple of 5, within a sane table-rules range. */
@@ -213,16 +230,25 @@ export function teamTotal(rounds: Round[], team: Team): number {
   return rounds.reduce((sum, r) => sum + (team === "US" ? r.usScore : r.themScore), 0);
 }
 
+/** spreadWin (default false) adds an alternate win condition on top of the
+ * normal "either team's own total reaches winningScore" check: the GAP
+ * between the two totals reaching winningScore also ends the game — e.g.
+ * 380 vs -120 is a 500-point spread, ending a 500-point game even though
+ * neither raw total hit 500. A non-zero spread means the totals can't be
+ * equal, so this can't introduce a new tie case beyond the one already
+ * handled below. */
 export function checkGameOver(
   rounds: Round[],
-  winningScore: number
+  winningScore: number,
+  spreadWin = false
 ): { over: boolean; winner: Team | null; usTotal: number; themTotal: number } {
   const usTotal = teamTotal(rounds, "US");
   const themTotal = teamTotal(rounds, "THEM");
   const usCrossed = usTotal >= winningScore;
   const themCrossed = themTotal >= winningScore;
+  const spreadCrossed = spreadWin && Math.abs(usTotal - themTotal) >= winningScore;
 
-  if (!usCrossed && !themCrossed) {
+  if (!usCrossed && !themCrossed && !spreadCrossed) {
     return { over: false, winner: null, usTotal, themTotal };
   }
 
@@ -247,6 +273,21 @@ export function checkGameOver(
   // the winner. That was the actual bug, not just mishandled ties.
   const winner: Team = usTotal > themTotal ? "US" : "THEM";
   return { over: true, winner, usTotal, themTotal };
+}
+
+/** The running us/them total immediately after each row in `rounds` —
+ * distinct from both the per-row score (that row's own delta, already on
+ * each Round) and the final game total (teamTotal above, just the last
+ * entry here). This is what answers "how far back were they at Round 3,"
+ * not visible from either of the other two numbers alone. */
+export function runningTotals(rounds: Round[]): { usTotal: number; themTotal: number }[] {
+  let usTotal = 0;
+  let themTotal = 0;
+  return rounds.map((r) => {
+    usTotal += r.usScore;
+    themTotal += r.themScore;
+    return { usTotal, themTotal };
+  });
 }
 
 /** Dealer rotates through 4 seats; only advances automatically once the first dealer is set. */

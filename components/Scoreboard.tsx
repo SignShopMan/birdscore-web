@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Round, Team, TrumpColor, GameSettings, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
+import {
+  Round,
+  Team,
+  TrumpColor,
+  GameSettings,
+  TRUMP_DOT_CLASS,
+  formatScore,
+  runningTotals,
+} from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
 import { EditRoundModal } from "./EditRoundModal";
 
@@ -42,6 +50,7 @@ function RoundRow({
   readOnly,
   usLabel,
   themLabel,
+  runningTotal,
   onUpdate,
   onDelete,
 }: {
@@ -50,6 +59,11 @@ function RoundRow({
   readOnly?: boolean;
   usLabel: string;
   themLabel: string;
+  // The cumulative total immediately after this round — distinct from
+  // round.usScore/themScore (that round's own delta, shown alongside this)
+  // and from the game's final total. This is what makes a comeback
+  // visible round-by-round instead of only at the very end.
+  runningTotal: { usTotal: number; themTotal: number };
   onUpdate: (rowId: string, updates: Partial<Round>) => void;
   onDelete: (rowId: string) => void;
 }) {
@@ -154,6 +168,9 @@ function RoundRow({
             </span>
           )}
         </div>
+        <p className="pl-7 font-body text-[10px] text-ink/50">
+          Total: {formatScore(runningTotal.usTotal, runningTotal.themTotal)}
+        </p>
         {confirmingDelete && (
           <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md bg-trump-red/10 p-2">
             <p className="font-body text-xs text-ink">
@@ -340,6 +357,7 @@ export function Scoreboard({
 }) {
   const listEndRef = useRef<HTMLLIElement>(null);
   const [addingAdjustment, setAddingAdjustment] = useState(false);
+  const totalsAfterEachRound = runningTotals(rounds);
 
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ block: "nearest" });
@@ -380,7 +398,7 @@ export function Scoreboard({
               <span className="w-10 text-right">Them</span>
               {!readOnly && <span className="ml-1 w-[92px] shrink-0" />}
             </li>
-            {rounds.map((r) => (
+            {rounds.map((r, i) => (
               <RoundRow
                 key={r.rowId}
                 round={r}
@@ -388,6 +406,7 @@ export function Scoreboard({
                 readOnly={readOnly}
                 usLabel={usLabel}
                 themLabel={themLabel}
+                runningTotal={totalsAfterEachRound[i]}
                 onUpdate={onUpdateRound}
                 onDelete={onDeleteRound}
               />

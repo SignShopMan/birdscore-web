@@ -53,6 +53,7 @@ export function SettingsScreen({
   const [usTeamName, setUsTeamName] = useState(current.usTeamName);
   const [themTeamName, setThemTeamName] = useState(current.themTeamName);
   const [useNamedPlayers, setUseNamedPlayers] = useState(current.players !== null);
+  const [spreadWin, setSpreadWin] = useState(current.spreadWin);
   const [playerNames, setPlayerNames] = useState<[string, string, string, string]>(
     current.players ?? ["", "", "", ""]
   );
@@ -82,6 +83,7 @@ export function SettingsScreen({
       usTeamName: derived?.usTeamName ?? (usTeamName.trim() || "Us"),
       themTeamName: derived?.themTeamName ?? (themTeamName.trim() || "Them"),
       players,
+      spreadWin,
     };
     updateSettings(settings);
     onDone();
@@ -123,6 +125,19 @@ export function SettingsScreen({
                 Enter a multiple of 5, at least {maxPoints} (this hand&rsquo;s max) and up to 5000.
               </p>
             )}
+            <label className="mt-3 flex items-start gap-2 font-body text-xs text-ink/75">
+              <input
+                type="checkbox"
+                checked={spreadWin}
+                onChange={(e) => setSpreadWin(e.target.checked)}
+                className="mt-0.5 accent-brass"
+              />
+              <span>
+                <span className="font-semibold text-ink">Win by spread</span> — also end the
+                game the moment the gap between the two totals reaches the winning score (e.g.
+                380 to -120 is a 500-point spread), not just when a team&rsquo;s own total does.
+              </span>
+            </label>
           </CollapsibleCard>
 
           <CollapsibleCard

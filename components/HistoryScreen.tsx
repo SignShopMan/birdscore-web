@@ -233,6 +233,7 @@ export function HistoryScreen({
             usTeamName: data.game.usTeamName,
             themTeamName: data.game.themTeamName,
             players: data.game.players,
+            spreadWin: data.game.spreadWin,
           },
           data.rounds,
           data.game.id

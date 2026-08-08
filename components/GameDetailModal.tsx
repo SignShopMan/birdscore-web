@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { canUseEnhancedStats } from "@/lib/entitlements";
-import { Round, TrumpColor, teamLabel, formatScore, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
+import { Round, TrumpColor, teamLabel, formatScore, runningTotals, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
 
 interface GameDetail {
   id: string;
@@ -120,59 +120,66 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
           )}
           {rounds && rounds.length > 0 && (
             <ul className="space-y-2">
-              {rounds.map((r, i) => {
-                const prev = i > 0 ? rounds[i - 1] : null;
-                const elapsedSeconds = prev
-                  ? (new Date(r.createdAt).getTime() - new Date(prev.createdAt).getTime()) / 1000
-                  : null;
-                return (
-                  <li key={r.rowId} className="rounded-md bg-paper-dim p-3">
-                    <div className="flex items-center justify-between">
-                      <p className="font-body text-xs font-semibold text-ink/70">
-                        {/* r.round is the number saved at scoring time (see
-                            roundsPlayed in rook-engine.ts), which correctly
-                            skips adjustment rows — the array index i does not,
-                            and would misnumber every round after the first
-                            adjustment in a game. */}
-                        {r.rowType === "Adj" ? r.label || "Adjustment" : `Round ${r.round}`}
-                        {elapsedSeconds != null && (
-                          <span className="ml-1.5 font-normal text-ink/40">
-                            {formatElapsed(elapsedSeconds)}
-                          </span>
-                        )}
+              {(() => {
+                const totalsAfterEachRound = runningTotals(rounds);
+                return rounds.map((r, i) => {
+                  const prev = i > 0 ? rounds[i - 1] : null;
+                  const elapsedSeconds = prev
+                    ? (new Date(r.createdAt).getTime() - new Date(prev.createdAt).getTime()) / 1000
+                    : null;
+                  const runningTotal = totalsAfterEachRound[i];
+                  return (
+                    <li key={r.rowId} className="rounded-md bg-paper-dim p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="font-body text-xs font-semibold text-ink/70">
+                          {/* r.round is the number saved at scoring time (see
+                              roundsPlayed in rook-engine.ts), which correctly
+                              skips adjustment rows — the array index i does not,
+                              and would misnumber every round after the first
+                              adjustment in a game. */}
+                          {r.rowType === "Adj" ? r.label || "Adjustment" : `Round ${r.round}`}
+                          {elapsedSeconds != null && (
+                            <span className="ml-1.5 font-normal text-ink/40">
+                              {formatElapsed(elapsedSeconds)}
+                            </span>
+                          )}
+                        </p>
+                        <p className="font-score tabular-score text-sm font-bold text-ink">
+                          {formatScore(r.usScore, r.themScore)}
+                        </p>
+                      </div>
+                      {r.rowType === "Round" && (
+                        <p className="mt-0.5 flex items-center gap-1.5 font-body text-xs text-ink/60">
+                          {r.trump && (
+                            <span
+                              className={`h-2 w-2 shrink-0 rounded-full ${TRUMP_DOT_CLASS[r.trump as TrumpColor]}`}
+                              aria-hidden
+                            />
+                          )}
+                          {r.bidTeam && teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
+                          bid {r.bid} &middot; {r.trump}
+                          {r.shootMoon ? " \u00B7 Moon" : ""}
+                        </p>
+                      )}
+                      {showEnhanced && game?.players && r.rowType === "Round" && (
+                        <p className="mt-1 font-body text-[11px] text-ink/50">
+                          {r.dealerIndex != null && (
+                            <>
+                              Dealer: {game.players[r.dealerIndex]} ({SEAT_LABELS[r.dealerIndex]})
+                            </>
+                          )}
+                          {r.rookHolderSeat != null && (
+                            <> &middot; Rook: {game.players[r.rookHolderSeat]}</>
+                          )}
+                        </p>
+                      )}
+                      <p className="mt-1 font-body text-[11px] text-ink/40">
+                        Total: {formatScore(runningTotal.usTotal, runningTotal.themTotal)}
                       </p>
-                      <p className="font-score tabular-score text-sm font-bold text-ink">
-                        {formatScore(r.usScore, r.themScore)}
-                      </p>
-                    </div>
-                    {r.rowType === "Round" && (
-                      <p className="mt-0.5 flex items-center gap-1.5 font-body text-xs text-ink/60">
-                        {r.trump && (
-                          <span
-                            className={`h-2 w-2 shrink-0 rounded-full ${TRUMP_DOT_CLASS[r.trump as TrumpColor]}`}
-                            aria-hidden
-                          />
-                        )}
-                        {r.bidTeam && teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
-                        bid {r.bid} &middot; {r.trump}
-                        {r.shootMoon ? " \u00B7 Moon" : ""}
-                      </p>
-                    )}
-                    {showEnhanced && game?.players && r.rowType === "Round" && (
-                      <p className="mt-1 font-body text-[11px] text-ink/50">
-                        {r.dealerIndex != null && (
-                          <>
-                            Dealer: {game.players[r.dealerIndex]} ({SEAT_LABELS[r.dealerIndex]})
-                          </>
-                        )}
-                        {r.rookHolderSeat != null && (
-                          <> &middot; Rook: {game.players[r.rookHolderSeat]}</>
-                        )}
-                      </p>
-                    )}
-                  </li>
-                );
-              })}
+                    </li>
+                  );
+                });
+              })()}
             </ul>
           )}
         </div>

@@ -9,6 +9,7 @@ import {
   roundsPlayed,
   teamLabel,
   formatScore,
+  runningTotals,
   DEFAULT_SETTINGS,
   Round,
 } from "../lib/rook-engine";
@@ -104,6 +105,28 @@ const bothCrossedThemAhead = checkGameOver(
 );
 assertEqual("both crossed, THEM actually ahead, THEM wins", bothCrossedThemAhead, { over: true, winner: "THEM", usTotal: 180, themTotal: 200 });
 
+// spreadWin: the exact reported scenario — 380 vs -120 is a 500-point
+// spread, ending a 500-point game even though neither raw total hit 500.
+const spreadRounds: Round[] = [
+  { rowId: "1", round: 1, trump: "Red", bidTeam: "US", bid: 130, dealerIndex: 0, shootMoon: false, usScore: 380, themScore: 0, rowType: "Round", createdAt: "" },
+  { rowId: "2", round: 1, usScore: 0, themScore: -120, rowType: "Adj", label: "Set", createdAt: "" },
+];
+assertEqual(
+  "spreadWin off (default): same totals, game continues",
+  checkGameOver(spreadRounds, 500),
+  { over: false, winner: null, usTotal: 380, themTotal: -120 }
+);
+assertEqual(
+  "spreadWin on: 500-point spread ends the game, higher total wins",
+  checkGameOver(spreadRounds, 500, true),
+  { over: true, winner: "US", usTotal: 380, themTotal: -120 }
+);
+assertEqual(
+  "spreadWin on but spread not yet reached: game continues",
+  checkGameOver([{ rowId: "1", round: 1, usScore: 100, themScore: 50, rowType: "Round", createdAt: "" }], 500, true),
+  { over: false, winner: null, usTotal: 100, themTotal: 50 }
+);
+
 // Bid options respect the max-points ceiling
 assertEqual("bid options capped at 150", bidOptions(150), [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150]);
 
@@ -175,9 +198,27 @@ assertEqual("Jon+Kevin games played", jonKevin?.gamesPlayed, 1);
 assertEqual("Jon+Kevin losses", jonKevin?.losses, 1);
 assertEqual("in-progress game excluded from stats (3 completed x 2 pairs each)", stats.reduce((n, s) => n + s.gamesPlayed, 0), 6);
 
-// formatScore: readable regardless of sign on either side
+// formatScore: readable regardless of sign on either side. Negative values
+// are parenthesized (accounting-style) rather than shown with a bare minus
+// sign next to the en dash separator \u2014 "250 \u2013 -120" reads as an odd
+// double-negative even though it isn't actually ambiguous.
 assertEqual("formatScore both positive", formatScore(500, 190), "500 \u2013 190");
-assertEqual("formatScore negative second stays unambiguous", formatScore(500, -190), "500 \u2013 -190");
-assertEqual("formatScore negative first", formatScore(-45, 635), "-45 \u2013 635");
+assertEqual("formatScore negative second uses parens, not a bare minus", formatScore(500, -190), "500 \u2013 (190)");
+assertEqual("formatScore negative first uses parens, not a bare minus", formatScore(-45, 635), "(45) \u2013 635");
+assertEqual("formatScore both negative", formatScore(-45, -190), "(45) \u2013 (190)");
+
+// runningTotals: the cumulative total after each round/adjustment, not the
+// per-round delta (already on each Round) and not just the final total \u2014
+// this is what lets History show "you were down by 200 at Round 3."
+const runningRounds: Round[] = [
+  { rowId: "1", round: 1, usScore: 90, themScore: 30, rowType: "Round", createdAt: "" },
+  { rowId: "2", round: 2, usScore: 20, themScore: 100, rowType: "Round", createdAt: "" },
+  { rowId: "3", round: 2, usScore: 0, themScore: -25, rowType: "Adj", label: "Renege", createdAt: "" },
+];
+assertEqual("runningTotals accumulates round-by-round, including adjustments", runningTotals(runningRounds), [
+  { usTotal: 90, themTotal: 30 },
+  { usTotal: 110, themTotal: 130 },
+  { usTotal: 110, themTotal: 105 },
+]);
 
 console.log("\nDone.");
