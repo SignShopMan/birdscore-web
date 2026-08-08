@@ -14,6 +14,15 @@ export interface DbRoundRow {
   label: string | null;
   dealer_player_id: string | null;
   rook_holder_player_id: string | null;
+  // The client already timestamps each round the instant it's scored (see
+  // game-store.ts's saveRound/addAdjustment). Carrying that through here
+  // explicitly matters because PATCH /api/games/[id] deletes and reinserts
+  // every round on every sync, not just the newest one — without an
+  // explicit created_at, every round would silently pick up the DB
+  // default (now()) on every resync, collapsing every round's real
+  // scored-at time down to "whenever the game last synced" and breaking
+  // the per-round elapsed-time display.
+  created_at: string;
 }
 
 /** Seat (0-3) -> that seat's players.id row, for resolving dealer_player_id /
@@ -42,6 +51,7 @@ export function roundsToDbRows(
       r.dealerIndex != null ? seatToPlayerId?.get(r.dealerIndex) ?? null : null,
     rook_holder_player_id:
       r.rookHolderSeat != null ? seatToPlayerId?.get(r.rookHolderSeat) ?? null : null,
+    created_at: r.createdAt,
   }));
 }
 

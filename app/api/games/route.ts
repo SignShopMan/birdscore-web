@@ -60,19 +60,7 @@ export async function POST(request: NextRequest) {
       themTeamName: string;
       players: [string, string, string, string] | null;
     };
-    rounds: Array<{
-      round: number;
-      rowType: "Round" | "Adj";
-      usScore: number;
-      themScore: number;
-      trump?: string;
-      bidTeam?: string;
-      bid?: number;
-      dealerIndex?: number;
-      shootMoon?: boolean;
-      rookHolderSeat?: number | null;
-      label?: string;
-    }>;
+    rounds: Parameters<typeof roundsToDbRows>[1];
     winner: "US" | "THEM" | null;
   };
 
@@ -169,7 +157,7 @@ export async function POST(request: NextRequest) {
     if (rounds.length > 0) {
       const { error: roundsError } = await supabase
         .from("rounds")
-        .insert(roundsToDbRows(game.id, rounds as never, seatToPlayerId));
+        .insert(roundsToDbRows(game.id, rounds, seatToPlayerId));
       if (roundsError) {
         return NextResponse.json({ error: roundsError.message }, { status: 500 });
       }

@@ -80,7 +80,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (winner !== undefined) {
     gameUpdate.status = winner ? "completed" : "in_progress";
     gameUpdate.winner = winner;
-    gameUpdate.completed_at = winner ? new Date().toISOString() : null;
+    if (winner) {
+      // Every round scored triggers a full resync (see GameSync.tsx), so
+      // this runs again on every subsequent sync of an already-completed
+      // game — a stale local session reconnecting days later, or a
+      // historical-round edit after the fact. Preserve the completed_at
+      // that's already there rather than bumping it to now() each time;
+      // only a genuinely first-time completion (no existing completed_at)
+      // gets stamped with the current time.
+      const { data: existingGame } = await supabase
+        .from("games")
+        .select("completed_at")
+        .eq("id", params.id)
+        .single();
+      gameUpdate.completed_at = existingGame?.completed_at ?? new Date().toISOString();
+    } else {
+      gameUpdate.completed_at = null;
+    }
   }
   if (settings) {
     gameUpdate.winning_score = settings.winningScore;

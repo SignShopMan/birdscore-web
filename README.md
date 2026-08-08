@@ -22,6 +22,50 @@ environment I built this in.
 
 ## Changelog
 
+**Follow-up on the Jon & Emy report — two more real bugs the screenshot
+surfaced, plus a way to actually delete completed test games**:
+
+- **Wrong "Finished" date, and every round showing "+0s"** — both traced to
+  the same underlying mistake, found by reading `PATCH /api/games/[id]`
+  rather than guessing from the symptom: it deletes and reinserts *every*
+  round on *every* sync (by design, for simplicity — see the comment in
+  that file), but the insert never carried the round's real
+  `createdAt` through, so each reinsert silently let Postgres default it to
+  `now()`. That collapses every round's timestamp to "whenever the game
+  last happened to sync," which is exactly why every round after the first
+  showed "+0s" elapsed. Fixed in `lib/game-persistence.ts` — `createdAt`
+  (already tracked correctly client-side since the moment each round is
+  scored, see `game-store.ts`) now flows through to the DB explicitly on
+  every insert instead of being discarded.
+- **The "Finished" date bug was separate**, not the same root cause: `PATCH`
+  also reset `games.completed_at` to `now()` on *every* sync where a winner
+  is present — including resyncing an already-completed game, which is
+  exactly what happens if a stale local session (old device, reopened PWA)
+  reconnects days later, or a historical round gets edited after the game
+  ended. Fixed by fetching the existing `completed_at` first and only
+  stamping a fresh one the first time a game actually completes.
+- **Also caught while fixing this**: `POST /api/games`'s request-body type
+  for `rounds` was a hand-written, incomplete duplicate of the real `Round`
+  type (missing `createdAt`, among other fields) — papered over with an
+  `as never` cast that suppressed the type checker entirely rather than
+  catching the mismatch. Replaced with the same
+  `Parameters<typeof roundsToDbRows>[1]` type the sibling PATCH route
+  already used correctly, so this class of drift can't slip through
+  silently again.
+- **No way to delete a completed test game** — the Cancel button (the
+  required first step before the existing permanent-delete flow) only ever
+  showed for `in_progress` games. The server-side cancel endpoint already
+  worked on any status; the UI just never exposed it for `completed` games,
+  so junk/test data had no path to removal once a game finished. Cancel now
+  shows for completed games too, Resume still doesn't (that only makes
+  sense for a game still in progress).
+- **The specific duplicate Jon & Emy rows from before the earlier fix are
+  still there** — that fix (see below) only prevents *new* duplicates; it
+  was never going to retroactively merge old ones. With Cancel now working
+  on completed games, the existing Cancel → Delete flow in History can
+  actually remove them (and any other test data) once you've confirmed
+  which row is the real one via Game Detail.
+
 **Duplicate games in History (the Jon & Emy report), and two AI-sounding lines
 in the app's copy**:
 

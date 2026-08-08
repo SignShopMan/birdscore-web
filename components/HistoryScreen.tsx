@@ -307,24 +307,28 @@ export function HistoryScreen({
                 </button>
                 <div className="flex shrink-0 gap-1.5">
                   {g.status === "in_progress" && (
-                    <>
-                      <button
-                        onClick={() => resume(g.id)}
-                        disabled={resumingId === g.id}
-                        className="rounded-full bg-ink px-3 py-1.5 font-body text-xs font-semibold text-paper disabled:opacity-50"
-                      >
-                        {resumingId === g.id ? "Loading\u2026" : "Resume"}
-                      </button>
-                      {confirmingCancelId !== g.id && (
-                        <button
-                          onClick={() => setConfirmingCancelId(g.id)}
-                          className="rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </>
+                    <button
+                      onClick={() => resume(g.id)}
+                      disabled={resumingId === g.id}
+                      className="rounded-full bg-ink px-3 py-1.5 font-body text-xs font-semibold text-paper disabled:opacity-50"
+                    >
+                      {resumingId === g.id ? "Loading\u2026" : "Resume"}
+                    </button>
                   )}
+                  {/* Cancel (the required first step before Delete below) used
+                      to only show for in-progress games \u2014 completed test/junk
+                      games had no path to removal at all. The PATCH cancel
+                      endpoint already works on any status; this just exposes
+                      it for completed games too. */}
+                  {(g.status === "in_progress" || g.status === "completed") &&
+                    confirmingCancelId !== g.id && (
+                      <button
+                        onClick={() => setConfirmingCancelId(g.id)}
+                        className="rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
+                      >
+                        Cancel
+                      </button>
+                    )}
                   {g.status === "cancelled" && confirmingDeleteId !== g.id && (
                     <button
                       onClick={() => setConfirmingDeleteId(g.id)}
