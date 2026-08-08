@@ -22,6 +22,34 @@ environment I built this in.
 
 ## Changelog
 
+**History swipe actions: split back into Cancel and Delete, from a
+real "why are my deleted games still here" screenshot**:
+
+- The previous swipe redesign collapsed Cancel-then-Delete into one gesture
+  — swipe, tap trash, one confirm, and it'd cancel-then-delete behind the
+  scenes if a row wasn't already cancelled. That chaining had a real gap:
+  if the delete half failed for any reason (or the two requests just
+  raced with a page navigation), the row was left stranded as
+  "Cancelled" — permanently, with the drawer still showing a trash icon
+  that looked like it should finish the job but wouldn't, since deleting
+  an already-cancelled row again is a no-op if it silently failed the
+  first time. That's exactly what showed up: several "Cancelled" rows
+  that looked mid-deletion but were actually just stuck.
+- Split back into two genuinely different single-request actions in
+  `HistoryScreen.tsx`, matching what they actually mean: a not-yet-
+  cancelled game's swipe drawer now reveals **Cancel** (a distinct
+  "no-entry" icon, brass background, one PATCH, row stays visible as
+  "Cancelled") — this is the "stop this abandoned in-progress game from
+  cluttering the list" action. An already-cancelled game's drawer reveals
+  **Delete** (trash icon, red, one DELETE, row disappears immediately and
+  permanently) — no chaining, no in-between state either action can get
+  stuck in.
+- Doesn't touch the DB rows already stuck from before this fix — same as
+  before, use the History screen once this deploys: swipe one of the
+  still-"Cancelled" rows, the drawer now correctly offers Delete (not
+  Cancel again, since it's already cancelled), and that single DELETE
+  call actually removes it.
+
 **"Win by spread" house rule, negative-score readability, and a running
 total per round** (from a real example: Jon & Kevin 380, Jared & Ryan -120
 — a 500-point spread on a 500-point game, which the old logic couldn't see

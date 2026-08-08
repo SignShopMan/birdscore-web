@@ -50,16 +50,47 @@ function TrashIcon() {
   );
 }
 
+// Deliberately a different glyph from TrashIcon — Cancel (soft, keeps the
+// row around as "Cancelled") and Delete (permanent, only ever shown once a
+// row is already cancelled) are different severities of action and should
+// look different at a glance, not just differ by which screen you're on.
+function BanIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.5 5.5l13 13" />
+    </svg>
+  );
+}
+
 // Reveal width for the delete drawer behind each row.
 const SWIPE_ACTION_WIDTH = 72;
 
-/** One History row, dragged over a red trash-icon drawer instead of the old
- * always-visible "Cancel"/"Delete" text buttons — those read as genuinely
- * confusing on a completed game ("Cancel" implies stopping something
- * in-progress), and cluttered every row all the time on what's installed as
- * a home-screen app, where a native swipe-to-delete pattern is the more
+/** One History row, dragged over a swipe-revealed action drawer instead of
+ * the old always-visible "Cancel"/"Delete" text buttons — those read as
+ * genuinely confusing on a completed game ("Cancel" implies stopping
+ * something in-progress), and cluttered every row all the time on what's
+ * installed as a home-screen app, where a native swipe pattern is the more
  * familiar affordance. Only one row's drawer is open at a time (isOpen is
- * controlled by the parent), same as Mail/Reminders-style lists. */
+ * controlled by the parent), same as Mail/Reminders-style lists.
+ *
+ * The revealed action is genuinely different depending on status, not one
+ * gesture doing double duty: a not-yet-cancelled game reveals Cancel (soft
+ * — flips status, keeps the row around, one API call), an already-cancelled
+ * one reveals Delete (permanent — trash icon, red, one API call). Each is a
+ * single atomic request now, not two chained together behind one tap —
+ * that chaining used to leave a real gap where Cancel could succeed and
+ * Delete fail, stranding a "Cancelled" row that looked like a stuck
+ * in-progress delete. */
 function HistoryRow({
   game: g,
   isOpen,
@@ -67,7 +98,7 @@ function HistoryRow({
   onOpenDetail,
   onResume,
   resuming,
-  onRemove,
+  onAction,
   busy,
 }: {
   game: SavedGame;
@@ -76,9 +107,10 @@ function HistoryRow({
   onOpenDetail: () => void;
   onResume: () => void;
   resuming: boolean;
-  onRemove: () => void;
+  onAction: () => void;
   busy: boolean;
 }) {
+  const isCancelled = g.status === "cancelled";
   const [dragX, setDragX] = useState<number | null>(null);
   const dragRef = useRef<{ startX: number; startY: number; base: number; axis: "h" | "v" | null } | null>(
     null
@@ -123,13 +155,15 @@ function HistoryRow({
   return (
     <div className="relative overflow-hidden rounded-md">
       <button
-        onClick={onRemove}
+        onClick={onAction}
         disabled={busy}
-        aria-label={g.status === "cancelled" ? "Permanently delete game" : "Delete game"}
-        className="absolute inset-y-0 right-0 flex items-center justify-center bg-trump-red text-white disabled:opacity-50"
+        aria-label={isCancelled ? "Permanently delete game" : "Cancel game"}
+        className={`absolute inset-y-0 right-0 flex items-center justify-center disabled:opacity-50 ${
+          isCancelled ? "bg-trump-red text-white" : "bg-brass text-ink"
+        }`}
         style={{ width: SWIPE_ACTION_WIDTH }}
       >
-        <TrashIcon />
+        {isCancelled ? <TrashIcon /> : <BanIcon />}
       </button>
       <div
         onPointerDown={onPointerDown}
@@ -142,7 +176,7 @@ function HistoryRow({
           touchAction: "pan-y",
         }}
         className={`relative flex items-center justify-between gap-2 bg-paper px-2 py-2.5 ${
-          g.status === "cancelled" ? "opacity-50" : ""
+          isCancelled ? "opacity-50" : ""
         }`}
       >
         <button
@@ -152,7 +186,7 @@ function HistoryRow({
           <p className="truncate font-body text-sm font-semibold text-ink">
             {g.status === "completed"
               ? `${g.winner === "US" ? g.usTeamName : g.themTeamName} won`
-              : g.status === "cancelled"
+              : isCancelled
               ? "Cancelled"
               : "In progress"}{" "}
             <span className="font-score tabular-score font-normal text-ink/70">
@@ -245,30 +279,46 @@ export function HistoryScreen({
     }
   };
 
-  // Collapses the old two-step Cancel-then-Delete flow into one gesture:
-  // swipe reveals the trash icon, tapping it asks a single native confirm,
-  // then does whatever it actually takes server-side (cancel first if the
-  // game isn't already cancelled — the DELETE endpoint refuses anything
-  // else — then permanently delete). The swipe + explicit tap + confirm is
-  // the safety rail now, not a separate visible banner per row.
-  const removeGame = async (g: SavedGame) => {
-    const verb = g.status === "cancelled" ? "Permanently delete" : "Delete";
-    if (!window.confirm(`${verb} this game? This can't be undone.`)) {
+  // Swipe reveals one of two genuinely different actions depending on
+  // status — Cancel (soft, single PATCH, row stays around as "Cancelled")
+  // or Delete (permanent, single DELETE, only ever offered once a row is
+  // already cancelled). Deliberately NOT chained into one call anymore: an
+  // earlier version fired cancel-then-delete behind a single tap, and any
+  // failure on the delete half (or just the network dropping between the
+  // two requests) stranded the row as "Cancelled" forever with no obvious
+  // way back in — exactly the "why are my deleted games still here" bug.
+  // Each of these is now a single atomic request; there's no in-between
+  // state either one can get stuck in.
+  const cancelGame = async (g: SavedGame) => {
+    if (!window.confirm("Cancel this game? This can't be undone.")) {
       setOpenSwipeId(null);
       return;
     }
     setRemovingId(g.id);
     try {
-      if (g.status !== "cancelled") {
-        const cancelRes = await fetch(`/api/games/${g.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cancel: true }),
-        });
-        if (!cancelRes.ok) return;
+      const res = await fetch(`/api/games/${g.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cancel: true }),
+      });
+      if (res.ok) {
+        setGames((prev) => prev?.map((x) => (x.id === g.id ? { ...x, status: "cancelled" } : x)) ?? null);
       }
-      const deleteRes = await fetch(`/api/games/${g.id}`, { method: "DELETE" });
-      if (deleteRes.ok) {
+    } finally {
+      setRemovingId(null);
+      setOpenSwipeId(null);
+    }
+  };
+
+  const deleteGame = async (g: SavedGame) => {
+    if (!window.confirm("Permanently delete this game? This can't be undone.")) {
+      setOpenSwipeId(null);
+      return;
+    }
+    setRemovingId(g.id);
+    try {
+      const res = await fetch(`/api/games/${g.id}`, { method: "DELETE" });
+      if (res.ok) {
         setGames((prev) => prev?.filter((x) => x.id !== g.id) ?? null);
       }
     } finally {
@@ -441,7 +491,7 @@ export function HistoryScreen({
                 onOpenDetail={() => setDetailGameId(g.id)}
                 onResume={() => resume(g.id)}
                 resuming={resumingId === g.id}
-                onRemove={() => removeGame(g)}
+                onAction={() => (g.status === "cancelled" ? deleteGame(g) : cancelGame(g))}
                 busy={removingId === g.id}
               />
             ))}
