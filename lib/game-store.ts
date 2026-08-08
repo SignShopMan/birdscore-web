@@ -33,12 +33,23 @@ interface GameState {
   gameOver: boolean;
   winner: Team | null;
 
-  // Which Supabase games.id (if any) this local game maps to — set once a
-  // signed-in, entitled account's game gets its first sync. Null means
-  // either not entitled/signed-in, or not synced yet. See GameSync.tsx for
-  // the actual sync orchestration; the store just tracks the mapping.
+  // Which Supabase games.id (if any) this local game maps to. Generated
+  // client-side up front (startGame) rather than waiting for the server to
+  // assign one — see gameCreated below for why.
   currentGameId: string | null;
   setCurrentGameId: (id: string | null) => void;
+  // False until the create request (POST /api/games, using currentGameId as
+  // the row's id) has actually succeeded. Kept separate from currentGameId
+  // being non-null on purpose: currentGameId is assigned optimistically the
+  // instant a game starts, before any network call, so GameSync knows
+  // whether it still needs to create the row or can go straight to PATCH.
+  // Without this split, an interrupted first sync (app backgrounded/killed
+  // mid-request, so the response never arrives) left currentGameId null
+  // forever, and the next sync attempt created a second row for the same
+  // game — the duplicate-game-in-History bug this fixes. Retrying the
+  // create with the same client-generated id is idempotent server-side.
+  gameCreated: boolean;
+  setGameCreated: (v: boolean) => void;
   // Set alongside currentGameId when a pro-tier host's game first syncs —
   // null for everyone else. Displayed as the "invite" code/link.
   joinCode: string | null;
@@ -108,6 +119,8 @@ export const useGameStore = create<GameState>()(
       winner: null,
       currentGameId: null,
       setCurrentGameId: (id) => set({ currentGameId: id }),
+      gameCreated: false,
+      setGameCreated: (v) => set({ gameCreated: v }),
       joinCode: null,
       setJoinCode: (code) => set({ joinCode: code }),
       viewerCount: 0,
@@ -129,7 +142,9 @@ export const useGameStore = create<GameState>()(
           dealerIndex: 0,
           gameOver: false,
           winner: null,
-          currentGameId: null,
+          currentGameId:
+            typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : null,
+          gameCreated: false,
           joinCode: null,
           syncStatus: "idle",
           gameActive: true,
@@ -147,6 +162,7 @@ export const useGameStore = create<GameState>()(
           gameOver: false,
           winner: null,
           currentGameId: null,
+          gameCreated: false,
           joinCode: null,
           syncStatus: "idle",
           gameActive: false,
@@ -265,6 +281,7 @@ export const useGameStore = create<GameState>()(
             gameOver: over,
             winner,
             currentGameId: gameId,
+            gameCreated: true,
             syncStatus: "synced",
             gameActive: true,
           };
@@ -286,6 +303,7 @@ export const useGameStore = create<GameState>()(
         gameOver: state.gameOver,
         winner: state.winner,
         currentGameId: state.currentGameId,
+        gameCreated: state.gameCreated,
         joinCode: state.joinCode,
         gameActive: state.gameActive,
       }),

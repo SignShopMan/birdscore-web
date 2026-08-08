@@ -37,6 +37,7 @@ export default function Home() {
     bidTeam,
     shootMoon,
     currentGameId,
+    gameCreated,
     updateRound,
     deleteRound,
     addAdjustment,
@@ -100,7 +101,12 @@ export default function Home() {
   const confirmAbandonAndStartNew = async () => {
     setAbandoning(true);
     try {
-      if (currentGameId) {
+      // gameCreated, not just currentGameId — currentGameId is now assigned
+      // client-side the instant a game starts (see game-store.ts), so it's
+      // set for every game including free-tier/anonymous ones that were
+      // never synced. Only a game that's actually landed server-side needs
+      // (or can receive) a cancel PATCH.
+      if (gameCreated && currentGameId) {
         await fetch(`/api/games/${currentGameId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

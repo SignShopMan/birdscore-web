@@ -57,12 +57,11 @@ export function ResourcesScreen({
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">Resources</h1>
       <p className="mt-2 font-body text-sm text-parchment/75">
-        Rook rules genuinely vary table to table — different win targets, different penalty
-        amounts, sometimes different deck sizes. What&rsquo;s below is the common ground across
-        most published rule sets, not one specific version. Where something varies, BirdScore
-        gives you the tools to play it your way rather than forcing a single answer: custom
-        winning scores and hand sizes in Settings, and the Penalty/Bonus button on the
-        Scoreboard for anything below that isn&rsquo;t built in directly.
+        Rook rules vary table to table — different win targets, different penalty amounts,
+        sometimes different deck sizes. What&rsquo;s below is the common ground across most
+        published rule sets. Where your table plays it differently, use custom winning scores
+        and hand sizes in Settings, and the Penalty/Bonus button on the Scoreboard for anything
+        below that isn&rsquo;t built in directly.
       </p>
 
       <div className="mt-8 space-y-6 font-body text-sm leading-relaxed text-parchment/85">

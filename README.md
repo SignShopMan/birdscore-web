@@ -22,6 +22,64 @@ environment I built this in.
 
 ## Changelog
 
+**Duplicate games in History (the Jon & Emy report), and two AI-sounding lines
+in the app's copy**:
+
+- **Root cause of the duplicate**, found by reading `GameSync.tsx` and
+  `game-store.ts` rather than guessing: the first sync of a new game relied
+  entirely on the server's response to learn the new game's id
+  (`currentGameId` started `null`, only set once `POST /api/games`
+  returned). If that response never arrived client-side — app backgrounded
+  or killed mid-request, connection dropped, anything that interrupts a
+  fetch already sent from a phone at the table — `currentGameId` stayed
+  `null` forever, and the next sync attempt (next round scored, or app
+  reopened) had no way to know a row might already exist, so it created a
+  **second** game row for the same actual match. That's exactly what two
+  History entries for the same players/scores looks like.
+- **Fix**: `currentGameId` is now a UUID generated client-side the instant
+  Start Game is pressed, not assigned by the server — a new `gameCreated`
+  boolean (both in `game-store.ts`, both persisted) tracks whether that id
+  has actually landed server-side yet. `POST /api/games` now accepts that
+  id and is genuinely idempotent: if a row with it already exists for the
+  signed-in owner, it's reused instead of inserted again, and the players/
+  rounds insert that follows creation is skipped on that reused path too
+  (skipping that was the part easy to miss — without it, retrying would've
+  swapped one duplication bug for a quieter one, duplicate players/rounds
+  rows under a single game). A retried create now always resolves to one
+  row, however many times it's retried.
+- **A second, smaller bug this surfaced while auditing every read of
+  `currentGameId`**: `app/page.tsx`'s "New Game" abandon flow used to check
+  `if (currentGameId)` to decide whether to PATCH-cancel the old game
+  server-side. Now that `currentGameId` is assigned to *every* game
+  (including free-tier/anonymous ones that never sync), that check no
+  longer means "this game exists on the server" — switched to checking the
+  new `gameCreated` flag instead, restoring the original behavior.
+- **This fix is forward-looking, not retroactive** — it stops new
+  duplicates from being created; it doesn't merge or delete the Jon & Emy
+  rows already sitting in Supabase from before this fix. Query your own
+  games to find them (Supabase SQL editor):
+  ```sql
+  select id, created_at, status, us_team_name, them_team_name,
+         (select count(*) from rounds r where r.game_id = g.id) as round_count
+  from games g
+  where owner_id = '<your user id, from the profiles or auth.users table>'
+  order by created_at desc;
+  ```
+  Look for two rows with near-identical `created_at` timestamps and the
+  same players — the one with fewer rounds is almost certainly the
+  orphaned duplicate. The existing "cancel, then permanently delete" flow
+  in History handles removing it once identified; deliberately not doing
+  that deletion from here since it's real historical data and worth a
+  human glance before anything's removed.
+- **Separately, two lines of copy that read as AI-generated meta-commentary
+  instead of normal product copy**, both fixed: the Privacy Policy's opener
+  ("This page describes, specifically and honestly... not a generic
+  template") and the Resources page's intro ("Rook rules genuinely vary...
+  not one specific version"). Swept the rest of the user-facing copy (FAQ,
+  Terms, Resources body, Privacy body) for the same pattern and didn't find
+  more — what's left in that style lives only in code comments, which
+  aren't user-visible.
+
 **Dev Stats: in-app key setup, and actual per-person detail**:
 
 - **"Editable fields" needed one honest caveat before building**: a

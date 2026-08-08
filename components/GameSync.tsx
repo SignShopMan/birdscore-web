@@ -27,6 +27,20 @@ import { canSaveHistory } from "@/lib/entitlements";
  * the next change re-sends the complete up-to-date state anyway, so
  * nothing is permanently lost, just possibly delayed by one round in the
  * rare overlap case.
+ *
+ * The create step specifically (first sync of a new game) is idempotent by
+ * construction: currentGameId is a UUID generated client-side the instant
+ * Start Game is pressed (see game-store.ts's startGame), not assigned by
+ * the server on response. gameCreated tracks whether that id has actually
+ * been persisted yet. If the create request never completes client-side
+ * (app backgrounded or killed mid-request, connection drops before the
+ * response arrives), gameCreated stays false and currentGameId is
+ * unchanged, so the next sync attempt retries POST with that same id —
+ * the server recognizes it already exists and returns it rather than
+ * inserting a second row. Previously currentGameId itself started null and
+ * was only set from the server's response, so a lost response meant the
+ * next attempt had no way to know a row might already exist and created a
+ * duplicate — the source of the duplicate-game-in-History bug.
  */
 export function GameSync() {
   const {
@@ -37,7 +51,8 @@ export function GameSync() {
     gameOver,
     winner,
     currentGameId,
-    setCurrentGameId,
+    gameCreated,
+    setGameCreated,
     setJoinCode,
     setSyncStatus,
   } = useGameStore();
@@ -46,7 +61,7 @@ export function GameSync() {
 
   useEffect(() => {
     if (!hasHydrated || !userId || !canSaveHistory(tier)) return;
-    if (!gameActive) return;
+    if (!gameActive || !currentGameId) return;
     if (syncingRef.current) return;
 
     syncingRef.current = true;
@@ -54,15 +69,20 @@ export function GameSync() {
 
     const run = async () => {
       try {
-        if (!currentGameId) {
+        if (!gameCreated) {
           const res = await fetch("/api/games", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ settings, rounds, winner: gameOver ? winner : null }),
+            body: JSON.stringify({
+              id: currentGameId,
+              settings,
+              rounds,
+              winner: gameOver ? winner : null,
+            }),
           });
           if (!res.ok) throw new Error("create failed");
           const data = await res.json();
-          setCurrentGameId(data.gameId);
+          setGameCreated(true);
           if (data.joinCode) setJoinCode(data.joinCode);
         } else {
           const res = await fetch(`/api/games/${currentGameId}`, {
@@ -80,11 +100,12 @@ export function GameSync() {
       }
     };
     run();
-    // setCurrentGameId/setSyncStatus are stable — every other dependency is
-    // a real trigger, including settings (team names/rules can be edited
-    // mid-game via Settings "edit" mode and need to reach the saved copy).
+    // setGameCreated/setSyncStatus/setJoinCode are stable — every other
+    // dependency is a real trigger, including settings (team names/rules
+    // can be edited mid-game via Settings "edit" mode and need to reach
+    // the saved copy).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated, userId, tier, gameActive, rounds, gameOver, winner, currentGameId, settings]);
+  }, [hasHydrated, userId, tier, gameActive, rounds, gameOver, winner, currentGameId, gameCreated, settings]);
 
   return null;
 }

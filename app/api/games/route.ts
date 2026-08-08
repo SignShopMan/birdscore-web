@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { settings, rounds, winner } = body as {
+  const { id, settings, rounds, winner } = body as {
+    id?: string;
     settings: {
       winningScore: number;
       maxPointsPerRound: number;
@@ -81,12 +82,37 @@ export async function POST(request: NextRequest) {
   const isHost = canHostRealtime(tier);
   let game: { id: string; join_code: string | null } | null = null;
   let gameError: { message: string } | null = null;
+  // True when `game` was found rather than freshly inserted this call —
+  // players/rounds below must be skipped in that case, since a prior
+  // attempt (or an in-flight concurrent one) already created them for this
+  // same id and re-running would duplicate players/rounds rows instead of
+  // duplicating the game row.
+  let wasExisting = false;
+
+  // `id` is a client-generated UUID (see GameSync.tsx) — this request may
+  // be a retry of a create whose earlier response never reached the client
+  // (app backgrounded/killed mid-request). If a row with this id already
+  // exists for this owner, reuse it instead of inserting a duplicate row;
+  // rounds/settings will catch up via the next PATCH either way.
+  if (id) {
+    const { data: existing } = await supabase
+      .from("games")
+      .select("id, join_code")
+      .eq("id", id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (existing) {
+      game = existing;
+      wasExisting = true;
+    }
+  }
 
   for (let attempt = 0; attempt < 3 && !game; attempt++) {
     const joinCode = isHost ? generateJoinCode() : null;
     const { data, error } = await supabase
       .from("games")
       .insert({
+        ...(id ? { id } : {}),
         owner_id: user.id,
         winning_score: settings.winningScore,
         max_points_per_round: settings.maxPointsPerRound,
@@ -103,8 +129,25 @@ export async function POST(request: NextRequest) {
 
     if (data) {
       game = data;
-    } else if (error?.code === "23505" && attempt < 2) {
-      continue; // join_code collision (~1 in a billion) — regenerate and retry
+    } else if (error?.code === "23505") {
+      // Could be a join_code collision (regenerate and retry) or a genuine
+      // race on `id` itself (another in-flight retry already inserted it) —
+      // check which before assuming.
+      if (id) {
+        const { data: existing } = await supabase
+          .from("games")
+          .select("id, join_code")
+          .eq("id", id)
+          .eq("owner_id", user.id)
+          .maybeSingle();
+        if (existing) {
+          game = existing;
+          wasExisting = true;
+          continue;
+        }
+      }
+      if (attempt < 2) continue; // join_code collision (~1 in a billion) — regenerate and retry
+      gameError = error;
     } else {
       gameError = error;
     }
@@ -114,16 +157,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: gameError?.message ?? "Failed to save game" }, { status: 500 });
   }
 
-  const seatToPlayerId = settings.players
-    ? await createPlayers(supabase, game.id, settings.players)
-    : undefined;
+  // Skip on a reused existing row — a prior attempt already created these
+  // (or is doing so concurrently), and re-running would insert duplicate
+  // players/rounds for the same game_id. The next PATCH naturally carries
+  // forward whatever rounds/settings changed since.
+  if (!wasExisting) {
+    const seatToPlayerId = settings.players
+      ? await createPlayers(supabase, game.id, settings.players)
+      : undefined;
 
-  if (rounds.length > 0) {
-    const { error: roundsError } = await supabase
-      .from("rounds")
-      .insert(roundsToDbRows(game.id, rounds as never, seatToPlayerId));
-    if (roundsError) {
-      return NextResponse.json({ error: roundsError.message }, { status: 500 });
+    if (rounds.length > 0) {
+      const { error: roundsError } = await supabase
+        .from("rounds")
+        .insert(roundsToDbRows(game.id, rounds as never, seatToPlayerId));
+      if (roundsError) {
+        return NextResponse.json({ error: roundsError.message }, { status: 500 });
+      }
     }
   }
 
