@@ -22,6 +22,59 @@ environment I built this in.
 
 ## Changelog
 
+**Signal when a new version is available on the home-screen app**:
+
+- The real cause isn't stale caching to fix — there's no service worker in
+  this app at all yet (see manifest.ts), so there's no cache to bust.
+  Reopening a standalone/home-screen PWA on iOS or Android just resumes a
+  suspended webview showing whatever JS was already loaded far more often
+  than it does a real network fetch, and nothing in the platform lets an
+  app force a fresh load on every reopen.
+- Detect the drift and ask instead: new `GET /api/version` (a serverless
+  function, so Vercel always routes it to whatever's actually live right
+  now, `Cache-Control: no-store`) versus the existing `APP_VERSION` from
+  `lib/version.ts` — that one's frozen into the client bundle at build
+  time, so comparing the two tells you whether the copy currently running
+  in front of you has actually fallen behind. New `UpdateChecker.tsx`,
+  mounted globally in `layout.tsx`, checks on mount, on `visibilitychange`
+  (the exact moment of reopening from the home screen) and `focus`, plus a
+  5-minute fallback interval for a tab left open and foregrounded the whole
+  time. A mismatch shows a small "tap to reload" banner; the reload is a
+  real `window.location.reload()`, a genuine network fetch, not a soft
+  state reset.
+- Deliberately skipped building a service worker for this — that's real
+  scope (an actual caching strategy, offline support) the README has
+  flagged as separate work since the PWA manifest first shipped; this
+  fixes the specific "doesn't refresh" complaint without taking that on.
+
+**History row actions: swipe-to-delete instead of always-visible Cancel/Delete
+buttons** (from a screenshot — "Cancel" on a finished game read as genuinely
+confusing, and it's installed as a home-screen app where a native swipe
+pattern is the more familiar affordance anyway):
+
+- New `HistoryRow` in `HistoryScreen.tsx` — each row now drags left over a
+  red trash-icon drawer (pointer events, so it works for touch and mouse;
+  only one row's drawer open at a time). Vertical scrolling still works
+  normally — the gesture only commits to horizontal once real horizontal
+  movement is detected, so a vertical scroll that starts on a row isn't
+  swallowed.
+- Collapses the old two-step Cancel-then-Delete confirmation flow (a
+  separate inline banner per action, cluttering every row at rest) into one
+  gesture: swipe, tap the revealed icon, a single native `confirm()`. That
+  swipe + deliberate tap + confirm is the safety rail now, matching how
+  Mail/Reminders-style swipe actions work rather than needing a second
+  custom-styled banner. Server-side is unchanged — still cancels first if
+  the game isn't already cancelled (the DELETE endpoint still refuses
+  anything else), then permanently deletes, chained behind that one
+  confirm.
+- Resume stays a normal always-visible button on in-progress rows — it's
+  not destructive, no reason to bury it behind a gesture.
+- Typechecks clean and the contrast script still passes; the actual swipe
+  feel needs a real touchscreen to judge — couldn't verify gesture behavior
+  from this sandbox (the dev server's CSP blocks the eval Next's dev-mode
+  HMR needs, so the client bundle doesn't even hydrate here; production
+  builds don't hit this).
+
 **Follow-up on the Jon & Emy report — two more real bugs the screenshot
 surfaced, plus a way to actually delete completed test games**:
 

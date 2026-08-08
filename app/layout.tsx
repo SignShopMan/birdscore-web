@@ -5,6 +5,7 @@ import { AuthInit } from "@/components/AuthInit";
 import { PendingSaveSync } from "@/components/PendingSaveSync";
 import { GameSync } from "@/components/GameSync";
 import { RealtimeHost } from "@/components/RealtimeHost";
+import { UpdateChecker } from "@/components/UpdateChecker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PendingSaveSync />
         <GameSync />
         <RealtimeHost />
+        <UpdateChecker />
         {children}
       </body>
     </html>

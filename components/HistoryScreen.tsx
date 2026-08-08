@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useGameStore } from "@/lib/game-store";
 import { formatScore } from "@/lib/rook-engine";
@@ -28,6 +29,154 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+// Reveal width for the delete drawer behind each row.
+const SWIPE_ACTION_WIDTH = 72;
+
+/** One History row, dragged over a red trash-icon drawer instead of the old
+ * always-visible "Cancel"/"Delete" text buttons — those read as genuinely
+ * confusing on a completed game ("Cancel" implies stopping something
+ * in-progress), and cluttered every row all the time on what's installed as
+ * a home-screen app, where a native swipe-to-delete pattern is the more
+ * familiar affordance. Only one row's drawer is open at a time (isOpen is
+ * controlled by the parent), same as Mail/Reminders-style lists. */
+function HistoryRow({
+  game: g,
+  isOpen,
+  onOpenChange,
+  onOpenDetail,
+  onResume,
+  resuming,
+  onRemove,
+  busy,
+}: {
+  game: SavedGame;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenDetail: () => void;
+  onResume: () => void;
+  resuming: boolean;
+  onRemove: () => void;
+  busy: boolean;
+}) {
+  const [dragX, setDragX] = useState<number | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; base: number; axis: "h" | "v" | null } | null>(
+    null
+  );
+
+  const restingX = isOpen ? -SWIPE_ACTION_WIDTH : 0;
+  const x = dragX ?? restingX;
+
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    dragRef.current = { startX: e.clientX, startY: e.clientY, base: restingX, axis: null };
+  };
+
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const deltaX = e.clientX - d.startX;
+    const deltaY = e.clientY - d.startY;
+    if (d.axis === null) {
+      // Wait for real movement before committing to horizontal (swipe) vs
+      // vertical (let the page scroll normally) — otherwise a vertical
+      // scroll gesture that starts on a row would get eaten immediately.
+      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+      d.axis = Math.abs(deltaX) > Math.abs(deltaY) ? "h" : "v";
+    }
+    if (d.axis === "v") return;
+    e.preventDefault();
+    setDragX(Math.min(0, Math.max(-SWIPE_ACTION_WIDTH, d.base + deltaX)));
+  };
+
+  const endDrag = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d || d.axis !== "h") {
+      setDragX(null);
+      return;
+    }
+    const current = dragX ?? restingX;
+    onOpenChange(current < -SWIPE_ACTION_WIDTH / 2);
+    setDragX(null);
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-md">
+      <button
+        onClick={onRemove}
+        disabled={busy}
+        aria-label={g.status === "cancelled" ? "Permanently delete game" : "Delete game"}
+        className="absolute inset-y-0 right-0 flex items-center justify-center bg-trump-red text-white disabled:opacity-50"
+        style={{ width: SWIPE_ACTION_WIDTH }}
+      >
+        <TrashIcon />
+      </button>
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        style={{
+          transform: `translateX(${x}px)`,
+          transition: dragX === null ? "transform 200ms ease" : "none",
+          touchAction: "pan-y",
+        }}
+        className={`relative flex items-center justify-between gap-2 bg-paper px-2 py-2.5 ${
+          g.status === "cancelled" ? "opacity-50" : ""
+        }`}
+      >
+        <button
+          onClick={() => (isOpen ? onOpenChange(false) : onOpenDetail())}
+          className="min-w-0 flex-1 text-left hover:opacity-70"
+        >
+          <p className="truncate font-body text-sm font-semibold text-ink">
+            {g.status === "completed"
+              ? `${g.winner === "US" ? g.usTeamName : g.themTeamName} won`
+              : g.status === "cancelled"
+              ? "Cancelled"
+              : "In progress"}{" "}
+            <span className="font-score tabular-score font-normal text-ink/70">
+              {formatScore(g.usTotal, g.themTotal)}
+            </span>
+          </p>
+          <p className="font-body text-[11px] text-ink/50">
+            {formatDate(g.createdAt)} &middot; {g.usTeamName} vs {g.themTeamName}
+          </p>
+        </button>
+        {g.status === "in_progress" && (
+          <button
+            onClick={onResume}
+            disabled={resuming}
+            className="shrink-0 rounded-full bg-ink px-3 py-1.5 font-body text-xs font-semibold text-paper disabled:opacity-50"
+          >
+            {resuming ? "Loading…" : "Resume"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function HistoryScreen({
   onNewGame,
   onOpenSettings,
@@ -52,10 +201,8 @@ export function HistoryScreen({
   const [games, setGames] = useState<SavedGame[] | null>(null);
   const [gamesError, setGamesError] = useState<string | null>(null);
   const [resumingId, setResumingId] = useState<string | null>(null);
-  const [confirmingCancelId, setConfirmingCancelId] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [detailGameId, setDetailGameId] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -97,33 +244,35 @@ export function HistoryScreen({
     }
   };
 
-  const cancelGame = async (id: string) => {
-    setCancellingId(id);
-    try {
-      const res = await fetch(`/api/games/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cancel: true }),
-      });
-      if (res.ok) {
-        setGames((prev) => prev?.map((g) => (g.id === id ? { ...g, status: "cancelled" } : g)) ?? null);
-      }
-    } finally {
-      setCancellingId(null);
-      setConfirmingCancelId(null);
+  // Collapses the old two-step Cancel-then-Delete flow into one gesture:
+  // swipe reveals the trash icon, tapping it asks a single native confirm,
+  // then does whatever it actually takes server-side (cancel first if the
+  // game isn't already cancelled — the DELETE endpoint refuses anything
+  // else — then permanently delete). The swipe + explicit tap + confirm is
+  // the safety rail now, not a separate visible banner per row.
+  const removeGame = async (g: SavedGame) => {
+    const verb = g.status === "cancelled" ? "Permanently delete" : "Delete";
+    if (!window.confirm(`${verb} this game? This can't be undone.`)) {
+      setOpenSwipeId(null);
+      return;
     }
-  };
-
-  const deleteGame = async (id: string) => {
-    setDeletingId(id);
+    setRemovingId(g.id);
     try {
-      const res = await fetch(`/api/games/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setGames((prev) => prev?.filter((g) => g.id !== id) ?? null);
+      if (g.status !== "cancelled") {
+        const cancelRes = await fetch(`/api/games/${g.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cancel: true }),
+        });
+        if (!cancelRes.ok) return;
+      }
+      const deleteRes = await fetch(`/api/games/${g.id}`, { method: "DELETE" });
+      if (deleteRes.ok) {
+        setGames((prev) => prev?.filter((x) => x.id !== g.id) ?? null);
       }
     } finally {
-      setDeletingId(null);
-      setConfirmingDeleteId(null);
+      setRemovingId(null);
+      setOpenSwipeId(null);
     }
   };
 
@@ -281,110 +430,21 @@ export function HistoryScreen({
               No games match these filters.
             </p>
           )}
-          {filteredGames.map((g) => (
-            <div
-              key={g.id}
-              className={`rounded-md px-2 py-2.5 ${g.status === "cancelled" ? "opacity-50" : ""}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  onClick={() => setDetailGameId(g.id)}
-                  className="min-w-0 flex-1 text-left hover:opacity-70"
-                >
-                  <p className="truncate font-body text-sm font-semibold text-ink">
-                    {g.status === "completed"
-                      ? `${g.winner === "US" ? g.usTeamName : g.themTeamName} won`
-                      : g.status === "cancelled"
-                      ? "Cancelled"
-                      : "In progress"}{" "}
-                    <span className="font-score tabular-score font-normal text-ink/70">
-                      {formatScore(g.usTotal, g.themTotal)}
-                    </span>
-                  </p>
-                  <p className="font-body text-[11px] text-ink/50">
-                    {formatDate(g.createdAt)} &middot; {g.usTeamName} vs {g.themTeamName}
-                  </p>
-                </button>
-                <div className="flex shrink-0 gap-1.5">
-                  {g.status === "in_progress" && (
-                    <button
-                      onClick={() => resume(g.id)}
-                      disabled={resumingId === g.id}
-                      className="rounded-full bg-ink px-3 py-1.5 font-body text-xs font-semibold text-paper disabled:opacity-50"
-                    >
-                      {resumingId === g.id ? "Loading\u2026" : "Resume"}
-                    </button>
-                  )}
-                  {/* Cancel (the required first step before Delete below) used
-                      to only show for in-progress games \u2014 completed test/junk
-                      games had no path to removal at all. The PATCH cancel
-                      endpoint already works on any status; this just exposes
-                      it for completed games too. */}
-                  {(g.status === "in_progress" || g.status === "completed") &&
-                    confirmingCancelId !== g.id && (
-                      <button
-                        onClick={() => setConfirmingCancelId(g.id)}
-                        className="rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  {g.status === "cancelled" && confirmingDeleteId !== g.id && (
-                    <button
-                      onClick={() => setConfirmingDeleteId(g.id)}
-                      className="rounded-full bg-white px-3 py-1.5 font-body text-xs font-semibold text-trump-red ring-1 ring-trump-red/30"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-              {confirmingCancelId === g.id && (
-                <div className="mt-2 flex items-center justify-between gap-2 rounded-md bg-trump-red/10 p-2">
-                  <p className="font-body text-xs text-ink">
-                    Cancel this game? This can&rsquo;t be undone.
-                  </p>
-                  <div className="flex shrink-0 gap-1.5">
-                    <button
-                      onClick={() => setConfirmingCancelId(null)}
-                      className="rounded-full bg-white px-3 py-1 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
-                    >
-                      No
-                    </button>
-                    <button
-                      onClick={() => cancelGame(g.id)}
-                      disabled={cancellingId === g.id}
-                      className="rounded-full bg-trump-red px-3 py-1 font-body text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      {cancellingId === g.id ? "Cancelling\u2026" : "Yes, cancel"}
-                    </button>
-                  </div>
-                </div>
-              )}
-              {confirmingDeleteId === g.id && (
-                <div className="mt-2 flex items-center justify-between gap-2 rounded-md bg-trump-red/10 p-2">
-                  <p className="font-body text-xs text-ink">
-                    Permanently delete this game? This can&rsquo;t be undone.
-                  </p>
-                  <div className="flex shrink-0 gap-1.5">
-                    <button
-                      onClick={() => setConfirmingDeleteId(null)}
-                      className="rounded-full bg-white px-3 py-1 font-body text-xs font-semibold text-ink ring-1 ring-ink/20"
-                    >
-                      No
-                    </button>
-                    <button
-                      onClick={() => deleteGame(g.id)}
-                      disabled={deletingId === g.id}
-                      className="rounded-full bg-trump-red px-3 py-1 font-body text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      {deletingId === g.id ? "Deleting\u2026" : "Yes, delete"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+          <div className="space-y-2">
+            {filteredGames.map((g) => (
+              <HistoryRow
+                key={g.id}
+                game={g}
+                isOpen={openSwipeId === g.id}
+                onOpenChange={(open) => setOpenSwipeId(open ? g.id : null)}
+                onOpenDetail={() => setDetailGameId(g.id)}
+                onResume={() => resume(g.id)}
+                resuming={resumingId === g.id}
+                onRemove={() => removeGame(g)}
+                busy={removingId === g.id}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
