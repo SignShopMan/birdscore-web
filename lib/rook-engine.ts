@@ -35,9 +35,41 @@ export interface Round {
   label?: string;
 }
 
+/** Reassigns sequential .round numbers after a delete — deleteRound used to
+ * just filter the array, leaving gaps (round 2 removed from 1/2/3 meant
+ * the survivors stayed labeled 1 and 3), and the next scored round got
+ * roundsPlayed()+1 = 3 again, since roundsPlayed just counts rows rather
+ * than tracking a max. That produced two different rows both labeled
+ * "Round 3". Walks in array order (already chronological) and gives each
+ * Round row the next sequential number; an Adj row keeps the same
+ * semantics addAdjustment already assigns at creation — "how many real
+ * rounds had been played when this was added," not its own number. */
+export function renumberRounds(rounds: Round[]): Round[] {
+  let count = 0;
+  return rounds.map((r) => {
+    if (r.rowType === "Round") count += 1;
+    return { ...r, round: count };
+  });
+}
+
 /** Count of actual played rounds, excluding adjustment entries — used for round numbering. */
 export function roundsPlayed(rounds: Round[]): number {
   return rounds.filter((r) => r.rowType === "Round").length;
+}
+
+/** The highest bid already on the board across actual played rounds (0 if
+ * none) — used to stop maxPointsPerRound from being lowered below a bid
+ * that already happened. calculateRoundScores's bidderWentSet math
+ * (nonBidderScore > maxPointsPerRound - bid) silently breaks once
+ * maxPointsPerRound < bid: maxPointsPerRound - bid goes negative, which
+ * ANY real nonBidderScore is greater than, so re-scoring that round (even
+ * just to fix an unrelated field like trump color) always computes as
+ * "went set" regardless of what actually happened at the table. */
+export function maxBidOnBoard(rounds: Round[]): number {
+  return rounds.reduce(
+    (max, r) => (r.rowType === "Round" && r.bid != null && r.bid > max ? r.bid : max),
+    0
+  );
 }
 
 export interface GameSettings {
@@ -202,6 +234,17 @@ export function calculateRoundScores(params: {
   shootMoon: boolean;
 }): { usScore: number; themScore: number; bidderSet: boolean } {
   const { bidTeam, bid, maxPointsPerRound, nonBidderScore, shootMoon } = params;
+
+  // Shoot the Moon is fully captured by bid === maxPointsPerRound below —
+  // shootMoon itself doesn't change the math. Every caller is expected to
+  // keep the two in sync (game-store.ts's toggleShootMoon sets bid to
+  // maxPointsPerRound the instant the flag turns on), so this asserts that
+  // invariant explicitly rather than leaving shootMoon silently unused —
+  // a future caller that drifts from it should fail loudly here, not
+  // quietly compute "correct" math for a state that shouldn't exist.
+  if (shootMoon && bid !== maxPointsPerRound) {
+    throw new Error("calculateRoundScores: shootMoon is true but bid !== maxPointsPerRound");
+  }
 
   // Shoot the Moon: bidding team must take every point (bid == maxPointsPerRound).
   // Any points the "non-bidder" is entered as having taken means the moon shot failed.

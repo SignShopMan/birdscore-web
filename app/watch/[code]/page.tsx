@@ -52,12 +52,11 @@ export default function WatchPage({ params }: { params: { code: string } }) {
     let cancelled = false;
     const supabase = createClient();
 
+    // check_join_code is a security-definer RPC (0009_join_code_rpc.sql) —
+    // returns a plain boolean, never a row, so there's no games data for
+    // an anonymous caller to read regardless of how this is called.
     supabase
-      .from("games")
-      .select("id")
-      .eq("join_code", normalized)
-      .eq("is_realtime", true)
-      .maybeSingle()
+      .rpc("check_join_code", { code: normalized })
       .then(({ data }) => {
         if (cancelled) return;
         setGameCheck(data ? "found" : "not_found");
@@ -166,6 +165,13 @@ export default function WatchPage({ params }: { params: { code: string } }) {
       <h1 className="mt-1 font-display text-3xl font-semibold text-parchment">
         {gameOver && winner ? `${winner === "US" ? usTeamName : themTeamName} wins` : "BirdScore"}
       </h1>
+      <p className="mt-1 font-body text-xs text-parchment/60">
+        You&rsquo;re watching someone else&rsquo;s live Rook game — the score updates in real
+        time as they play.{" "}
+        <a href="/" className="underline underline-offset-4">
+          What&rsquo;s BirdScore?
+        </a>
+      </p>
 
       <div className="mt-6">
         <ScoreTotals us={usTotal} them={themTotal} usLabel={usTeamName} themLabel={themTeamName} />

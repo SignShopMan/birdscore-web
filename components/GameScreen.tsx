@@ -10,6 +10,7 @@ import { BidSlider } from "./BidSlider";
 import { MainMenu } from "./MainMenu";
 import { InviteScreen } from "./InviteScreen";
 import { DealerPickerModal } from "./DealerPickerModal";
+import { UndoToast } from "./UndoToast";
 
 const SEAT_FALLBACK_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
 
@@ -84,6 +85,7 @@ export function GameScreen({
         <h1 className="mt-3 font-display text-2xl font-semibold text-parchment lg:text-3xl">
           Round {roundsPlayed(rounds) + 1}
         </h1>
+        <UndoToast />
       </header>
 
       {/* Prominent by design — this used to only live inside the mobile
@@ -240,14 +242,14 @@ export function GameScreen({
         <button
           onClick={clearTrump}
           disabled={!locked}
-          className="flex-1 rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] transition disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-parchment/40 disabled:ring-1 disabled:ring-parchment/20 enabled:bg-parchment/10 enabled:text-brass enabled:ring-2 enabled:ring-brass"
+          className="flex-1 rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:bg-transparent disabled:text-parchment/60 disabled:ring-1 disabled:ring-parchment/20 enabled:bg-parchment/10 enabled:text-brass enabled:ring-2 enabled:ring-brass"
         >
           Edit Bid
         </button>
         <button
           onClick={onScoreRound}
           disabled={!locked}
-          className="flex-1 rounded-full bg-brass py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] text-ink disabled:opacity-40"
+          className="flex-1 rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:bg-transparent disabled:text-parchment/60 disabled:ring-1 disabled:ring-parchment/20 enabled:bg-brass enabled:text-ink"
         >
           Score Round
         </button>

@@ -9,6 +9,7 @@ import { computePartnershipStats, GameForStats } from "@/lib/partner-stats";
 import { MainMenu } from "./MainMenu";
 import { SignInForm } from "./SignInForm";
 import { GameDetailModal } from "./GameDetailModal";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface SavedGame {
   id: string;
@@ -171,8 +172,15 @@ function HistoryRow({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         style={{
-          transform: `translateX(${x}px)`,
-          transition: dragX === null ? "transform 200ms ease" : "none",
+          // Shrinking width (not translateX) so the label's own `truncate`
+          // clips from the END as usual, keeping the start of the team
+          // names — the only way to tell which game this drawer belongs
+          // to — always visible. Translating the whole row instead used
+          // to slide its own left edge (icon + start of the label) off
+          // the left side of the overflow-hidden wrapper, leaving an
+          // unidentifiable fragment like "in won" once opened.
+          width: `calc(100% - ${-x}px)`,
+          transition: dragX === null ? "width 200ms ease" : "none",
           touchAction: "pan-y",
         }}
         className={`relative flex items-center justify-between gap-2 bg-paper px-2 py-2.5 ${
@@ -193,7 +201,7 @@ function HistoryRow({
               {formatScore(g.usTotal, g.themTotal)}
             </span>
           </p>
-          <p className="font-body text-[11px] text-ink/50">
+          <p className="truncate font-body text-[11px] text-ink/50">
             {formatDate(g.createdAt)} &middot; {g.usTeamName} vs {g.themTeamName}
           </p>
         </button>
@@ -288,12 +296,15 @@ export function HistoryScreen({
   // two requests) stranded the row as "Cancelled" forever with no obvious
   // way back in — exactly the "why are my deleted games still here" bug.
   // Each of these is now a single atomic request; there's no in-between
-  // state either one can get stuck in.
+  // state either one can get stuck in. Confirmed via the app's own
+  // ConfirmDialog (not window.confirm — a native browser popup broke the
+  // "this is a real app" feel on the one screen that had just been
+  // redesigned to avoid exactly that).
+  const [confirming, setConfirming] = useState<{ game: SavedGame; type: "cancel" | "delete" } | null>(
+    null
+  );
+
   const cancelGame = async (g: SavedGame) => {
-    if (!window.confirm("Cancel this game? This can't be undone.")) {
-      setOpenSwipeId(null);
-      return;
-    }
     setRemovingId(g.id);
     try {
       const res = await fetch(`/api/games/${g.id}`, {
@@ -307,14 +318,11 @@ export function HistoryScreen({
     } finally {
       setRemovingId(null);
       setOpenSwipeId(null);
+      setConfirming(null);
     }
   };
 
   const deleteGame = async (g: SavedGame) => {
-    if (!window.confirm("Permanently delete this game? This can't be undone.")) {
-      setOpenSwipeId(null);
-      return;
-    }
     setRemovingId(g.id);
     try {
       const res = await fetch(`/api/games/${g.id}`, { method: "DELETE" });
@@ -324,6 +332,7 @@ export function HistoryScreen({
     } finally {
       setRemovingId(null);
       setOpenSwipeId(null);
+      setConfirming(null);
     }
   };
 
@@ -491,7 +500,9 @@ export function HistoryScreen({
                 onOpenDetail={() => setDetailGameId(g.id)}
                 onResume={() => resume(g.id)}
                 resuming={resumingId === g.id}
-                onAction={() => (g.status === "cancelled" ? deleteGame(g) : cancelGame(g))}
+                onAction={() =>
+                  setConfirming({ game: g, type: g.status === "cancelled" ? "delete" : "cancel" })
+                }
                 busy={removingId === g.id}
               />
             ))}
@@ -501,6 +512,24 @@ export function HistoryScreen({
 
       {detailGameId && (
         <GameDetailModal gameId={detailGameId} onClose={() => setDetailGameId(null)} />
+      )}
+
+      {confirming && (
+        <ConfirmDialog
+          title={confirming.type === "cancel" ? "Cancel this game?" : "Permanently delete this game?"}
+          message="This can't be undone."
+          confirmLabel={confirming.type === "cancel" ? "Yes, cancel" : "Yes, delete"}
+          cancelLabel="Never mind"
+          danger
+          confirming={removingId === confirming.game.id}
+          onConfirm={() =>
+            confirming.type === "cancel" ? cancelGame(confirming.game) : deleteGame(confirming.game)
+          }
+          onCancel={() => {
+            setConfirming(null);
+            setOpenSwipeId(null);
+          }}
+        />
       )}
     </div>
   );

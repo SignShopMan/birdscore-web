@@ -1,5 +1,7 @@
 "use client";
 
+import { Modal } from "./Modal";
+
 const SEAT_LABELS = ["North", "East", "South", "West"];
 
 /**
@@ -22,9 +24,14 @@ export function DealerPickerModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-      <div className="w-full max-w-sm rounded-t-card bg-paper p-5 shadow-card sm:rounded-card">
-        <h2 className="font-display text-lg font-semibold text-ink">Who&rsquo;s dealing?</h2>
+    <Modal
+      onClose={onClose}
+      labelledBy="dealer-picker-title"
+      panelClassName="w-full max-w-sm rounded-t-card bg-paper p-5 shadow-card sm:rounded-card"
+    >
+      <h2 id="dealer-picker-title" className="font-display text-lg font-semibold text-ink">
+        Who&rsquo;s dealing?
+      </h2>
         <div className="mt-4 grid grid-cols-2 gap-3">
           {SEAT_LABELS.map((seat, i) => (
             <button
@@ -50,7 +57,6 @@ export function DealerPickerModal({
         >
           Cancel
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }

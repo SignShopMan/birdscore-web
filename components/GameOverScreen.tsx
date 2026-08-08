@@ -50,6 +50,7 @@ export function GameOverScreen({
             them={themTotal(rounds)}
             usLabel={settings.usTeamName}
             themLabel={settings.themTeamName}
+            gameOver
           />
         </div>
       </div>

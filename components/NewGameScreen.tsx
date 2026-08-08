@@ -45,7 +45,15 @@ export function NewGameScreen({
           <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
         </header>
         <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">BirdScore</h1>
-        <p className="mt-2 font-body text-sm text-parchment/75">Ready to deal?</p>
+        <p className="mt-2 font-body text-sm text-parchment/75">
+          Ready to deal?{" "}
+          <button
+            onClick={onOpenResources}
+            className="text-brass underline underline-offset-4"
+          >
+            New to Rook? See the rules
+          </button>
+        </p>
 
         <div className="mt-4">
           <InstallPrompt />

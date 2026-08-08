@@ -39,6 +39,19 @@ export async function POST(request: NextRequest) {
 
   const supabase = serviceClient();
 
+  // Idempotency gate: insert event.id before doing anything else. A
+  // unique-constraint conflict means this exact event was already
+  // processed (Stripe redelivers on timeout/ambiguous response, and
+  // webhook endpoints should tolerate that) — skip processing entirely
+  // rather than relying on every handler below happening to be a safe
+  // no-op to repeat. See 0010_processed_stripe_events.sql.
+  const { error: dedupeError } = await supabase
+    .from("processed_stripe_events")
+    .insert({ event_id: event.id });
+  if (dedupeError?.code === "23505") {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;

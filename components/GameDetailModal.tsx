@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { canUseEnhancedStats } from "@/lib/entitlements";
 import { Round, TrumpColor, teamLabel, formatScore, runningTotals, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
+import { Modal } from "./Modal";
 
 interface GameDetail {
   id: string;
@@ -72,11 +73,15 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
   const themTotal = rounds?.reduce((sum, r) => sum + r.themScore, 0) ?? 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
-      <div className="flex max-h-[85dvh] w-full max-w-lg flex-col rounded-t-card bg-paper shadow-card sm:rounded-card">
+    <Modal
+      onClose={onClose}
+      labelledBy="game-detail-title"
+      backdropClassName="sm:p-4"
+      panelClassName="flex max-h-[85dvh] w-full max-w-lg flex-col rounded-t-card bg-paper shadow-card sm:rounded-card"
+    >
         <div className="shrink-0 border-b border-ink/10 p-5">
           <div className="flex items-center justify-between">
-            <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
+            <p id="game-detail-title" className="font-body text-xs uppercase tracking-[0.3em] text-brass">
               {game?.status === "cancelled" ? "Cancelled Game" : "Game Detail"}
             </p>
             <button
@@ -183,7 +188,6 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
             </ul>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

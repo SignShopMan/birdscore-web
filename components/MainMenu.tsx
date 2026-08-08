@@ -137,7 +137,10 @@ export function MainMenu({
               </a>
             </nav>
 
-            <p className="mt-6 font-body text-[10px] uppercase tracking-wide text-ink/50 lg:mt-4">
+            <p
+              title="The feature set is still growing — already-shipped features like scoring, saved history, and realtime hosting are stable. See Terms for details."
+              className="mt-6 font-body text-[10px] uppercase tracking-wide text-ink/50 lg:mt-4"
+            >
               Beta &middot; {APP_VERSION}
             </p>
           </div>

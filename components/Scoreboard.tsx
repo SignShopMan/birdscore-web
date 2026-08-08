@@ -70,46 +70,84 @@ function RoundRow({
   const [editingRound, setEditingRound] = useState(false);
   const [editingAdj, setEditingAdj] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [usDraft, setUsDraft] = useState(String(round.usScore));
-  const [themDraft, setThemDraft] = useState(String(round.themScore));
+  // Team + kind + points, same shape as creation (AdjustmentForm below) —
+  // not two independently-free-typed us/them numbers. That older version
+  // let an edit save fractional points (creation only ever allowed whole
+  // numbers) and let both sides end up nonzero at once, breaking the
+  // "one team's score field, the other 0" invariant every other adjustment
+  // row in the app relies on.
+  const [adjTeam, setAdjTeam] = useState<Team>(round.usScore !== 0 ? "US" : "THEM");
+  const [adjKind, setAdjKind] = useState<"penalty" | "bonus">(
+    (round.usScore || round.themScore) < 0 ? "penalty" : "bonus"
+  );
+  const [adjPointsInput, setAdjPointsInput] = useState(
+    String(Math.abs(round.usScore || round.themScore))
+  );
   const isAdj = round.rowType === "Adj";
 
-  const adjValid = (v: string) => {
-    const n = Number(v);
-    return v.trim() !== "" && Number.isFinite(n) && Math.abs(n) <= MAX_ADJUSTMENT_POINTS;
-  };
-
   if (editingAdj) {
-    const bothValid = adjValid(usDraft) && adjValid(themDraft);
+    const adjPointsValid =
+      /^\d+$/.test(adjPointsInput.trim()) &&
+      Number(adjPointsInput) > 0 &&
+      Number(adjPointsInput) <= MAX_ADJUSTMENT_POINTS;
+    const save = () => {
+      if (!adjPointsValid) return;
+      const signed = adjKind === "penalty" ? -Number(adjPointsInput) : Number(adjPointsInput);
+      onUpdate(round.rowId, {
+        usScore: adjTeam === "US" ? signed : 0,
+        themScore: adjTeam === "THEM" ? signed : 0,
+      });
+      setEditingAdj(false);
+    };
     return (
-      <li className="flex items-center gap-2 rounded-md bg-white/60 px-2 py-1.5 ring-1 ring-ink/15">
-        <span className="w-5 shrink-0 font-score text-xs text-ink/75">&#177;</span>
-        <input
-          value={usDraft}
-          onChange={(e) => setUsDraft(e.target.value)}
-          inputMode="numeric"
-          className="w-16 rounded border border-ink/20 bg-white px-1 py-1 text-center font-score tabular-score text-sm text-ink"
-        />
-        <input
-          value={themDraft}
-          onChange={(e) => setThemDraft(e.target.value)}
-          inputMode="numeric"
-          className="w-16 rounded border border-ink/20 bg-white px-1 py-1 text-center font-score tabular-score text-sm text-ink"
-        />
-        <div className="ml-auto flex gap-1">
+      <li className="space-y-1.5 rounded-md bg-white/60 px-2 py-1.5 ring-1 ring-ink/15">
+        <div className="flex items-center gap-1.5">
+          {(["US", "THEM"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setAdjTeam(t)}
+              className={`min-h-[36px] flex-1 truncate rounded-full px-2 font-body text-xs font-semibold uppercase tracking-wide ${
+                adjTeam === t ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
+              }`}
+            >
+              {t === "US" ? usLabel : themLabel}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setAdjKind("penalty")}
+            className={`min-h-[36px] flex-1 rounded-full px-2 font-body text-xs font-semibold ${
+              adjKind === "penalty" ? "bg-trump-red text-white" : "bg-white text-ink ring-1 ring-ink/20"
+            }`}
+          >
+            &minus;
+          </button>
+          <button
+            onClick={() => setAdjKind("bonus")}
+            className={`min-h-[36px] flex-1 rounded-full px-2 font-body text-xs font-semibold ${
+              adjKind === "bonus" ? "bg-trump-green text-white" : "bg-white text-ink ring-1 ring-ink/20"
+            }`}
+          >
+            +
+          </button>
+          <input
+            value={adjPointsInput}
+            onChange={(e) => setAdjPointsInput(e.target.value)}
+            inputMode="numeric"
+            aria-label="Adjustment points"
+            className="w-16 rounded border border-ink/20 bg-white px-1 py-1 text-center font-score tabular-score text-sm text-ink"
+          />
           <button
             onClick={() => setEditingAdj(false)}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 font-body text-xs text-ink/75"
+            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded px-2 font-body text-xs text-ink/75"
           >
             Cancel
           </button>
           <button
-            disabled={!bothValid}
-            onClick={() => {
-              if (bothValid) onUpdate(round.rowId, { usScore: Number(usDraft), themScore: Number(themDraft) });
-              setEditingAdj(false);
-            }}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded bg-ink px-2 font-body text-xs font-semibold text-paper disabled:opacity-40"
+            disabled={!adjPointsValid}
+            onClick={save}
+            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded bg-ink px-2 font-body text-xs font-semibold text-paper disabled:opacity-40"
           >
             Save
           </button>
@@ -146,8 +184,9 @@ function RoundRow({
               <button
                 onClick={() => {
                   if (isAdj) {
-                    setUsDraft(String(round.usScore));
-                    setThemDraft(String(round.themScore));
+                    setAdjTeam(round.usScore !== 0 ? "US" : "THEM");
+                    setAdjKind((round.usScore || round.themScore) < 0 ? "penalty" : "bonus");
+                    setAdjPointsInput(String(Math.abs(round.usScore || round.themScore)));
                     setEditingAdj(true);
                   } else {
                     setEditingRound(true);

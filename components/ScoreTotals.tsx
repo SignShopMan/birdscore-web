@@ -5,14 +5,22 @@ export function ScoreTotals({
   them,
   usLabel = "Us",
   themLabel = "Them",
+  // True only on the actual Game Over screen. "Leading" describes an
+  // ongoing, undecided comparison — showing it right under a headline
+  // that's already declared a winner ("X wins") reads as a stale,
+  // redundant label. "Won" says the same visual thing (which side is
+  // highlighted) without contradicting the headline.
+  gameOver = false,
 }: {
   us: number;
   them: number;
   usLabel?: string;
   themLabel?: string;
+  gameOver?: boolean;
 }) {
   const usLeads = us > them;
   const themLeads = them > us;
+  const badgeLabel = gameOver ? "Won" : "Leading";
   return (
     <div className="grid grid-cols-2 gap-3">
       <div
@@ -26,7 +34,7 @@ export function ScoreTotals({
           </span>
           {usLeads && (
             <span className="shrink-0 rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
-              Leading
+              {badgeLabel}
             </span>
           )}
         </div>
@@ -43,7 +51,7 @@ export function ScoreTotals({
           </span>
           {themLeads && (
             <span className="shrink-0 rounded-full bg-brass px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-wide text-ink">
-              Leading
+              {badgeLabel}
             </span>
           )}
         </div>

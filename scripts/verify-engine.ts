@@ -10,6 +10,8 @@ import {
   teamLabel,
   formatScore,
   runningTotals,
+  maxBidOnBoard,
+  renumberRounds,
   DEFAULT_SETTINGS,
   Round,
 } from "../lib/rook-engine";
@@ -49,6 +51,17 @@ assertEqual(
   calculateRoundScores({ bidTeam: "US", bid: 180, maxPointsPerRound: 180, nonBidderScore: 5, shootMoon: true }),
   { usScore: -180, themScore: 5, bidderSet: true }
 );
+
+// shootMoon must agree with bid === maxPointsPerRound — a caller drifting
+// from that invariant (game-store.ts's toggleShootMoon is the only place
+// meant to set it) should fail loudly, not silently compute wrong math.
+let threwOnMismatchedShootMoon = false;
+try {
+  calculateRoundScores({ bidTeam: "US", bid: 150, maxPointsPerRound: 180, nonBidderScore: 0, shootMoon: true });
+} catch {
+  threwOnMismatchedShootMoon = true;
+}
+assertEqual("shootMoon with bid !== maxPointsPerRound throws", threwOnMismatchedShootMoon, true);
 
 // Validation: multiples of 5 only, 0..max, numeric
 assertEqual("valid score 50", isValidNonBidderScore("50", 180), true);
@@ -156,6 +169,64 @@ assertEqual(
 
 // Adjustment entries must not count toward round numbering
 assertEqual("roundsPlayed excludes adjustments", roundsPlayed(withAdjustment), 1);
+
+// renumberRounds: regression for deleting a middle round leaving gaps that
+// then collide with the next round scored (roundsPlayed()+1 reused an
+// already-taken number). Deleting round 2 of 3 should leave the survivors
+// relabeled 1 and 2, not "1 and 3".
+const threeRounds: Round[] = [
+  { rowId: "1", round: 1, usScore: 90, themScore: 30, rowType: "Round", createdAt: "" },
+  { rowId: "2", round: 2, usScore: 20, themScore: 100, rowType: "Round", createdAt: "" },
+  { rowId: "3", round: 3, usScore: 50, themScore: 50, rowType: "Round", createdAt: "" },
+];
+const afterDeletingMiddle = renumberRounds(threeRounds.filter((r) => r.rowId !== "2"));
+assertEqual(
+  "renumberRounds closes the gap after deleting a middle round",
+  afterDeletingMiddle.map((r) => r.round),
+  [1, 2]
+);
+// An Adj row keeps "how many real rounds preceded it," matching what
+// addAdjustment already assigns at creation time (roundsPlayed(rounds)).
+const roundsWithAdj: Round[] = [
+  threeRounds[0],
+  { rowId: "adj", round: 99, usScore: 0, themScore: -10, rowType: "Adj", label: "Renege", createdAt: "" },
+  threeRounds[2],
+];
+const roundsWithAdjAfterDelete = renumberRounds(roundsWithAdj.filter((r) => r.rowId !== "2"));
+assertEqual(
+  "renumberRounds keeps an Adj row tagged with the round count before it",
+  roundsWithAdjAfterDelete.map((r) => r.round),
+  [1, 1, 2]
+);
+
+// maxBidOnBoard: the regression this guards against is lowering
+// maxPointsPerRound below a bid that already happened, which silently
+// flips that round's outcome the next time it's edited (see
+// SettingsScreen.tsx's maxPointsBelowBoard check).
+assertEqual("maxBidOnBoard with no rounds", maxBidOnBoard([]), 0);
+assertEqual("maxBidOnBoard ignores Adj rows", maxBidOnBoard(withAdjustment), 60);
+const higherBidRounds: Round[] = [
+  { rowId: "1", round: 1, bid: 130, usScore: 50, themScore: 0, rowType: "Round", createdAt: "" },
+  { rowId: "2", round: 2, bid: 200, usScore: 20, themScore: 0, rowType: "Round", createdAt: "" },
+];
+assertEqual("maxBidOnBoard finds the highest bid across rounds", maxBidOnBoard(higherBidRounds), 200);
+// Regression: re-scoring a round after maxPointsPerRound drops below its
+// own bid must not silently flip a made bid into "went set." This is the
+// exact corruption maxBidOnBoard exists to block at the Settings layer —
+// verifying the underlying math bug still exists in calculateRoundScores
+// unless the caller prevents it, since that's the actual mechanism.
+const staleBidResult = calculateRoundScores({
+  bidTeam: "US",
+  bid: 200,
+  maxPointsPerRound: 120, // lowered below the round's own bid of 200
+  nonBidderScore: 50, // originally a made bid (50 <= 250-200... i.e. 50 <= max-bid at the real max)
+  shootMoon: false,
+});
+assertEqual(
+  "confirms the corruption mechanism: a stale bid above the new max always computes as went-set",
+  staleBidResult.bidderSet,
+  true
+);
 
 // teamLabel falls back to defaults, and reflects a custom name once set
 assertEqual("teamLabel default US", teamLabel("US", DEFAULT_SETTINGS), "Us");

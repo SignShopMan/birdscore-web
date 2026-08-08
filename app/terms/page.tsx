@@ -26,10 +26,12 @@ export default function TermsPage() {
         <section>
           <h2 className="font-display text-lg font-semibold text-parchment">Beta status</h2>
           <p className="mt-1">
-            This app is under active development. Features, pricing, and behavior may change.
-            While we take reasonable care with saved data, we can&rsquo;t guarantee it will never
-            be lost, and recommend not relying on BirdScore as the sole record of anything you
-            can&rsquo;t afford to lose.
+            &ldquo;Beta&rdquo; here means the feature set is still growing — new features and
+            refinements ship regularly. It doesn&rsquo;t mean what&rsquo;s already built is
+            unreliable: core scoring, saved history, and realtime hosting are stable and won&rsquo;t
+            disappear. We take real care with saved data, but as with any young product we
+            recommend not relying on BirdScore as the sole record of anything you can&rsquo;t
+            afford to lose.
           </p>
         </section>
 

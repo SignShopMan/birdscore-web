@@ -95,6 +95,28 @@ for (const t of THEMES) {
 check("ink/75 on paper (muted labels)", blend(ink, paper, 0.75), paper, 4.5);
 check("ink/75 on paper-dim (muted labels)", blend(ink, paperDim, 0.75), paperDim, 4.5);
 
+// Disabled-state text (Edit Bid / Score Round when nothing's selected yet).
+// WCAG explicitly exempts disabled UI components from AA contrast
+// requirements — this isn't meant to be pass/fail at 4.5:1 — but a
+// genuinely invisible disabled state is still a real bug. This check is
+// what actually caught one: the original disabled style stacked
+// text-parchment/40 (a color-alpha blend against the background) with a
+// separate element-level disabled:opacity-30 on the whole button. Those
+// don't add — they multiply, since opacity-30 re-blends the
+// already-blended text against whatever's behind the button too, so the
+// real effective mix was closer to 40%×30% ≈ 12%, not 40%. That
+// compounding is exactly why the disabled Edit Bid button read as nearly
+// blank in the phone-call screenshot this session started from. Fixed by
+// dropping the element-level opacity and relying solely on
+// text-parchment/60 — checked here against a relaxed 3:1 floor, same
+// reasoning as the swatch-ring check above: not body text, but should
+// still read as present, not blank.
+console.log("\n--- Disabled-state text: parchment/60 on felt (relaxed 3:1 — WCAG exempts disabled UI) ---");
+for (const t of THEMES) {
+  const disabledText = blend(t.parchment, t.felt, 0.6);
+  check(`parchment/60 on felt (${t.name})`, disabledText, t.felt, 3.0);
+}
+
 console.log(`\n${failures === 0 ? "All contrast checks passed." : `${failures} FAILURE(S) — fix before shipping.`}`);
 
 // --- Automated structural scan ---
@@ -125,6 +147,33 @@ for (const dir of ["components", "app"]) {
 }
 if (structuralFailures === 0) console.log("PASS  no bg-ink + text-parchment found in any component");
 failures += structuralFailures;
+
+// Inline style={{backgroundColor: ...}} (e.g. /watch/[code]/page.tsx's
+// TRUMP_HEX-driven trump card) is invisible to the className-based scan
+// above, and its color is computed at runtime, so it can't be evaluated
+// numerically here the way className pairings can. The one known instance
+// today (app/watch/[code]/page.tsx) uses white text on TRUMP_HEX, which
+// IS covered above via the equivalent "white text on trump-*" checks
+// (TRUMP_HEX's values are hand-mirrored into the `trump` constant at the
+// top of this file) — but that link is easy to lose track of silently if
+// either side changes. This just surfaces every such call site so it gets
+// a human look rather than quietly passing by default.
+console.log("\n--- Informational: inline backgroundColor styles (can't be evaluated numerically) ---");
+let inlineStyleCount = 0;
+for (const dir of ["components", "app"]) {
+  for (const file of readdirSync(dir, { recursive: true }) as string[]) {
+    if (!file.endsWith(".tsx")) continue;
+    const path = join(dir, file);
+    const lines = readFileSync(path, "utf-8").split("\n");
+    lines.forEach((line, i) => {
+      if (/style=\{\{[^}]*backgroundColor/.test(line)) {
+        console.log(`INFO  ${path}:${i + 1} — inline backgroundColor; confirm its text color pairing is one of the checks above`);
+        inlineStyleCount++;
+      }
+    });
+  }
+}
+if (inlineStyleCount === 0) console.log("INFO  no inline backgroundColor styles found");
 
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} total FAILURE(S) — fix before shipping.`}`);
 process.exitCode = failures === 0 ? 0 : 1;

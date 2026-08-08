@@ -14,6 +14,7 @@ import {
 } from "@/lib/rook-engine";
 import { useAuthStore } from "@/lib/auth-store";
 import { canUseEnhancedStats } from "@/lib/entitlements";
+import { Modal } from "./Modal";
 
 const TRUMP_COLORS: TrumpColor[] = ["Black", "Green", "Red", "Yellow"];
 const SEAT_LABELS = ["North", "East", "South", "West"];
@@ -95,9 +96,14 @@ export function EditRoundModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-      <div className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-card bg-paper p-5 shadow-card sm:rounded-card">
-        <h2 className="font-display text-xl font-semibold text-ink">Edit Round {round.round}</h2>
+    <Modal
+      onClose={onClose}
+      labelledBy="edit-round-title"
+      panelClassName="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-card bg-paper p-5 shadow-card sm:rounded-card"
+    >
+      <h2 id="edit-round-title" className="font-display text-xl font-semibold text-ink">
+        Edit Round {round.round}
+      </h2>
         <p className="mt-1 font-body text-xs text-ink/60">
           Changes recompute both scores the same way live scoring does — there&rsquo;s no way to
           save a pair of numbers that couldn&rsquo;t actually happen.
@@ -228,7 +234,6 @@ export function EditRoundModal({
             Save
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

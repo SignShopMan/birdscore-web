@@ -114,18 +114,31 @@ export function PlayerSetupCard({
               </div>
             ))}
           </div>
-          {playerNames.every((n) => n.trim()) && (
-            <p className="mt-3 rounded-md bg-white p-2 font-body text-xs text-ink/70">
-              Teams:{" "}
-              <span className="font-semibold text-ink">
-                {playerNames[0]} &amp; {playerNames[2]}
-              </span>{" "}
-              vs.{" "}
-              <span className="font-semibold text-ink">
-                {playerNames[1]} &amp; {playerNames[3]}
-              </span>
-            </p>
-          )}
+          {(() => {
+            // Shows as soon as either pair has both names in, instead of
+            // waiting for all 4 — someone filling seats in order otherwise
+            // got no feedback on who's actually paired with whom until the
+            // very last name landed.
+            const pairAReady = playerNames[0].trim() && playerNames[2].trim();
+            const pairBReady = playerNames[1].trim() && playerNames[3].trim();
+            if (!pairAReady && !pairBReady) return null;
+            return (
+              <p className="mt-3 rounded-md bg-white p-2 font-body text-xs text-ink/70">
+                Teams:{" "}
+                <span className="font-semibold text-ink">
+                  {pairAReady
+                    ? `${playerNames[0]} & ${playerNames[2]}`
+                    : "First dealer & partner"}
+                </span>{" "}
+                vs.{" "}
+                <span className="font-semibold text-ink">
+                  {pairBReady
+                    ? `${playerNames[1]} & ${playerNames[3]}`
+                    : "Second dealer & partner"}
+                </span>
+              </p>
+            );
+          })()}
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import {
   isValidCustomMaxPoints,
   isValidWinningScore,
   deriveTeamNamesFromPlayers,
+  maxBidOnBoard,
 } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
 import { ThemePicker } from "./ThemePicker";
@@ -42,6 +43,14 @@ export function SettingsScreen({
 }) {
   const updateSettings = useGameStore((s) => s.updateSettings);
   const current = useGameStore((s) => s.settings);
+  const rounds = useGameStore((s) => s.rounds);
+  // Lowering this below a bid that already happened silently corrupts that
+  // round the next time anyone edits it (calculateRoundScores's set-check
+  // goes permanently negative once maxPointsPerRound < bid) — see
+  // maxBidOnBoard's own doc comment. Blocking the change here, at the
+  // source, is simpler and safer than trying to patch every place a stale
+  // bid could interact with a new max.
+  const maxBidFloor = maxBidOnBoard(rounds);
 
   const [winningScoreInput, setWinningScoreInput] = useState(String(current.winningScore));
   const presetMatch = MAX_POINTS_OPTIONS.includes(
@@ -60,8 +69,13 @@ export function SettingsScreen({
 
   const winningScoreValid = isValidWinningScore(winningScoreInput, maxPoints);
   const customValid = isValidCustomMaxPoints(customInput);
+  const maxPointsBelowBoard = maxPoints < maxBidFloor;
   const playersValid = !useNamedPlayers || playerNames.every((n) => n.trim().length > 0);
-  const canSave = winningScoreValid && (customMode ? customValid : true) && playersValid;
+  const canSave =
+    winningScoreValid &&
+    (customMode ? customValid : true) &&
+    !maxPointsBelowBoard &&
+    playersValid;
 
   const setPlayer = (seat: number, value: string) => {
     setPlayerNames((prev) => {
@@ -143,7 +157,7 @@ export function SettingsScreen({
           <CollapsibleCard
             title="Max points per hand"
             subtitle="Total points on the board for a single round, per your house rules."
-            hasError={customMode && !customValid}
+            hasError={(customMode && !customValid) || maxPointsBelowBoard}
           >
             <div className="flex flex-wrap gap-2">
               {MAX_POINTS_OPTIONS.map((v) => (
@@ -171,6 +185,12 @@ export function SettingsScreen({
                 Custom
               </button>
             </div>
+
+            {maxPointsBelowBoard && (
+              <p className="mt-2 font-body text-xs text-trump-red">
+                Can&rsquo;t be lower than the highest bid already on the board ({maxBidFloor}).
+              </p>
+            )}
 
             {customMode && (
               <div className="mt-3">

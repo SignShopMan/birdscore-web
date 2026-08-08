@@ -12,6 +12,7 @@ import {
   checkGameOver,
   newRoundId,
   nextDealerIndex,
+  renumberRounds,
   roundsPlayed,
   teamTotal,
 } from "./rook-engine";
@@ -100,6 +101,13 @@ interface GameState {
   addAdjustment: (team: Team, points: number, label: string) => void;
   updateRound: (rowId: string, updates: Partial<Round>) => void;
   deleteRound: (rowId: string) => void;
+  // The rowId of whatever saveRound most recently created — lets the UI
+  // offer a brief "Round saved — Undo" without needing its own copy of
+  // which row that was. Never persisted (ephemeral, session-only); cleared
+  // by dismissUndo (auto-dismiss timer) or naturally superseded the next
+  // time a round is saved.
+  lastSavedRoundId: string | null;
+  dismissUndo: () => void;
   // Hydrates local state from a game fetched from Supabase — the Resume
   // action on AccountScreen's in-progress games list.
   loadGame: (settings: GameSettings, rounds: Round[], gameId: string) => void;
@@ -127,6 +135,8 @@ export const useGameStore = create<GameState>()(
       setViewerCount: (n) => set({ viewerCount: n }),
       syncStatus: "idle",
       setSyncStatus: (syncStatus) => set({ syncStatus }),
+      lastSavedRoundId: null,
+      dismissUndo: () => set({ lastSavedRoundId: null }),
       hasHydrated: false,
       gameActive: false,
       setHasHydrated: (v) => set({ hasHydrated: v }),
@@ -171,7 +181,16 @@ export const useGameStore = create<GameState>()(
 
       // Adjusts rules for the game already in progress, without touching rounds already
       // scored — used when someone backs out to Settings mid-game to fix a typo.
-      updateSettings: (settings) => set({ settings }),
+      // Recomputes gameOver/winner immediately against the new rules, same as
+      // every other mutator — previously left them stale until the next
+      // round/adjustment/edit, so lowering winningScore mid-game (or toggling
+      // spreadWin) didn't actually end an already-won game until something
+      // else happened to trigger a recheck.
+      updateSettings: (settings) =>
+        set((s) => {
+          const { over, winner } = checkGameOver(s.rounds, settings.winningScore, settings.spreadWin);
+          return { settings, gameOver: over, winner };
+        }),
 
       setTrump: (t) => set({ trump: t }),
       clearTrump: () => set({ trump: null }),
@@ -227,6 +246,7 @@ export const useGameStore = create<GameState>()(
           bid: null,
           shootMoon: false,
           dealerIndex: over ? s.dealerIndex : nextDealerIndex(s.dealerIndex),
+          lastSavedRoundId: round.rowId,
         });
       },
 
@@ -261,7 +281,7 @@ export const useGameStore = create<GameState>()(
 
       deleteRound: (rowId) =>
         set((s) => {
-          const rounds = s.rounds.filter((r) => r.rowId !== rowId);
+          const rounds = renumberRounds(s.rounds.filter((r) => r.rowId !== rowId));
           const { over, winner } = checkGameOver(rounds, s.settings.winningScore, s.settings.spreadWin);
           return { rounds, gameOver: over, winner };
         }),
@@ -270,6 +290,18 @@ export const useGameStore = create<GameState>()(
       loadGame: (settings, rounds, gameId) =>
         set(() => {
           const { over, winner } = checkGameOver(rounds, settings.winningScore, settings.spreadWin);
+          // Every round already carries its own real dealerIndex all the
+          // way through persistence — hardcoding 0 here silently claimed
+          // the wrong person deals next on every Resume once the dealer
+          // had actually rotated. Derive it from whoever dealt last,
+          // same as saveRound already does for a live game in progress.
+          const lastRoundWithDealer = [...rounds]
+            .reverse()
+            .find((r) => r.rowType === "Round" && r.dealerIndex != null);
+          const dealerIndex =
+            lastRoundWithDealer?.dealerIndex != null
+              ? nextDealerIndex(lastRoundWithDealer.dealerIndex)
+              : 0;
           return {
             settings,
             rounds,
@@ -277,7 +309,7 @@ export const useGameStore = create<GameState>()(
             bid: null,
             bidTeam: null,
             shootMoon: false,
-            dealerIndex: 0,
+            dealerIndex,
             gameOver: over,
             winner,
             currentGameId: gameId,

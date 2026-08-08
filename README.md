@@ -22,6 +22,103 @@ environment I built this in.
 
 ## Changelog
 
+**A real adversarial QA pass — 2 Critical, 6 High, 7 Medium/Low fixes, plus
+3 new bugs found from screenshots**. Three parallel audits (security/auth/
+billing, game-engine correctness, UI/UX) were run and then independently
+re-verified by hand before any fix — every finding below was traced through
+the actual code, not taken on an audit's word:
+
+- **Critical — editing a historical round after lowering "Max points per
+  hand" could silently flip its outcome.** `calculateRoundScores`'s
+  set-check (`nonBidderScore > maxPointsPerRound - bid`) goes permanently
+  negative once `maxPointsPerRound < bid`, so re-saving an old round
+  through `EditRoundModal` — even just to fix the trump color — always
+  computed as "went set," regardless of what actually happened. Fixed at
+  the source: new `maxBidOnBoard()` blocks lowering max points below any
+  bid already on the board, in `SettingsScreen.tsx`.
+- **Critical — anyone could list every pro-hosted game via the public
+  Supabase API.** `0006_public_join_code_check.sql`'s RLS policy filtered
+  by `is_realtime = true` with no requirement that the query was scoped to
+  one code — RLS filters rows, not the shape of a query, so an unfiltered
+  request with just the public anon key returned every hosted game's id,
+  owner, join code, team names, status, and winner. Replaced with a
+  `security definer` RPC (`check_join_code`, new migration
+  `0009_join_code_rpc.sql`) that returns only a boolean — same pattern as
+  `handle_new_user` in `0001_init.sql`. **Needs the migration run in
+  Supabase before this deploys** — `/watch` will 404 its existence check
+  otherwise.
+- **The "Leading" badge showed on the actual Game Over screen** — reused
+  as-is from live play, with no idea the game had ended, so it sat right
+  under a headline that already said "wins." `ScoreTotals` now takes a
+  `gameOver` prop and shows "Won" instead.
+- **A disabled "Score Round" button didn't look disabled** — worse, its
+  disabled state was stacking a color-alpha text fade with a *separate*
+  element-level `opacity-30`, which multiply rather than add; the real
+  effective contrast was close to invisible, not the ~40% either looked
+  like alone. Found by the very contrast-script check added to catch it
+  (see below) — fixed by dropping the element-level opacity and relying on
+  `text-parchment/60` alone.
+- **Swiping a History row open clipped its own label text** — translating
+  the whole row shifted its start (the team names — the only way to tell
+  which game a drawer belongs to) off the left edge of the
+  `overflow-hidden` wrapper. Switched to shrinking the row's `width`
+  instead of `translateX`, so the label's existing `truncate` clips from
+  the end as normal.
+- **`dealerIndex` reset to 0 on every Resume**, even though every round
+  already carries its real dealer through persistence — `loadGame` now
+  derives it from the last round played instead of hardcoding 0.
+- **Deleting a middle round produced duplicate round numbers** — new
+  `renumberRounds()` closes the gap after every delete instead of leaving
+  it for the next `roundsPlayed()+1` to collide with.
+- **`HistoryScreen` used a raw `window.confirm()`** instead of the app's
+  own `ConfirmDialog` component (already used correctly elsewhere) — a
+  native browser popup on the one screen that had just been redesigned
+  specifically to feel like a real app.
+- **No modal had real dialog semantics** — no `role="dialog"`,
+  `aria-modal`, focus-on-open, or Escape-to-close, anywhere, including
+  `ScorecardModal` (opened every round). New shared `Modal.tsx` wrapper;
+  all 6 modals (`ScorecardModal`, `EditRoundModal`, `DealerPickerModal`,
+  `ConfirmDialog`, `InviteScreen`, `GameDetailModal`) migrated to it.
+- Added a rules link on `NewGameScreen` and brief context + a link back to
+  the app on `/watch/[code]` — neither screen explained core vocabulary
+  (trump, the nest, shoot the moon) or what a cold invitee was even
+  looking at.
+- **Inline adjustment editing in `Scoreboard.tsx` bypassed creation-time
+  validation** — accepted fractional points and let both teams end up
+  nonzero on one row, breaking the "one side is always 0" invariant the
+  rest of the app assumes. Rebuilt to match `AdjustmentForm`'s team +
+  penalty/bonus + whole-number-points model exactly.
+- **`verify-contrast.ts` gained two real blind spots**: a relaxed 3:1 check
+  for disabled-state text (which is how the Score Round compounding-opacity
+  bug above actually got caught), and an informational scan for inline
+  `style={{backgroundColor}}` usage the className-based scan can't see.
+- **`updateSettings` never rechecked `checkGameOver`** — lowering the
+  winning score or toggling spread-win mid-game left `gameOver`/`winner`
+  stale until the next round, adjustment, or edit happened to trigger a
+  recompute.
+- **No way to undo a mis-tapped round** without reopening the ledger and
+  `EditRoundModal` — new `UndoToast.tsx`, a brief "Round saved — Undo"
+  after every `saveRound`, reusing the existing `deleteRound`.
+- Softened the permanent "Beta" badge and Terms' data-loss disclaimer —
+  both sat unexplained next to a recurring $19.99/yr charge. Now clarifies
+  that "beta" means the feature set is still growing, not that
+  already-shipped functionality (scoring, history, realtime) is unreliable.
+- **Stripe webhook gained real idempotency** — new
+  `processed_stripe_events` table (migration `0010`), event.id inserted
+  before processing, a unique-constraint conflict skips a replayed
+  delivery entirely. The handlers were already accidentally idempotent by
+  construction; this makes it load-bearing instead of incidental. **Also
+  needs its migration run before deploy.**
+- Resolved `calculateRoundScores`'s dead `shootMoon` parameter — was
+  destructured but never used, since the math only ever depended on
+  `bid === maxPointsPerRound`. Now asserts that invariant explicitly
+  instead of silently ignoring a caller that drifts from it.
+- `PlayerSetupCard`'s team-pairing preview now shows as soon as either
+  pair has both names in, instead of waiting for all 4.
+- 19 new/updated regression tests in `scripts/verify-engine.ts` covering
+  every logic fix above; both migrations documented with the same
+  "run before this deploys" flag already established for `spread_win`.
+
 **History swipe actions: split back into Cancel and Delete, from a
 real "why are my deleted games still here" screenshot**:
 
