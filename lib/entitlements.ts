@@ -63,7 +63,8 @@ export function isDevStatsViewer(email: string | null): boolean {
  * double-checking if that's ever not the case.
  */
 const BETA_TESTER_EMAILS: string[] = [
-  "andyjwatkins@gmail.com", // Andy Watkins
+ "coolnuss01@icloud.com", //Conner Nuss
+ "andyjwatkins@gmail.com", // Andy Watkins
   "dankwatkins@gmail.com", // Dan Watkins
   "melikiehonda@gmail.com", // Ryan Sanders
   "thompsonhomeimprovements@outlook.com", // Jared Thompson
