@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { useAuthStore } from "@/lib/auth-store";
-import { canSaveHistory } from "@/lib/entitlements";
+import { canSaveHistory, canUseEnhancedStats } from "@/lib/entitlements";
 import { NewGameScreen } from "@/components/NewGameScreen";
 import { SettingsScreen } from "@/components/SettingsScreen";
 import { GameScreen } from "@/components/GameScreen";
@@ -241,6 +241,7 @@ export default function Home() {
             onUpdateRound={updateRound}
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
+            showDealerRook={canUseEnhancedStats(tier) && settings.players !== null}
           />
         </aside>
       )}
@@ -259,6 +260,7 @@ export default function Home() {
             onDeleteRound={deleteRound}
             onAddAdjustment={addAdjustment}
             onClose={() => setScoreboardOpen(false)}
+            showDealerRook={canUseEnhancedStats(tier) && settings.players !== null}
           />
         </div>
       )}

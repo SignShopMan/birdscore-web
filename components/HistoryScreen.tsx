@@ -22,6 +22,7 @@ interface SavedGame {
   usTotal: number;
   themTotal: number;
   players: [string, string, string, string] | null;
+  hidden: boolean;
 }
 
 type StatusFilter = "all" | "in_progress" | "completed";
@@ -51,10 +52,9 @@ function TrashIcon() {
   );
 }
 
-// Deliberately a different glyph from TrashIcon — Cancel (soft, keeps the
-// row around as "Cancelled") and Delete (permanent, only ever shown once a
-// row is already cancelled) are different severities of action and should
-// look different at a glance, not just differ by which screen you're on.
+// Deliberately a different glyph per action — Cancel, Hide, and Delete are
+// different severities/reversibilities and should look different at a
+// glance, not just differ by which screen or status you're on.
 function BanIcon() {
   return (
     <svg
@@ -73,25 +73,98 @@ function BanIcon() {
   );
 }
 
-// Reveal width for the delete drawer behind each row.
-const SWIPE_ACTION_WIDTH = 72;
+function EyeOffIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a17.7 17.7 0 0 1-2.16 3.19M6.6 6.6C3.28 8.6 2 12 2 12s3 8 10 8a9.14 9.14 0 0 0 4.53-1.19" />
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+      <path d="M1 1l22 22" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3-8 10-8 10 8 10 8-3 8-10 8-10-8-10-8Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+// Width of a single action button in the swipe drawer — a row's drawer is
+// this times however many actions apply to its status (1 or 2).
+const ACTION_WIDTH = 72;
+
+// How many games to show before offering "Show more" — a long list gets
+// unwieldy well before the server's own 50-game cap (GET /api/games).
+const PAGE_SIZE = 10;
+
+type RowAction = {
+  key: "cancel" | "hide" | "unhide" | "delete";
+  label: string;
+  icon: React.ReactNode;
+  colorClass: string;
+};
+
+/** Which actions a swipe reveals, entirely determined by status/hidden —
+ * matches the actual lifecycle: Cancel only ever applies to a game still
+ * in progress (and immediately deletes it too, no lingering "Cancelled"
+ * row — see cancelGame in HistoryScreen below); Hide/Unhide and Delete
+ * only ever apply to a completed game, and are two genuinely different
+ * severities (reversible vs. permanent) rather than one action doing
+ * double duty. A `cancelled` row showing up here is the one edge case:
+ * it means a previous Cancel's own delete call failed partway through
+ * (see cancelGame) — offering it a plain Delete keeps that recoverable
+ * with one more swipe instead of a dead end. */
+function actionsFor(g: SavedGame): RowAction[] {
+  if (g.status === "in_progress") {
+    return [{ key: "cancel", label: "Cancel game", icon: <BanIcon />, colorClass: "bg-brass text-ink" }];
+  }
+  if (g.status === "cancelled") {
+    return [{ key: "delete", label: "Permanently delete game", icon: <TrashIcon />, colorClass: "bg-trump-red text-white" }];
+  }
+  // completed
+  const hideAction: RowAction = g.hidden
+    ? { key: "unhide", label: "Unhide game", icon: <EyeIcon />, colorClass: "bg-brass text-ink" }
+    : { key: "hide", label: "Hide game", icon: <EyeOffIcon />, colorClass: "bg-brass text-ink" };
+  return [
+    hideAction,
+    { key: "delete", label: "Permanently delete game", icon: <TrashIcon />, colorClass: "bg-trump-red text-white" },
+  ];
+}
 
 /** One History row, dragged over a swipe-revealed action drawer instead of
- * the old always-visible "Cancel"/"Delete" text buttons — those read as
- * genuinely confusing on a completed game ("Cancel" implies stopping
- * something in-progress), and cluttered every row all the time on what's
- * installed as a home-screen app, where a native swipe pattern is the more
- * familiar affordance. Only one row's drawer is open at a time (isOpen is
+ * always-visible action buttons — those read as genuinely confusing when
+ * one label ("Cancel") had to mean different things depending on status,
+ * and cluttered every row all the time on what's installed as a
+ * home-screen app, where a native swipe pattern is the more familiar
+ * affordance. Only one row's drawer is open at a time (isOpen is
  * controlled by the parent), same as Mail/Reminders-style lists.
  *
- * The revealed action is genuinely different depending on status, not one
- * gesture doing double duty: a not-yet-cancelled game reveals Cancel (soft
- * — flips status, keeps the row around, one API call), an already-cancelled
- * one reveals Delete (permanent — trash icon, red, one API call). Each is a
- * single atomic request now, not two chained together behind one tap —
- * that chaining used to leave a real gap where Cancel could succeed and
- * Delete fail, stranding a "Cancelled" row that looked like a stuck
- * in-progress delete. */
+ * The revealed action(s) are entirely determined by actionsFor(g) above —
+ * an in-progress game only ever offers Cancel, a completed game offers
+ * Hide/Unhide + Delete side by side, never a mix. The drawer widens to fit
+ * however many actions apply (1 or 2 × ACTION_WIDTH) rather than always
+ * reserving room for a fixed single action. */
 function HistoryRow({
   game: g,
   isOpen,
@@ -108,16 +181,18 @@ function HistoryRow({
   onOpenDetail: () => void;
   onResume: () => void;
   resuming: boolean;
-  onAction: () => void;
+  onAction: (key: RowAction["key"]) => void;
   busy: boolean;
 }) {
   const isCancelled = g.status === "cancelled";
+  const actions = actionsFor(g);
+  const drawerWidth = actions.length * ACTION_WIDTH;
   const [dragX, setDragX] = useState<number | null>(null);
   const dragRef = useRef<{ startX: number; startY: number; base: number; axis: "h" | "v" | null } | null>(
     null
   );
 
-  const restingX = isOpen ? -SWIPE_ACTION_WIDTH : 0;
+  const restingX = isOpen ? -drawerWidth : 0;
   const x = dragX ?? restingX;
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -138,7 +213,7 @@ function HistoryRow({
     }
     if (d.axis === "v") return;
     e.preventDefault();
-    setDragX(Math.min(0, Math.max(-SWIPE_ACTION_WIDTH, d.base + deltaX)));
+    setDragX(Math.min(0, Math.max(-drawerWidth, d.base + deltaX)));
   };
 
   const endDrag = () => {
@@ -149,23 +224,26 @@ function HistoryRow({
       return;
     }
     const current = dragX ?? restingX;
-    onOpenChange(current < -SWIPE_ACTION_WIDTH / 2);
+    onOpenChange(current < -drawerWidth / 2);
     setDragX(null);
   };
 
   return (
     <div className="relative overflow-hidden rounded-md">
-      <button
-        onClick={onAction}
-        disabled={busy}
-        aria-label={isCancelled ? "Permanently delete game" : "Cancel game"}
-        className={`absolute inset-y-0 right-0 flex items-center justify-center disabled:opacity-50 ${
-          isCancelled ? "bg-trump-red text-white" : "bg-brass text-ink"
-        }`}
-        style={{ width: SWIPE_ACTION_WIDTH }}
-      >
-        {isCancelled ? <TrashIcon /> : <BanIcon />}
-      </button>
+      <div className="absolute inset-y-0 right-0 flex" style={{ width: drawerWidth }}>
+        {actions.map((a) => (
+          <button
+            key={a.key}
+            onClick={() => onAction(a.key)}
+            disabled={busy}
+            aria-label={a.label}
+            className={`flex items-center justify-center disabled:opacity-50 ${a.colorClass}`}
+            style={{ width: ACTION_WIDTH }}
+          >
+            {a.icon}
+          </button>
+        ))}
+      </div>
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -184,7 +262,7 @@ function HistoryRow({
           touchAction: "pan-y",
         }}
         className={`relative flex items-center justify-between gap-2 bg-paper px-2 py-2.5 ${
-          isCancelled ? "opacity-50" : ""
+          isCancelled || g.hidden ? "opacity-50" : ""
         }`}
       >
         <button
@@ -200,6 +278,11 @@ function HistoryRow({
             <span className="font-score tabular-score font-normal text-ink/70">
               {formatScore(g.usTotal, g.themTotal)}
             </span>
+            {g.hidden && (
+              <span className="ml-1.5 rounded-full bg-ink/10 px-1.5 py-0.5 font-body text-[9px] font-semibold uppercase tracking-wide text-ink/60">
+                Hidden
+              </span>
+            )}
           </p>
           <p className="truncate font-body text-[11px] text-ink/50">
             {formatDate(g.createdAt)} &middot; {g.usTeamName} vs {g.themTeamName}
@@ -248,8 +331,15 @@ export function HistoryScreen({
   const [detailGameId, setDetailGameId] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [showCancelled, setShowCancelled] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const [playerFilter, setPlayerFilter] = useState<string>("all");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Paging deep into a list and then switching filters would otherwise
+  // leave you scrolled past a result set that just got much shorter.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [statusFilter, playerFilter, showHidden]);
 
   useEffect(() => {
     if (!userId) return;
@@ -287,19 +377,17 @@ export function HistoryScreen({
     }
   };
 
-  // Swipe reveals one of two genuinely different actions depending on
-  // status — Cancel (soft, single PATCH, row stays around as "Cancelled")
-  // or Delete (permanent, single DELETE, only ever offered once a row is
-  // already cancelled). Deliberately NOT chained into one call anymore: an
-  // earlier version fired cancel-then-delete behind a single tap, and any
-  // failure on the delete half (or just the network dropping between the
-  // two requests) stranded the row as "Cancelled" forever with no obvious
-  // way back in — exactly the "why are my deleted games still here" bug.
-  // Each of these is now a single atomic request; there's no in-between
-  // state either one can get stuck in. Confirmed via the app's own
-  // ConfirmDialog (not window.confirm — a native browser popup broke the
-  // "this is a real app" feel on the one screen that had just been
-  // redesigned to avoid exactly that).
+  // Cancel only ever applies to an in-progress game, and means "end this
+  // and remove it" — not "flip status and leave a row behind." So this
+  // chains PATCH cancel:true with an immediate DELETE, both behind one
+  // confirmation. That chaining has a real, known failure mode (the delete
+  // half can fail after cancel succeeds — a network drop between the two
+  // calls, a server hiccup), so it's handled explicitly here rather than
+  // pretending it can't happen: if delete fails, the row is updated to
+  // "cancelled" locally instead of silently staying "in_progress" or
+  // disappearing — actionsFor() then offers a plain Delete on that row
+  // (see above), so a failed cleanup is one more swipe away from done,
+  // not a dead end.
   const [confirming, setConfirming] = useState<{ game: SavedGame; type: "cancel" | "delete" } | null>(
     null
   );
@@ -307,12 +395,17 @@ export function HistoryScreen({
   const cancelGame = async (g: SavedGame) => {
     setRemovingId(g.id);
     try {
-      const res = await fetch(`/api/games/${g.id}`, {
+      const cancelRes = await fetch(`/api/games/${g.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cancel: true }),
       });
-      if (res.ok) {
+      if (!cancelRes.ok) return;
+
+      const deleteRes = await fetch(`/api/games/${g.id}`, { method: "DELETE" });
+      if (deleteRes.ok) {
+        setGames((prev) => prev?.filter((x) => x.id !== g.id) ?? null);
+      } else {
         setGames((prev) => prev?.map((x) => (x.id === g.id ? { ...x, status: "cancelled" } : x)) ?? null);
       }
     } finally {
@@ -322,6 +415,9 @@ export function HistoryScreen({
     }
   };
 
+  // Delete is permanent and reachable from either a completed game
+  // directly or a cancelled one (the edge case above) — same single
+  // DELETE call either way.
   const deleteGame = async (g: SavedGame) => {
     setRemovingId(g.id);
     try {
@@ -336,6 +432,31 @@ export function HistoryScreen({
     }
   };
 
+  // Hide/unhide is reversible and non-destructive — fires immediately on
+  // tap, no confirmation, matches why the spec only asks for one on
+  // Cancel/Delete.
+  const toggleHidden = async (g: SavedGame, hidden: boolean) => {
+    setOpenSwipeId(null);
+    setGames((prev) => prev?.map((x) => (x.id === g.id ? { ...x, hidden } : x)) ?? null);
+    const res = await fetch(`/api/games/${g.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hidden }),
+    });
+    if (!res.ok) {
+      // Roll back the optimistic update if the write didn't actually land.
+      setGames((prev) => prev?.map((x) => (x.id === g.id ? { ...x, hidden: !hidden } : x)) ?? null);
+    }
+  };
+
+  const handleRowAction = (g: SavedGame, key: RowAction["key"]) => {
+    if (key === "cancel" || key === "delete") {
+      setConfirming({ game: g, type: key });
+    } else {
+      toggleHidden(g, key === "hide");
+    }
+  };
+
   const allPlayerNames = useMemo(() => {
     const names = new Set<string>();
     for (const g of games ?? []) {
@@ -346,15 +467,24 @@ export function HistoryScreen({
 
   const filteredGames = useMemo(() => {
     return (games ?? []).filter((g) => {
-      if (g.status === "cancelled" && !showCancelled) return false;
+      // Cancelled rows are the failed-cleanup edge case (see cancelGame) —
+      // folded under the same "Show hidden" toggle as hidden completed
+      // games, since both are "not normally visible" categories that
+      // would otherwise need their own checkbox for an increasingly rare
+      // case.
+      if ((g.status === "cancelled" || g.hidden) && !showHidden) return false;
       if (statusFilter !== "all" && g.status !== statusFilter) return false;
       if (playerFilter !== "all" && !(g.players?.includes(playerFilter) ?? false)) return false;
       return true;
     });
-  }, [games, statusFilter, showCancelled, playerFilter]);
+  }, [games, statusFilter, showHidden, playerFilter]);
+
+  const visibleGames = filteredGames.slice(0, visibleCount);
 
   // Partner stats always computed from the full unfiltered set — filtering
-  // the games list shouldn't secretly change the stats underneath it.
+  // (or hiding) the games list shouldn't secretly change the stats
+  // underneath it. hidden/cancelled games are still in `games`, so a
+  // hidden completed game keeps counting exactly as before.
   const partnerStats = games ? computePartnershipStats(games as GameForStats[]) : [];
 
   if (!userId) {
@@ -433,11 +563,11 @@ export function HistoryScreen({
           <label className="flex items-center gap-1.5 font-body text-[11px] text-parchment/75">
             <input
               type="checkbox"
-              checked={showCancelled}
-              onChange={(e) => setShowCancelled(e.target.checked)}
+              checked={showHidden}
+              onChange={(e) => setShowHidden(e.target.checked)}
               className="accent-brass"
             />
-            Show cancelled
+            Show hidden
           </label>
         </div>
 
@@ -491,7 +621,7 @@ export function HistoryScreen({
             </p>
           )}
           <div className="space-y-2">
-            {filteredGames.map((g) => (
+            {visibleGames.map((g) => (
               <HistoryRow
                 key={g.id}
                 game={g}
@@ -500,13 +630,19 @@ export function HistoryScreen({
                 onOpenDetail={() => setDetailGameId(g.id)}
                 onResume={() => resume(g.id)}
                 resuming={resumingId === g.id}
-                onAction={() =>
-                  setConfirming({ game: g, type: g.status === "cancelled" ? "delete" : "cancel" })
-                }
+                onAction={(key) => handleRowAction(g, key)}
                 busy={removingId === g.id}
               />
             ))}
           </div>
+          {filteredGames.length > visibleCount && (
+            <button
+              onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+              className="mt-2 w-full rounded-md py-2 font-body text-xs font-semibold text-ink/70 hover:bg-white"
+            >
+              Show more ({filteredGames.length - visibleCount} more)
+            </button>
+          )}
         </div>
       </div>
 
@@ -517,7 +653,11 @@ export function HistoryScreen({
       {confirming && (
         <ConfirmDialog
           title={confirming.type === "cancel" ? "Cancel this game?" : "Permanently delete this game?"}
-          message="This can't be undone."
+          message={
+            confirming.type === "cancel"
+              ? "This ends the game and removes it from History. This can't be undone."
+              : "This can't be undone."
+          }
           confirmLabel={confirming.type === "cancel" ? "Yes, cancel" : "Yes, delete"}
           cancelLabel="Never mind"
           danger

@@ -80,6 +80,13 @@ export function RealtimeHost() {
       payload: {
         usTeamName: settings.usTeamName,
         themTeamName: settings.themTeamName,
+        // Named players weren't broadcast at all before — beta feedback
+        // was that watchers had no way to see who dealt or held the Rook,
+        // live or per past round. Safe to send unconditionally: hosting
+        // realtime at all already requires Pro (canHostRealtime), the
+        // same tier canUseEnhancedStats requires, so there's no separate
+        // entitlement being bypassed by including it here.
+        players: settings.players,
         rounds,
         dealerIndex,
         current,

@@ -10,12 +10,15 @@ import { Scoreboard } from "@/components/Scoreboard";
 interface LiveState {
   usTeamName: string;
   themTeamName: string;
+  players: [string, string, string, string] | null;
   rounds: Round[];
   dealerIndex: number;
   current: { bidTeam: Team; bid: number; trump: TrumpColor | null; shootMoon: boolean } | null;
   gameOver: boolean;
   winner: Team | null;
 }
+
+const SEAT_FALLBACK_LABELS = ["Seat 1", "Seat 2", "Seat 3", "Seat 4"];
 
 type GameCheck = "checking" | "invalid_format" | "not_found" | "found";
 
@@ -153,7 +156,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
     );
   }
 
-  const { usTeamName, themTeamName, rounds, current, gameOver, winner } = state;
+  const { usTeamName, themTeamName, players, dealerIndex, rounds, current, gameOver, winner } = state;
   const usTotal = rounds.reduce((sum, r) => sum + r.usScore, 0);
   const themTotal = rounds.reduce((sum, r) => sum + r.themScore, 0);
 
@@ -172,6 +175,17 @@ export default function WatchPage({ params }: { params: { code: string } }) {
           What&rsquo;s BirdScore?
         </a>
       </p>
+
+      {/* Beta feedback: the current dealer was already broadcast
+          (dealerIndex, below) but never actually shown to watchers —
+          same brass-banner treatment GameScreen's own dealer badge uses,
+          just without a "change" affordance since watchers can't. */}
+      {!gameOver && (
+        <div className="mt-4 flex items-center gap-1.5 self-start rounded-full bg-brass/20 px-4 py-2 font-body text-sm font-semibold text-parchment ring-1 ring-brass/50">
+          <span className="font-normal text-parchment/70">Dealer</span>
+          <span>{players ? players[dealerIndex] : SEAT_FALLBACK_LABELS[dealerIndex]}</span>
+        </div>
+      )}
 
       <div className="mt-6">
         <ScoreTotals us={usTotal} them={themTotal} usLabel={usTeamName} themLabel={themTeamName} />
@@ -203,13 +217,14 @@ export default function WatchPage({ params }: { params: { code: string } }) {
             maxPointsPerRound: 0,
             usTeamName,
             themTeamName,
-            players: null,
+            players,
             spreadWin: false,
           }}
           onUpdateRound={() => {}}
           onDeleteRound={() => {}}
           readOnly
           hideTotals
+          showDealerRook={players !== null}
         />
       </div>
     </div>

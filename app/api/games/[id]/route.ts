@@ -31,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   const body = await request.json();
-  const { rounds, winner, settings, cancel } = body as {
+  const { rounds, winner, settings, cancel, hidden } = body as {
     rounds?: Parameters<typeof roundsToDbRows>[1];
     winner?: "US" | "THEM" | null;
     settings?: {
@@ -42,6 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       spreadWin: boolean;
     };
     cancel?: boolean;
+    hidden?: boolean;
   };
 
   // Cancelling is a separate, minimal path — leaves whatever rounds already
@@ -52,6 +53,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       .from("games")
       .update({ status: "cancelled" })
       .eq("id", params.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // Hide/unhide a completed game — reversible, doesn't touch rounds or
+  // stats (Partner Performance reads the full unfiltered games list, not
+  // whatever's currently visible), just whether it shows up in History.
+  if (hidden !== undefined) {
+    const { error } = await supabase.from("games").update({ hidden }).eq("id", params.id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -186,13 +198,16 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 }
 
 /**
- * Permanently deletes a game — scoped to cancelled games only, on
- * purpose. A cancelled game has no real historical value, but a
- * completed (or even in-progress) one might, so this refuses to delete
- * anything else rather than trusting the client to only ever call it in
- * the right place. RLS also means this can only ever touch the caller's
- * own game regardless. rounds/players cascade-delete automatically
- * (on delete cascade in 0001_init.sql).
+ * Permanently deletes a game — scoped to cancelled or completed games
+ * only. In-progress is deliberately excluded: the client always cancels
+ * an in-progress game first (PATCH cancel:true), which flips it to
+ * cancelled before this is ever called, so there's no legitimate path
+ * that reaches here with status still "in_progress" — refusing it here
+ * too is a real safety rail, not just an unreachable branch, since it
+ * means a client bug can't skip straight to deleting a game that's still
+ * being played. RLS also means this can only ever touch the caller's own
+ * game regardless. rounds/players cascade-delete automatically (on delete
+ * cascade in 0001_init.sql).
  */
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -212,9 +227,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   if (!game) {
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
   }
-  if (game.status !== "cancelled") {
+  if (game.status !== "cancelled" && game.status !== "completed") {
     return NextResponse.json(
-      { error: "Only cancelled games can be permanently deleted" },
+      { error: "Only cancelled or completed games can be permanently deleted" },
       { status: 400 }
     );
   }

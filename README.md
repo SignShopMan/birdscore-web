@@ -22,6 +22,82 @@ environment I built this in.
 
 ## Changelog
 
+**History lifecycle redesign: Cancel vs Hide vs Delete, plus pagination**
+(the swipe-action rework from earlier this session conflated two different
+concepts under one "Cancel," and offered no way to tidy up a long list
+except permanent deletion — this replaces it with the actual intended
+model):
+
+- **Cancel is now only for in-progress games** — `actionsFor()` in
+  `HistoryScreen.tsx` determines a row's swipe actions purely from its
+  status, and a completed game no longer offers Cancel at all. Cancelling
+  now chains the existing PATCH `cancel:true` with an immediate DELETE
+  behind one confirmation, so an abandoned in-progress game is actually
+  gone, not left behind as a lingering "Cancelled" row. That chaining has
+  a known failure mode (delete can fail after cancel succeeds) — handled
+  explicitly: if it does, the row updates to `cancelled` locally and
+  `actionsFor()` offers it a plain Delete, so a failed cleanup is one more
+  swipe away from done instead of a dead end.
+- **Completed games get Hide and Delete instead** — new `games.hidden`
+  column (migration `0011_hide_completed_games.sql`), toggled via a new
+  `PATCH /api/games/[id]` branch. Hide is reversible and fires immediately
+  with no confirmation (matches "hidden simply hides it, doesn't affect
+  stats" — `computePartnershipStats` already reads the full unfiltered
+  games list, not the filtered/visible one, so a hidden game keeps
+  counting for free). Delete is permanent, confirmed, and now reachable
+  directly from a completed game — `DELETE /api/games/[id]` used to only
+  allow already-cancelled games; relaxed to also allow completed ones,
+  in-progress still refused.
+- The swipe drawer now reveals however many actions apply to a row's
+  status side by side (1 for in-progress/cancelled, 2 for completed —
+  Hide/Unhide + Delete) instead of always assuming exactly one.
+- **Pagination**: History shows 10 games at a time with a "Show more"
+  button, resetting back to 10 whenever a filter changes so switching
+  filters mid-scroll can't strand you past a now-much-shorter list. Client
+  -side over the already-fetched list — `GET /api/games` still caps at 50
+  server-side, a known boundary not solved in this pass.
+- "Show cancelled" renamed to "Show hidden," now covering both hidden
+  completed games and the (should be rare) cancelled-cleanup-failed edge
+  case — one toggle for "not normally visible," rather than two checkboxes
+  for two increasingly obscure cases.
+- **Needs the migration run before deploy**, same flag as the last three —
+  `PATCH /api/games/[id]` will write to `hidden` immediately once this
+  ships.
+
+**Beta tester feedback: dealer visibility, and Rook-holder/dealer history in
+watch mode** (three related reports from the same weekend of real play):
+
+- **Dealer badge too small/easy to miss** — `GameScreen.tsx`'s dealer
+  control was a `text-xs` pill the same subtle weight as everything else
+  in the header. Bumped to the brass-banner treatment the invite code
+  already uses for "this matters, look here" — the dealer's name is now
+  the visually dominant part, "change" demoted to a small trailing hint.
+- **Watchers couldn't see who dealt or held the Rook in past rounds** —
+  that data (`dealerIndex`, `rookHolderSeat`) was already on every `Round`
+  and already reaching `/watch` in the broadcast `rounds` array, but
+  `Scoreboard.tsx`'s round ledger never displayed it anywhere — not even
+  to the host in their own live game, only after the fact in
+  `GameDetailModal`'s History review. New `showDealerRook` prop on
+  `Scoreboard`/`RoundRow` adds a "Dealer: X · Rook: Y" line per round,
+  computed by each caller: the host's own screens (`app/page.tsx`'s
+  sidebar/sheet, `GameOverScreen`) gate it behind their current
+  `canUseEnhancedStats(tier)`, matching how `GameDetailModal` already
+  works; `/watch` has no signed-in viewer to check a tier against, but
+  realtime hosting already requires Pro (the same tier enhanced stats
+  requires), so it shows there whenever named players are set, no separate
+  check needed.
+- **Current dealer wasn't shown live in watch mode at all** —
+  `dealerIndex` was already broadcast and sitting in `LiveState`, just
+  never rendered. Also needed `settings.players` broadcast for the first
+  time (`RealtimeHost.tsx` — safe unconditionally, same Pro-tier reasoning
+  as above) so names, not just seat numbers, can actually resolve. Added
+  the same brass-banner dealer display as the host's screen, minus the
+  "change" affordance watchers don't have.
+- Caught while wiring the host's new banner up: the un-named-players
+  fallback label (`"Dealer: Seat 1"`) would have doubled up with the
+  banner's own separate "Dealer" prefix into "Dealer Dealer: Seat 1" —
+  fixed to just `"Seat 1"` before it ever shipped.
+
 **A real adversarial QA pass — 2 Critical, 6 High, 7 Medium/Low fixes, plus
 3 new bugs found from screenshots**. Three parallel audits (security/auth/
 billing, game-engine correctness, UI/UX) were run and then independently

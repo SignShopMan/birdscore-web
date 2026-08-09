@@ -181,7 +181,9 @@ export async function GET() {
 
   const { data: games, error } = await supabase
     .from("games")
-    .select("id, winning_score, max_points_per_round, us_team_name, them_team_name, status, winner, created_at, completed_at")
+    .select(
+      "id, winning_score, max_points_per_round, us_team_name, them_team_name, status, hidden, winner, created_at, completed_at"
+    )
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -247,6 +249,7 @@ export async function GET() {
       maxPointsPerRound: g.max_points_per_round,
       usTeamName: g.us_team_name,
       themTeamName: g.them_team_name,
+      hidden: g.hidden,
       status: g.status,
       winner: g.winner,
       createdAt: g.created_at,

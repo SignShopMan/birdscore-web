@@ -12,7 +12,7 @@ import { InviteScreen } from "./InviteScreen";
 import { DealerPickerModal } from "./DealerPickerModal";
 import { UndoToast } from "./UndoToast";
 
-const SEAT_FALLBACK_LABELS = ["Dealer: Seat 1", "Dealer: Seat 2", "Dealer: Seat 3", "Dealer: Seat 4"];
+const SEAT_FALLBACK_LABELS = ["Seat 1", "Seat 2", "Seat 3", "Seat 4"];
 
 export function GameScreen({
   onScoreRound,
@@ -75,11 +75,19 @@ export function GameScreen({
       <header>
         <div className="flex items-center justify-between">
           <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
+          {/* Beta feedback: this used to be a text-xs pill the same subtle
+              weight as everything else in the header, easy to miss at a
+              glance mid-game. Bumped to the same brass-banner treatment the
+              invite code already uses for "this matters, look here" — the
+              dealer name itself is now the visually dominant part, "change"
+              demoted to a small hint rather than competing with it. */}
           <button
             onClick={() => setDealerPickerOpen(true)}
-            className="min-h-[44px] rounded-full bg-parchment/10 px-3 py-1.5 font-body text-xs text-parchment ring-1 ring-parchment/30"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-full bg-brass/20 px-4 py-2 font-body text-sm font-semibold text-parchment ring-1 ring-brass/50"
           >
-            {settings.players ? `Dealer: ${settings.players[dealerIndex]}` : SEAT_FALLBACK_LABELS[dealerIndex]} &middot; change
+            <span className="font-normal text-parchment/70">Dealer</span>
+            <span>{settings.players ? settings.players[dealerIndex] : SEAT_FALLBACK_LABELS[dealerIndex]}</span>
+            <span className="font-normal text-parchment/50">&middot; change</span>
           </button>
         </div>
         <h1 className="mt-3 font-display text-2xl font-semibold text-parchment lg:text-3xl">

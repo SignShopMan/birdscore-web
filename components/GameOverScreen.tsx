@@ -2,7 +2,7 @@
 
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { useAuthStore } from "@/lib/auth-store";
-import { canSaveHistory } from "@/lib/entitlements";
+import { canSaveHistory, canUseEnhancedStats } from "@/lib/entitlements";
 import { teamLabel } from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
 import { Scoreboard } from "./Scoreboard";
@@ -67,6 +67,7 @@ export function GameOverScreen({
           onDeleteRound={deleteRound}
           readOnly
           hideTotals
+          showDealerRook={canUseEnhancedStats(tier) && settings.players !== null}
         />
       </div>
 

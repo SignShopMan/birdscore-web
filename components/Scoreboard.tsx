@@ -44,6 +44,8 @@ function TrashIcon() {
   );
 }
 
+const SEAT_LABELS = ["North", "East", "South", "West"];
+
 function RoundRow({
   round,
   settings,
@@ -51,6 +53,7 @@ function RoundRow({
   usLabel,
   themLabel,
   runningTotal,
+  showDealerRook,
   onUpdate,
   onDelete,
 }: {
@@ -64,6 +67,16 @@ function RoundRow({
   // and from the game's final total. This is what makes a comeback
   // visible round-by-round instead of only at the very end.
   runningTotal: { usTotal: number; themTotal: number };
+  // Dealer/Rook-holder per round — beta feedback was that neither was
+  // visible anywhere except the after-the-fact History review
+  // (GameDetailModal), not in the live ledger a host actually plays
+  // against, and not at all to spectators in /watch. Each caller computes
+  // this: the host's own screens gate it behind their current
+  // canUseEnhancedStats(tier), same as GameDetailModal already does;
+  // /watch has no signed-in viewer to check a tier against, but hosting a
+  // realtime game already requires Pro, so it's shown there whenever
+  // named players are set, no separate check needed.
+  showDealerRook?: boolean;
   onUpdate: (rowId: string, updates: Partial<Round>) => void;
   onDelete: (rowId: string) => void;
 }) {
@@ -210,6 +223,14 @@ function RoundRow({
         <p className="pl-7 font-body text-[10px] text-ink/50">
           Total: {formatScore(runningTotal.usTotal, runningTotal.themTotal)}
         </p>
+        {showDealerRook && !isAdj && settings.players && round.dealerIndex != null && (
+          <p className="pl-7 font-body text-[10px] text-ink/50">
+            Dealer: {settings.players[round.dealerIndex]} ({SEAT_LABELS[round.dealerIndex]})
+            {round.rookHolderSeat != null && (
+              <> &middot; Rook: {settings.players[round.rookHolderSeat]}</>
+            )}
+          </p>
+        )}
         {confirmingDelete && (
           <div className="mt-1.5 flex items-center justify-between gap-2 rounded-md bg-trump-red/10 p-2">
             <p className="font-body text-xs text-ink">
@@ -380,6 +401,7 @@ export function Scoreboard({
   readOnly,
   onClose,
   hideTotals,
+  showDealerRook,
 }: {
   rounds: Round[];
   usTotal: number;
@@ -393,6 +415,7 @@ export function Scoreboard({
   readOnly?: boolean;
   onClose?: () => void;
   hideTotals?: boolean;
+  showDealerRook?: boolean;
 }) {
   const listEndRef = useRef<HTMLLIElement>(null);
   const [addingAdjustment, setAddingAdjustment] = useState(false);
@@ -446,6 +469,7 @@ export function Scoreboard({
                 usLabel={usLabel}
                 themLabel={themLabel}
                 runningTotal={totalsAfterEachRound[i]}
+                showDealerRook={showDealerRook}
                 onUpdate={onUpdateRound}
                 onDelete={onDeleteRound}
               />
