@@ -21,7 +21,16 @@ const nextConfig = {
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com",
       "frame-src https://checkout.stripe.com",
-      "frame-ancestors 'none'",
+      // 'none' broke the iOS app wrapper entirely: Capacitor's WKWebView
+      // identifies its own bridge context as capacitor://localhost even in
+      // remote server.url mode, and WebKit's frame-ancestors enforcement
+      // treated the wrapper's top-level navigation as framing this page —
+      // failed with WebKitErrorDomain 102 (frame load interrupted), which
+      // then fell back to opening the URL in the system browser instead.
+      // capacitor://localhost isn't a reachable origin on the open web, so
+      // allowlisting it here doesn't weaken clickjacking protection for
+      // actual browser traffic.
+      "frame-ancestors 'self' capacitor://localhost",
       "form-action 'self' https://checkout.stripe.com",
       "base-uri 'self'",
     ].join("; ");
