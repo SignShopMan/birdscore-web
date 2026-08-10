@@ -13,9 +13,14 @@ const nextConfig = {
     // needs a live check — watch the browser console after deploying
     // for any "Refused to..." CSP errors, particularly around sign-in,
     // realtime, and checkout.
+    // next dev's Fast Refresh relies on eval() for its bundle, which a
+    // strict script-src blocks outright — crashes hydration on every load
+    // (blank page, no console guidance beyond an EvalError). Production
+    // builds don't eval() the same way, so this stays scoped to dev only.
+    const isDev = process.env.NODE_ENV === "development";
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",

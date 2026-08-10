@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 
 const DISMISSED_KEY = "birdscore-install-prompt-dismissed";
 
@@ -25,6 +26,12 @@ export function InstallPrompt() {
   const [dismissed, setDismissed] = useState(true); // default hidden until checked, avoids a flash
 
   useEffect(() => {
+    // Already running as the native wrapper — navigator.userAgent still
+    // matches the iOS branch below (it's real WebKit under the hood), so
+    // without this check the "add to home screen" banner would show up
+    // inside the app you already installed from the App Store.
+    if (Capacitor.isNativePlatform()) return;
+
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
