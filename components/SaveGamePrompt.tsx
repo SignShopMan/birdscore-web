@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { SignInForm } from "./SignInForm";
 import { stashPendingSave } from "@/lib/pending-save";
 import { Round, GameSettings } from "@/lib/rook-engine";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isNativeIOS } from "@/lib/platform";
 
 /** Shown at Game Over for anyone who can't save history yet. Stashes the
  * finished game the moment they express intent to save (before sign-in
@@ -24,6 +25,12 @@ export function SaveGamePrompt({
   const [selected, setSelected] = useState<"plus" | "pro" | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Read after mount, not during render — Capacitor.isNativePlatform() only
+  // reflects reality once the client-side bridge has loaded, so reading it
+  // synchronously during SSR/first paint would always say "false" and cause
+  // a hydration mismatch on the one platform this actually matters for.
+  const [nativeIOS, setNativeIOS] = useState(false);
+  useEffect(() => setNativeIOS(isNativeIOS()), []);
 
   const choose = (tier: "plus" | "pro") => {
     setSelected(tier);
@@ -60,7 +67,16 @@ export function SaveGamePrompt({
         good.
       </p>
 
-      {!isSupabaseConfigured ? (
+      {nativeIOS ? (
+        // App Store guideline 3.1.1: digital purchases inside the app must
+        // go through StoreKit. Rather than build/reconcile a parallel IAP
+        // flow, this build simply never offers a purchase path — no
+        // pricing, no buttons, no link out. Already-entitled accounts still
+        // skip this prompt entirely and save automatically (see below).
+        <p className="mt-3 font-body text-xs text-ink/60">
+          This game only lives on this device right now.
+        </p>
+      ) : !isSupabaseConfigured ? (
         <p className="mt-3 rounded-md bg-white p-2 font-body text-xs text-trump-red">
           Saving isn&rsquo;t set up in this environment yet — Supabase/Stripe aren&rsquo;t
           configured. See the README&rsquo;s Phase 2 setup section.

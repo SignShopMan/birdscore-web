@@ -3,3 +3,11 @@ node_modules
 .env*.local
 .DS_Store
 supabase/.temp
+
+# iOS / Xcode — user-specific state and build output, not the project itself
+ios/App/Pods
+ios/App/output
+ios/DerivedData
+ios/.build
+**/xcuserdata/
+*.xcuserstate

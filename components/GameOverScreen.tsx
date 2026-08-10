@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { Share } from "@capacitor/share";
 import { useGameStore, usTotal, themTotal } from "@/lib/game-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { canSaveHistory, canUseEnhancedStats } from "@/lib/entitlements";
 import { teamLabel } from "@/lib/rook-engine";
+import { isNativeIOS } from "@/lib/platform";
 import { ScoreTotals } from "./ScoreTotals";
 import { Scoreboard } from "./Scoreboard";
 import { SaveGamePrompt } from "./SaveGamePrompt";
@@ -27,6 +30,19 @@ export function GameOverScreen({
   const { settings, rounds, winner, updateRound, deleteRound, syncStatus } = useGameStore();
   const { tier } = useAuthStore();
   const entitled = canSaveHistory(tier);
+  const [nativeIOS, setNativeIOS] = useState(false);
+  useEffect(() => setNativeIOS(isNativeIOS()), []);
+
+  const shareScore = () => {
+    const us = usTotal(rounds);
+    const them = themTotal(rounds);
+    Share.share({
+      title: "BirdScore",
+      text: `${settings.usTeamName} ${us} – ${them} ${settings.themTeamName}. ${
+        winner ? teamLabel(winner, settings) : "Nobody"
+      } wins!`,
+    });
+  };
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 text-center lg:max-w-lg lg:py-14">
@@ -75,6 +91,15 @@ export function GameOverScreen({
         <div className="mt-6 text-left">
           <SaveGamePrompt settings={settings} rounds={rounds} winner={winner} />
         </div>
+      )}
+
+      {nativeIOS && (
+        <button
+          onClick={shareScore}
+          className="mt-6 w-full rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.2em] text-parchment ring-1 ring-parchment/30"
+        >
+          Share Score
+        </button>
       )}
 
       <button

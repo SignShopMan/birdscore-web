@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
+import { Capacitor } from "@capacitor/core";
 import { calculateRoundScores, isValidNonBidderScore, teamLabel } from "@/lib/rook-engine";
 import { useGameStore } from "@/lib/game-store";
 import { useAuthStore } from "@/lib/auth-store";
@@ -121,6 +123,12 @@ export function ScorecardModal({ onClose }: { onClose: () => void }) {
           <button
             disabled={!valid}
             onClick={() => {
+              // No-op outside the native wrapper — Capacitor's web fallback
+              // for Haptics is a silent unsupported-feature warning, so gate
+              // it explicitly rather than relying on that.
+              if (Capacitor.isNativePlatform()) {
+                Haptics.impact({ style: ImpactStyle.Medium });
+              }
               saveRound(nonBidderScore, trackRookHolder ? rookHolderSeat : null);
               onClose();
             }}
