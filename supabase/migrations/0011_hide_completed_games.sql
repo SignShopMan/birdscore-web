@@ -5,4 +5,4 @@
 -- filtered/visible one.
 
 alter table public.games
-  add column hidden boolean not null default false;
+  add column if not exists hidden boolean not null default false;

@@ -13,7 +13,7 @@
 -- already bypasses RLS entirely; this table has no reason to be visible
 -- to anon/authenticated at all.
 
-create table public.processed_stripe_events (
+create table if not exists public.processed_stripe_events (
   event_id text primary key,
   processed_at timestamptz not null default now()
 );

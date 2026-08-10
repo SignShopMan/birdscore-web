@@ -16,9 +16,9 @@
 -- This returns a single boolean, never a row, so there's nothing to leak
 -- regardless of how the caller queries it.
 
-drop policy "games: anyone can check a join code exists" on public.games;
+drop policy if exists "games: anyone can check a join code exists" on public.games;
 
-create function public.check_join_code(code text)
+create or replace function public.check_join_code(code text)
 returns boolean
 language sql
 security definer
