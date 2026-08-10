@@ -323,6 +323,8 @@ export function HistoryScreen({
 }) {
   const { userId } = useAuthStore();
   const loadGame = useGameStore((s) => s.loadGame);
+  const currentGameId = useGameStore((s) => s.currentGameId);
+  const abandonGame = useGameStore((s) => s.abandonGame);
   const [games, setGames] = useState<SavedGame[] | null>(null);
   const [gamesError, setGamesError] = useState<string | null>(null);
   const [resumingId, setResumingId] = useState<string | null>(null);
@@ -401,6 +403,13 @@ export function HistoryScreen({
         body: JSON.stringify({ cancel: true }),
       });
       if (!cancelRes.ok) return;
+
+      // If this was the locally-active game (e.g. cancelled from History
+      // while it's still the in-memory current game), clear the local
+      // store too — otherwise gameActive/currentGameId still point at a
+      // game that no longer exists server-side, and New Game wrongly
+      // prompts "Game in progress" for a game that was just cancelled.
+      if (g.id === currentGameId) abandonGame();
 
       const deleteRes = await fetch(`/api/games/${g.id}`, { method: "DELETE" });
       if (deleteRes.ok) {
