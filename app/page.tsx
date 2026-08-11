@@ -9,6 +9,7 @@ import { SettingsScreen } from "@/components/SettingsScreen";
 import { GameScreen } from "@/components/GameScreen";
 import { ScorecardModal } from "@/components/ScorecardModal";
 import { GameOverScreen } from "@/components/GameOverScreen";
+import { GameOverConfirmScreen } from "@/components/GameOverConfirmScreen";
 import { Scoreboard } from "@/components/Scoreboard";
 import { AccountScreen } from "@/components/AccountScreen";
 import { HistoryScreen } from "@/components/HistoryScreen";
@@ -26,10 +27,12 @@ export default function Home() {
   const [scoreboardOpen, setScoreboardOpen] = useState(false);
   const [confirmingNewGame, setConfirmingNewGame] = useState(false);
   const [abandoning, setAbandoning] = useState(false);
+  const [gameOverConfirmed, setGameOverConfirmed] = useState(false);
   const {
     hasHydrated,
     gameActive,
     gameOver,
+    winner,
     settings,
     rounds,
     trump,
@@ -43,6 +46,14 @@ export default function Home() {
     addAdjustment,
     abandonGame,
   } = useGameStore();
+
+  // Re-arm the checkpoint below every time gameOver goes back to false —
+  // covers both a fresh game later reaching the winning score again, and
+  // the "No, let me check a round" edit path dropping the score back
+  // under it (which un-confirms this on its own, no extra wiring needed).
+  useEffect(() => {
+    if (!gameOver) setGameOverConfirmed(false);
+  }, [gameOver]);
 
   // Resume a game already in progress after a reload — an interrupted game
   // used to just vanish back to the landing screen, since screen state
@@ -129,7 +140,42 @@ export default function Home() {
 
   // gameOver takes over specifically when screen is "game" (the resumed/
   // default state) — Settings, Account, History, and FAQ all stay freely
-  // reachable even with a finished game sitting there.
+  // reachable even with a finished game sitting there. Unconfirmed first:
+  // a checkpoint before the real (locked, synced) Game Over screen below,
+  // with the live-editing Scoreboard still available via "No, let me
+  // check a round" — see GameOverConfirmScreen for why.
+  if (gameOver && screen === "game" && !gameOverConfirmed) {
+    return (
+      <>
+        <GameOverConfirmScreen
+          winner={winner}
+          usTotal={usTotal(rounds)}
+          themTotal={themTotal(rounds)}
+          settings={settings}
+          onConfirm={() => setGameOverConfirmed(true)}
+          onEdit={() => setScoreboardOpen(true)}
+        />
+        {scoreboardOpen && (
+          <div className="fixed inset-0 z-40 bg-felt-dark p-5 pt-8">
+            <Scoreboard
+              rounds={rounds}
+              usTotal={usTotal(rounds)}
+              themTotal={themTotal(rounds)}
+              usLabel={settings.usTeamName}
+              themLabel={settings.themTeamName}
+              settings={settings}
+              onUpdateRound={updateRound}
+              onDeleteRound={deleteRound}
+              onAddAdjustment={addAdjustment}
+              onClose={() => setScoreboardOpen(false)}
+              showDealerRook={canUseEnhancedStats(tier) && settings.players !== null}
+            />
+          </div>
+        )}
+      </>
+    );
+  }
+
   if (gameOver && screen === "game") {
     return (
       <GameOverScreen

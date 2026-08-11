@@ -456,8 +456,8 @@ export function Scoreboard({
               <span className="w-5 shrink-0">#</span>
               <span className="w-2.5 shrink-0" />
               <span className="min-w-0 flex-1">Bid</span>
-              <span className="w-10 text-right">Us</span>
-              <span className="w-10 text-right">Them</span>
+              <span className="w-10 truncate text-right">{usLabel}</span>
+              <span className="w-10 truncate text-right">{themLabel}</span>
               {!readOnly && <span className="ml-1 w-[92px] shrink-0" />}
             </li>
             {rounds.map((r, i) => (
