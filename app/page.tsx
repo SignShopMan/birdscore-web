@@ -156,7 +156,7 @@ export default function Home() {
           onEdit={() => setScoreboardOpen(true)}
         />
         {scoreboardOpen && (
-          <div className="fixed inset-0 z-40 bg-felt-dark p-5 pt-8">
+          <div className="fixed inset-0 z-40 bg-felt-dark p-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             <Scoreboard
               rounds={rounds}
               usTotal={usTotal(rounds)}
@@ -294,7 +294,7 @@ export default function Home() {
 
       {/* Mobile: scoreboard opens as a full sheet on demand */}
       {scoreboardOpen && (
-        <div className="fixed inset-0 z-40 bg-felt-dark p-5 pt-8 lg:hidden">
+        <div className="fixed inset-0 z-40 bg-felt-dark p-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:hidden">
           <Scoreboard
             rounds={rounds}
             usTotal={usTotal(rounds)}

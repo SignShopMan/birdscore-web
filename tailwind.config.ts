@@ -27,6 +27,15 @@ const config: Config = {
         brass: {
           DEFAULT: "#C9A227",
           light: "#E4C560",
+          // Solid, not alpha — bg-brass/25 looked fine wherever it was
+          // first tried against a light backdrop, but composited against
+          // the dark felt background (the mobile Scoreboard sheet, the
+          // /watch page) it blends to a muddy dark olive instead of a
+          // light gold wash, making the "leading" card read as *less*
+          // legible than the plain one next to it. This is what 25%
+          // brass over the paper surfaces actually looks like, fixed
+          // regardless of what's behind it.
+          tint: "#E2D1A0",
         },
         // Constant across every theme — these must match the physical Rook
         // deck's printed colors, so they're not a themeable choice.

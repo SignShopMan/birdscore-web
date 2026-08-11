@@ -59,8 +59,8 @@ export function MainMenu({
             onClick={() => setOpen(false)}
           />
           <div
-            className="fixed inset-y-0 left-0 z-50 h-full w-72 max-w-[85vw] bg-paper p-5 shadow-card
-              lg:absolute lg:inset-auto lg:left-0 lg:top-full lg:mt-2 lg:h-auto lg:w-64 lg:rounded-card"
+            className="fixed inset-y-0 left-0 z-50 h-full w-72 max-w-[85vw] bg-paper p-5 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-card
+              lg:absolute lg:inset-auto lg:left-0 lg:top-full lg:mt-2 lg:h-auto lg:w-64 lg:rounded-card lg:pt-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">

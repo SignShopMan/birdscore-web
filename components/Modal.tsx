@@ -49,7 +49,11 @@ export function Modal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center ${backdropClassName}`}
+      // Bottom-sheet on mobile (items-end) — pb here keeps the panel clear
+      // of the home indicator's unsafe zone without every modal needing
+      // to know that itself; harmless on desktop/browsers, where
+      // safe-area-inset-bottom is just 0.
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 pb-[env(safe-area-inset-bottom)] sm:items-center sm:pb-0 ${backdropClassName}`}
     >
       <div
         ref={panelRef}

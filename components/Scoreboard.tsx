@@ -9,6 +9,7 @@ import {
   TRUMP_DOT_CLASS,
   formatScore,
   runningTotals,
+  teamShortLabel,
 } from "@/lib/rook-engine";
 import { ScoreTotals } from "./ScoreTotals";
 import { EditRoundModal } from "./EditRoundModal";
@@ -456,8 +457,8 @@ export function Scoreboard({
               <span className="w-5 shrink-0">#</span>
               <span className="w-2.5 shrink-0" />
               <span className="min-w-0 flex-1">Bid</span>
-              <span className="w-12 truncate text-right">{usLabel}</span>
-              <span className="w-12 truncate text-right">{themLabel}</span>
+              <span className="w-12 truncate text-right">{teamShortLabel("US", settings)}</span>
+              <span className="w-12 truncate text-right">{teamShortLabel("THEM", settings)}</span>
               {!readOnly && <span className="ml-1 w-[92px] shrink-0" />}
             </li>
             {rounds.map((r, i) => (

@@ -167,6 +167,21 @@ export function teamLabel(team: Team, settings: Pick<GameSettings, "usTeamName" 
   return team === "US" ? settings.usTeamName : settings.themTeamName;
 }
 
+/** Header-safe label for columns too narrow for "Jared & Ryan" without
+ * truncating to "Jared ..." — initials ("J/R") when named players are
+ * set, since those two names are always derivable from the seats
+ * directly. Falls back to the full team name otherwise (a custom typed
+ * name or the "Us"/"Them" default), since there's no safe way to
+ * abbreviate arbitrary free text a player chose themselves. */
+export function teamShortLabel(
+  team: Team,
+  settings: Pick<GameSettings, "usTeamName" | "themTeamName" | "players">
+): string {
+  if (!settings.players) return teamLabel(team, settings);
+  const [a, b] = team === "US" ? [settings.players[0], settings.players[2]] : [settings.players[1], settings.players[3]];
+  return `${a[0]}/${b[0]}`;
+}
+
 export const MAX_POINTS_OPTIONS = [120, 150, 180, 200, 250] as const;
 export const DEFAULT_SETTINGS: GameSettings = {
   winningScore: 500,

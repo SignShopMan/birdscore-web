@@ -35,6 +35,13 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#173C31",
+  // Required for env(safe-area-inset-*) to report real values instead of
+  // 0 everywhere — without it, the fixed-position full-screen overlays
+  // (mobile Scoreboard sheet) have no way to know how tall the notch/
+  // Dynamic Island/status bar actually is on a given device, so a fixed
+  // pt-* either overshoots on phones without one or undershoots on ones
+  // with a bigger inset than assumed.
+  viewportFit: "cover",
 };
 
 const THEME_INIT_SCRIPT = `

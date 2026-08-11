@@ -25,7 +25,7 @@ export function ScoreTotals({
     <div className="grid grid-cols-2 gap-3">
       <div
         className={`rounded-card p-4 text-center ${
-          usLeads ? "bg-brass/25 ring-2 ring-brass" : "bg-paper-dim"
+          usLeads ? "bg-brass-tint ring-2 ring-brass" : "bg-paper-dim"
         }`}
       >
         <div className="flex items-center justify-center gap-1.5">
@@ -42,7 +42,7 @@ export function ScoreTotals({
       </div>
       <div
         className={`rounded-card p-4 text-center ${
-          themLeads ? "bg-brass/25 ring-2 ring-brass" : "bg-paper-dim"
+          themLeads ? "bg-brass-tint ring-2 ring-brass" : "bg-paper-dim"
         }`}
       >
         <div className="flex items-center justify-center gap-1.5">
