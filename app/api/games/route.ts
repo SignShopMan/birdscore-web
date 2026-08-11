@@ -197,10 +197,13 @@ export async function GET() {
 
   // One extra query for totals rather than N — fetch every round for every
   // listed game at once and sum client-side (in this route), instead of a
-  // per-game round-trip.
+  // per-game round-trip. Also carries rook_holder_player_id — beta
+  // feedback wanted a running Rook tally (who actually gets stuck with it
+  // most), and the per-round holder was already tracked but never
+  // aggregated anywhere.
   const { data: rounds, error: roundsError } = await supabase
     .from("rounds")
-    .select("game_id, us_score, them_score")
+    .select("game_id, us_score, them_score, rook_holder_player_id")
     .in("game_id", games.map((g) => g.id));
 
   if (roundsError) {
@@ -217,7 +220,7 @@ export async function GET() {
 
   const { data: players, error: playersError } = await supabase
     .from("players")
-    .select("game_id, seat, display_name")
+    .select("id, game_id, seat, display_name")
     .in(
       "game_id",
       games.map((g) => g.id)
@@ -231,6 +234,46 @@ export async function GET() {
     list.push({ seat: p.seat, display_name: p.display_name });
     playersByGame.set(p.game_id, list);
   }
+
+  // Rook tally — by player name (not id, so the same person across
+  // different games/seats still adds up) and by partnership pairing,
+  // matching how "Partner Performance" already groups north+south /
+  // east+west. Counted regardless of game status: an in-progress game's
+  // rounds so far are real hands that were actually dealt, same reasoning
+  // as why totals above aren't status-gated either.
+  const playerNameById = new Map((players ?? []).map((p) => [p.id, p.display_name]));
+  const rookByPlayer = new Map<string, number>();
+  const rookByPartnership = new Map<string, { players: [string, string]; count: number }>();
+  for (const r of rounds ?? []) {
+    if (!r.rook_holder_player_id) continue;
+    const name = playerNameById.get(r.rook_holder_player_id);
+    if (!name) continue;
+    rookByPlayer.set(name, (rookByPlayer.get(name) ?? 0) + 1);
+
+    const gamePlayers = playersByGame.get(r.game_id);
+    if (!gamePlayers || gamePlayers.length !== 4) continue;
+    // North+South (seats 0/2) and East+West (seats 1/3) are partners —
+    // same pairing partner-stats.ts uses for "Partner Performance".
+    const PARTNER_SEAT = [2, 3, 0, 1] as const;
+    const holder = gamePlayers.find((p) => p.display_name === name);
+    if (!holder) continue;
+    const partnerPlayer = gamePlayers.find((p) => p.seat === PARTNER_SEAT[holder.seat]);
+    if (!partnerPlayer) continue;
+    const partner = partnerPlayer.display_name;
+    const pairKey = [name, partner].sort().join(" ");
+    const existing = rookByPartnership.get(pairKey);
+    if (existing) existing.count++;
+    else {
+      const pair = [name, partner].sort() as [string, string];
+      rookByPartnership.set(pairKey, { players: pair, count: 1 });
+    }
+  }
+  const rookStats = {
+    perPlayer: Array.from(rookByPlayer.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count),
+    perPartnership: Array.from(rookByPartnership.values()).sort((a, b) => b.count - a.count),
+  };
 
   const result = games.map((g) => {
     const gamePlayers = playersByGame.get(g.id);
@@ -260,5 +303,5 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ games: result });
+  return NextResponse.json({ games: result, rookStats });
 }

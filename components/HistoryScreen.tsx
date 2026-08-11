@@ -25,6 +25,11 @@ interface SavedGame {
   hidden: boolean;
 }
 
+interface RookStats {
+  perPlayer: { name: string; count: number }[];
+  perPartnership: { players: [string, string]; count: number }[];
+}
+
 type StatusFilter = "all" | "in_progress" | "completed";
 
 function formatDate(iso: string) {
@@ -326,6 +331,7 @@ export function HistoryScreen({
   const currentGameId = useGameStore((s) => s.currentGameId);
   const abandonGame = useGameStore((s) => s.abandonGame);
   const [games, setGames] = useState<SavedGame[] | null>(null);
+  const [rookStats, setRookStats] = useState<RookStats | null>(null);
   const [gamesError, setGamesError] = useState<string | null>(null);
   const [resumingId, setResumingId] = useState<string | null>(null);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
@@ -348,8 +354,10 @@ export function HistoryScreen({
     fetch("/api/games")
       .then((res) => res.json())
       .then((data) => {
-        if (data.games) setGames(data.games);
-        else setGamesError(data.error ?? "Couldn't load games");
+        if (data.games) {
+          setGames(data.games);
+          setRookStats(data.rookStats ?? null);
+        } else setGamesError(data.error ?? "Couldn't load games");
       })
       .catch(() => setGamesError("Couldn't load games"));
   }, [userId]);
@@ -562,6 +570,38 @@ export function HistoryScreen({
           No partner stats yet — play a few completed games with named players (Settings
           &rarr; Team names &amp; players &rarr; Track 4 players) and they&rsquo;ll show up here.
         </p>
+      )}
+
+      {rookStats && rookStats.perPlayer.length > 0 && (
+        <div className="mt-6">
+          <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
+            Rook Holder
+          </p>
+          <div className="mt-3 rounded-card bg-paper p-3 shadow-card">
+            <div className="space-y-1.5">
+              {rookStats.perPlayer.map((p) => (
+                <div key={p.name} className="flex items-center justify-between">
+                  <p className="truncate font-body text-sm text-ink">{p.name}</p>
+                  <p className="font-score tabular-score text-sm font-bold text-ink">
+                    {p.count}&times;
+                  </p>
+                </div>
+              ))}
+            </div>
+            {rookStats.perPartnership.length > 0 && (
+              <div className="mt-3 space-y-1.5 border-t border-ink/10 pt-3">
+                {rookStats.perPartnership.map((p) => (
+                  <div key={p.players.join("+")} className="flex items-center justify-between">
+                    <p className="truncate font-body text-xs text-ink/60">
+                      {p.players[0]} &amp; {p.players[1]}
+                    </p>
+                    <p className="font-score tabular-score text-xs text-ink/60">{p.count}&times;</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       <div className="mt-6 flex-1">

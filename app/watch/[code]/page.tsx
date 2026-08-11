@@ -70,21 +70,41 @@ export default function WatchPage({ params }: { params: { code: string } }) {
     };
   }, [params.code]);
 
+  // Reconnects outright on visibility rather than assuming the old socket
+  // resumed on its own — a backgrounded/locked phone suspends JS (and any
+  // reconnect logic Realtime itself would otherwise run) entirely, so
+  // there's no guarantee the subscription is even alive again by the time
+  // the screen comes back. See RealtimeHost.tsx for the host-side half of
+  // this same fix — beta feedback was that watchers stopped getting
+  // updates until something unrelated happened to force a reconnect.
   useEffect(() => {
     if (gameCheck !== "found") return;
     const supabase = createClient();
-    const channel = supabase
-      .channel(joinCodeChannel(params.code.trim().toUpperCase()))
-      .on("broadcast", { event: "state" }, ({ payload }) => setState(payload as LiveState))
-      .subscribe(async (status) => {
-        setConnected(status === "SUBSCRIBED");
-        if (status === "SUBSCRIBED") {
-          await channel.track({ watching_since: new Date().toISOString() });
-        }
-      });
+    const code = params.code.trim().toUpperCase();
+    let channel: ReturnType<typeof supabase.channel>;
+
+    const connect = () => {
+      channel?.unsubscribe();
+      channel = supabase
+        .channel(joinCodeChannel(code))
+        .on("broadcast", { event: "state" }, ({ payload }) => setState(payload as LiveState))
+        .subscribe(async (status) => {
+          setConnected(status === "SUBSCRIBED");
+          if (status === "SUBSCRIBED") {
+            await channel.track({ watching_since: new Date().toISOString() });
+          }
+        });
+    };
+    connect();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") connect();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      channel.unsubscribe();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      channel?.unsubscribe();
     };
   }, [gameCheck, params.code]);
 

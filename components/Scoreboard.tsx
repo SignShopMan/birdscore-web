@@ -171,7 +171,7 @@ function RoundRow({
 
   return (
     <>
-      <li className="group rounded-md px-2 py-1.5 hover:bg-white/50">
+      <li className="group rounded-md px-2 py-2 hover:bg-white/50">
         <div className="flex items-center gap-2">
           <span className="w-5 shrink-0 font-score text-xs text-ink/75">
             {isAdj ? "\u00B1" : round.round}
@@ -181,15 +181,15 @@ function RoundRow({
           ) : (
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`} />
           )}
-          <span className="min-w-0 flex-1 truncate font-body text-xs text-ink/75">
+          <span className="min-w-0 flex-1 truncate font-body text-sm text-ink/75">
             {isAdj
               ? round.label || "Adjustment"
               : `${round.bidTeam === "US" ? usLabel : themLabel} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
           </span>
-          <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
+          <span className="w-12 text-right font-score tabular-score text-lg font-semibold text-ink">
             {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}
           </span>
-          <span className="w-10 text-right font-score tabular-score text-sm font-semibold text-ink">
+          <span className="w-12 text-right font-score tabular-score text-lg font-semibold text-ink">
             {isAdj && round.themScore === 0 ? "\u2013" : round.themScore}
           </span>
           {!readOnly && (
@@ -456,8 +456,8 @@ export function Scoreboard({
               <span className="w-5 shrink-0">#</span>
               <span className="w-2.5 shrink-0" />
               <span className="min-w-0 flex-1">Bid</span>
-              <span className="w-10 truncate text-right">{usLabel}</span>
-              <span className="w-10 truncate text-right">{themLabel}</span>
+              <span className="w-12 truncate text-right">{usLabel}</span>
+              <span className="w-12 truncate text-right">{themLabel}</span>
               {!readOnly && <span className="ml-1 w-[92px] shrink-0" />}
             </li>
             {rounds.map((r, i) => (
