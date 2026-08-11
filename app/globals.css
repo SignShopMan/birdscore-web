@@ -69,6 +69,14 @@
 html,
 body {
   min-height: 100dvh;
+  /* Kills WKWebView's default elastic rubber-band bounce past the top/
+     bottom edge — in the native app wrapper this made every screen feel
+     "scrollable" even when its content exactly fit the viewport, since
+     the bounce itself is a drag gesture independent of whether there's
+     any real extra content. Doesn't affect genuinely long screens
+     (History, FAQ) — they still scroll normally, just without the
+     springy overshoot past their real edges. */
+  overscroll-behavior: none;
 }
 
 body {
