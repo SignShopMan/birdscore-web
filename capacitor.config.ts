@@ -19,7 +19,13 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   ios: {
-    contentInset: 'automatic',
+    // 'automatic' has the native layer itself reserve scroll space for
+    // the notch/status bar via UIScrollView.contentInset — which then
+    // double-counts against the app's own env(safe-area-inset-*) CSS
+    // (added for the overlays that need it), leaving real extra
+    // scrollable slack exactly the size of the notch. 'never' makes CSS
+    // the only source of truth for safe-area spacing.
+    contentInset: 'never',
   },
 };
 

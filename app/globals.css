@@ -80,6 +80,19 @@ body {
 }
 
 body {
+  /* capacitor.config.ts sets ios.contentInset to 'never', so the native
+     layer does nothing automatic about the notch/status bar/home
+     indicator — this is now the only place that happens. Applied here
+     rather than per-screen so every normal (non-fixed-position) screen
+     gets it for free; the few fixed-position overlays (Scoreboard sheet,
+     the menu drawer) don't inherit body padding and already carry their
+     own env() padding directly. max() keeps it a no-op on any
+     browser/device without a real inset. */
+  padding-top: max(0px, env(safe-area-inset-top));
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+body {
   background-image:
     radial-gradient(ellipse at top, rgb(var(--felt-texture) / 0.05), transparent 60%),
     repeating-linear-gradient(
