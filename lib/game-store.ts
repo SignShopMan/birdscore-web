@@ -14,6 +14,7 @@ import {
   nextDealerIndex,
   renumberRounds,
   roundsPlayed,
+  seatTeam,
   teamTotal,
 } from "./rook-engine";
 
@@ -28,6 +29,11 @@ interface GameState {
   trump: TrumpColor | null;
   bid: number | null;
   bidTeam: Team | null;
+  // Which seat actually won the bid — set via setBidderSeat when named
+  // players are in use (derives bidTeam automatically, see there); stays
+  // null for games without named players, where setBidTeam is the only
+  // entry point.
+  bidderSeat: number | null;
   shootMoon: boolean;
   dealerIndex: number;
 
@@ -93,6 +99,12 @@ interface GameState {
   setTrump: (t: TrumpColor) => void;
   clearTrump: () => void;
   setBidTeam: (t: Team) => void;
+  // The named-players entry point — derives and sets bidTeam via
+  // seatTeam(seat) in the same action, so the two can never end up
+  // disagreeing (the exact failure mode a wrong manual team pick caused
+  // before). null clears both, e.g. un-passing back below one remaining
+  // active player.
+  setBidderSeat: (seat: number | null) => void;
   setBid: (b: number) => void;
   toggleShootMoon: () => void;
   advanceDealer: () => void;
@@ -121,6 +133,7 @@ export const useGameStore = create<GameState>()(
       trump: null,
       bid: null,
       bidTeam: null,
+      bidderSeat: null,
       shootMoon: false,
       dealerIndex: 0,
       gameOver: false,
@@ -148,6 +161,7 @@ export const useGameStore = create<GameState>()(
           trump: null,
           bid: null,
           bidTeam: null,
+          bidderSeat: null,
           shootMoon: false,
           dealerIndex: 0,
           gameOver: false,
@@ -167,6 +181,7 @@ export const useGameStore = create<GameState>()(
           trump: null,
           bid: null,
           bidTeam: null,
+          bidderSeat: null,
           shootMoon: false,
           dealerIndex: 0,
           gameOver: false,
@@ -194,7 +209,8 @@ export const useGameStore = create<GameState>()(
 
       setTrump: (t) => set({ trump: t }),
       clearTrump: () => set({ trump: null }),
-      setBidTeam: (t) => set({ bidTeam: t }),
+      setBidTeam: (t) => set({ bidTeam: t, bidderSeat: null }),
+      setBidderSeat: (seat) => set({ bidderSeat: seat, bidTeam: seat != null ? seatTeam(seat) : null }),
       setBid: (b) => set({ bid: b }),
 
       toggleShootMoon: () =>
@@ -224,6 +240,7 @@ export const useGameStore = create<GameState>()(
           round: roundsPlayed(s.rounds) + 1,
           trump: s.trump,
           bidTeam: s.bidTeam,
+          bidderSeat: s.bidderSeat,
           bid: s.bid,
           dealerIndex: s.dealerIndex,
           shootMoon: s.shootMoon,
@@ -243,6 +260,7 @@ export const useGameStore = create<GameState>()(
           winner,
           trump: null,
           bidTeam: null,
+          bidderSeat: null,
           bid: null,
           shootMoon: false,
           dealerIndex: over ? s.dealerIndex : nextDealerIndex(s.dealerIndex),
@@ -308,6 +326,7 @@ export const useGameStore = create<GameState>()(
             trump: null,
             bid: null,
             bidTeam: null,
+            bidderSeat: null,
             shootMoon: false,
             dealerIndex,
             gameOver: over,
@@ -330,6 +349,7 @@ export const useGameStore = create<GameState>()(
         trump: state.trump,
         bid: state.bid,
         bidTeam: state.bidTeam,
+        bidderSeat: state.bidderSeat,
         shootMoon: state.shootMoon,
         dealerIndex: state.dealerIndex,
         gameOver: state.gameOver,

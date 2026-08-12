@@ -7,6 +7,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { canHostRealtime } from "@/lib/entitlements";
 import { TrumpPicker } from "./TrumpPicker";
 import { BidSlider } from "./BidSlider";
+import { BidderPicker } from "./BidderPicker";
 import { MainMenu } from "./MainMenu";
 import { InviteScreen } from "./InviteScreen";
 import { DealerPickerModal } from "./DealerPickerModal";
@@ -39,6 +40,7 @@ export function GameScreen({
     trump,
     bid,
     bidTeam,
+    bidderSeat,
     shootMoon,
     dealerIndex,
     joinCode,
@@ -47,6 +49,7 @@ export function GameScreen({
     setTrump,
     clearTrump,
     setBidTeam,
+    setBidderSeat,
     setBid,
     toggleShootMoon,
     setDealerIndex,
@@ -166,26 +169,41 @@ export function GameScreen({
       </button>
 
       <div className="mt-6 flex-1 space-y-5">
-        {/* 1. Who's bidding */}
+        {/* 1. Who's bidding — pass players down to the winner when named
+               players are set (derives the team, no separate team pick to
+               get wrong); falls back to the plain team pick otherwise,
+               since there are no individual seats to attribute a bid to. */}
         <section>
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
-            Bidding team
+            {settings.players ? "Who won the bid?" : "Bidding team"}
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            {(["US", "THEM"] as const).map((team) => (
-              <button
-                key={team}
+          <div className="mt-2">
+            {settings.players ? (
+              <BidderPicker
+                players={settings.players}
+                bidderSeat={bidderSeat}
+                onSelectBidder={setBidderSeat}
                 disabled={locked}
-                onClick={() => setBidTeam(team)}
-                className={`truncate rounded-card py-3 font-body text-sm font-semibold uppercase tracking-wide transition disabled:opacity-50 ${
-                  bidTeam === team
-                    ? "bg-brass text-ink"
-                    : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
-                }`}
-              >
-                {teamLabel(team, settings)}
-              </button>
-            ))}
+                resetKey={rounds.length}
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {(["US", "THEM"] as const).map((team) => (
+                  <button
+                    key={team}
+                    disabled={locked}
+                    onClick={() => setBidTeam(team)}
+                    className={`truncate rounded-card py-3 font-body text-sm font-semibold uppercase tracking-wide transition disabled:opacity-50 ${
+                      bidTeam === team
+                        ? "bg-brass text-ink"
+                        : "bg-parchment/10 text-parchment ring-1 ring-parchment/30"
+                    }`}
+                  >
+                    {teamLabel(team, settings)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

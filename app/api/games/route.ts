@@ -203,7 +203,7 @@ export async function GET() {
   // aggregated anywhere.
   const { data: rounds, error: roundsError } = await supabase
     .from("rounds")
-    .select("game_id, us_score, them_score, rook_holder_player_id")
+    .select("game_id, us_score, them_score, rook_holder_player_id, bidder_player_id, bid_team, bid")
     .in("game_id", games.map((g) => g.id));
 
   if (roundsError) {
@@ -275,6 +275,39 @@ export async function GET() {
     perPartnership: Array.from(rookByPartnership.values()).sort((a, b) => b.count - a.count),
   };
 
+  // Per-player bidding behavior — "does Kevin always overbid and get set,
+  // does Ryan trend conservative" was the actual beta-feedback ask this
+  // answers. "Set" reuses the same authoritative signal as everywhere
+  // else in the app (the bidder's own score going negative), not a raw
+  // comparison — see GameDetailModal/Scoreboard for the same logic.
+  const biddingByPlayer = new Map<
+    string,
+    { bidsWon: number; made: number; set: number; bidTotal: number }
+  >();
+  for (const r of rounds ?? []) {
+    if (!r.bidder_player_id || !r.bid_team || r.bid == null) continue;
+    const name = playerNameById.get(r.bidder_player_id);
+    if (!name) continue;
+    const bidderScore = r.bid_team === "US" ? r.us_score : r.them_score;
+    const entry = biddingByPlayer.get(name) ?? { bidsWon: 0, made: 0, set: 0, bidTotal: 0 };
+    entry.bidsWon++;
+    entry.bidTotal += r.bid;
+    if (bidderScore < 0) entry.set++;
+    else entry.made++;
+    biddingByPlayer.set(name, entry);
+  }
+  const biddingStats = {
+    perPlayer: Array.from(biddingByPlayer.entries())
+      .map(([name, e]) => ({
+        name,
+        bidsWon: e.bidsWon,
+        made: e.made,
+        set: e.set,
+        avgBid: Math.round(e.bidTotal / e.bidsWon),
+      }))
+      .sort((a, b) => b.bidsWon - a.bidsWon),
+  };
+
   const result = games.map((g) => {
     const gamePlayers = playersByGame.get(g.id);
     const sortedPlayers =
@@ -303,5 +336,5 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ games: result, rookStats });
+  return NextResponse.json({ games: result, rookStats, biddingStats });
 }

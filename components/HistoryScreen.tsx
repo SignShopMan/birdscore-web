@@ -30,6 +30,10 @@ interface RookStats {
   perPartnership: { players: [string, string]; count: number }[];
 }
 
+interface BiddingStats {
+  perPlayer: { name: string; bidsWon: number; made: number; set: number; avgBid: number }[];
+}
+
 type StatusFilter = "all" | "in_progress" | "completed";
 
 function formatDate(iso: string) {
@@ -332,6 +336,7 @@ export function HistoryScreen({
   const abandonGame = useGameStore((s) => s.abandonGame);
   const [games, setGames] = useState<SavedGame[] | null>(null);
   const [rookStats, setRookStats] = useState<RookStats | null>(null);
+  const [biddingStats, setBiddingStats] = useState<BiddingStats | null>(null);
   const [gamesError, setGamesError] = useState<string | null>(null);
   const [resumingId, setResumingId] = useState<string | null>(null);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
@@ -357,6 +362,7 @@ export function HistoryScreen({
         if (data.games) {
           setGames(data.games);
           setRookStats(data.rookStats ?? null);
+          setBiddingStats(data.biddingStats ?? null);
         } else setGamesError(data.error ?? "Couldn't load games");
       })
       .catch(() => setGamesError("Couldn't load games"));
@@ -600,6 +606,32 @@ export function HistoryScreen({
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {biddingStats && biddingStats.perPlayer.length > 0 && (
+        <div className="mt-6">
+          <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
+            Bidding Behavior
+          </p>
+          <div className="mt-3 rounded-card bg-paper p-3 shadow-card">
+            <div className="space-y-2.5">
+              {biddingStats.perPlayer.map((p) => (
+                <div key={p.name}>
+                  <div className="flex items-center justify-between">
+                    <p className="truncate font-body text-sm text-ink">{p.name}</p>
+                    <p className="font-score tabular-score text-sm font-bold text-ink">
+                      {p.bidsWon} bid{p.bidsWon === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <p className="font-body text-[11px] text-ink/60">
+                    {p.made} made &middot; <span className="text-trump-red">{p.set} set</span> &middot; avg
+                    bid {p.avgBid}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

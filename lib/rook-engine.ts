@@ -23,6 +23,12 @@ export interface Round {
   // Present when rowType === "Round"
   trump?: TrumpColor;
   bidTeam?: Team;
+  // Which seat (0-3) actually won the bid — the source of truth when named
+  // players are in use; bidTeam is derived from it via seatTeam() rather
+  // than picked independently, so the two can never disagree. Optional
+  // because non-named-player games have no individual seats to attribute
+  // the bid to, only bidTeam.
+  bidderSeat?: number | null;
   bid?: number;
   dealerIndex?: number;
   shootMoon?: boolean;

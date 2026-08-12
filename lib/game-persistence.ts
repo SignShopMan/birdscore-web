@@ -14,6 +14,7 @@ export interface DbRoundRow {
   label: string | null;
   dealer_player_id: string | null;
   rook_holder_player_id: string | null;
+  bidder_player_id: string | null;
   // The client already timestamps each round the instant it's scored (see
   // game-store.ts's saveRound/addAdjustment). Carrying that through here
   // explicitly matters because PATCH /api/games/[id] deletes and reinserts
@@ -51,6 +52,8 @@ export function roundsToDbRows(
       r.dealerIndex != null ? seatToPlayerId?.get(r.dealerIndex) ?? null : null,
     rook_holder_player_id:
       r.rookHolderSeat != null ? seatToPlayerId?.get(r.rookHolderSeat) ?? null : null,
+    bidder_player_id:
+      r.bidderSeat != null ? seatToPlayerId?.get(r.bidderSeat) ?? null : null,
     created_at: r.createdAt,
   }));
 }
@@ -73,6 +76,7 @@ export function dbRowsToRounds(
     shoot_moon: boolean | null;
     label: string | null;
     rook_holder_player_id?: string | null;
+    bidder_player_id?: string | null;
     created_at: string;
   }>,
   playerIdToSeat?: Map<string, number>
@@ -93,6 +97,8 @@ export function dbRowsToRounds(
       r.rook_holder_player_id && playerIdToSeat
         ? playerIdToSeat.get(r.rook_holder_player_id) ?? null
         : null,
+    bidderSeat:
+      r.bidder_player_id && playerIdToSeat ? playerIdToSeat.get(r.bidder_player_id) ?? null : null,
     createdAt: r.created_at,
   }));
 }

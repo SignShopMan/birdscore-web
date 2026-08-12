@@ -172,7 +172,9 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
                               aria-hidden
                             />
                           )}
-                          {teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
+                          {r.bidderSeat != null && game?.players
+                            ? game.players[r.bidderSeat]
+                            : teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
                           {bidderSet ? "went set" : "made it"} &middot; bid {r.bid} &middot; {r.trump}
                           {r.shootMoon ? " \u00B7 Moon" : ""}
                         </p>

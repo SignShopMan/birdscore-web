@@ -52,6 +52,7 @@ export function RealtimeHost() {
     trump,
     bid,
     bidTeam,
+    bidderSeat,
     shootMoon,
     dealerIndex,
     gameOver,
@@ -81,7 +82,7 @@ export function RealtimeHost() {
 
     const current =
       bidTeam && (bid != null || shootMoon)
-        ? { bidTeam, bid: shootMoon ? settings.maxPointsPerRound : bid, trump, shootMoon }
+        ? { bidTeam, bidderSeat, bid: shootMoon ? settings.maxPointsPerRound : bid, trump, shootMoon }
         : null;
     const payload = {
       usTeamName: settings.usTeamName,
@@ -139,7 +140,20 @@ export function RealtimeHost() {
       clearInterval(heartbeat);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canHost, joinCode, rounds, trump, bid, bidTeam, shootMoon, dealerIndex, gameOver, winner, settings]);
+  }, [
+    canHost,
+    joinCode,
+    rounds,
+    trump,
+    bid,
+    bidTeam,
+    bidderSeat,
+    shootMoon,
+    dealerIndex,
+    gameOver,
+    winner,
+    settings,
+  ]);
 
   useEffect(() => {
     return () => {

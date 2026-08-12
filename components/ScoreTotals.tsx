@@ -38,7 +38,7 @@ export function ScoreTotals({
             </span>
           )}
         </div>
-        <div className="font-score tabular-score text-5xl font-bold text-ink">{us}</div>
+        <div className="font-score tabular-score text-4xl font-bold text-ink">{us}</div>
       </div>
       <div
         className={`rounded-card p-4 text-center ${
@@ -55,7 +55,7 @@ export function ScoreTotals({
             </span>
           )}
         </div>
-        <div className="font-score tabular-score text-5xl font-bold text-ink">{them}</div>
+        <div className="font-score tabular-score text-4xl font-bold text-ink">{them}</div>
       </div>
     </div>
   );

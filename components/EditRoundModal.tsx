@@ -10,6 +10,7 @@ import {
   isValidNonBidderScore,
   bidOptions,
   teamLabel,
+  seatTeam,
   TRUMP_DOT_CLASS,
 } from "@/lib/rook-engine";
 import { useAuthStore } from "@/lib/auth-store";
@@ -41,6 +42,7 @@ export function EditRoundModal({
   onSave: (updated: {
     trump: TrumpColor;
     bidTeam: Team;
+    bidderSeat: number | null;
     bid: number;
     shootMoon: boolean;
     rookHolderSeat: number | null;
@@ -53,6 +55,11 @@ export function EditRoundModal({
   const trackRookHolder = canUseEnhancedStats(tier) && settings.players !== null;
 
   const [bidTeam, setBidTeam] = useState<Team>(round.bidTeam ?? "US");
+  const [bidderSeat, setBidderSeat] = useState<number | null>(round.bidderSeat ?? null);
+  const selectBidder = (seat: number) => {
+    setBidderSeat(seat);
+    setBidTeam(seatTeam(seat));
+  };
   const [trump, setTrump] = useState<TrumpColor>(round.trump ?? "Black");
   const [bid, setBid] = useState<number>(round.bid ?? 50);
   const [shootMoon, setShootMoon] = useState(round.shootMoon ?? false);
@@ -86,6 +93,7 @@ export function EditRoundModal({
     onSave({
       trump,
       bidTeam,
+      bidderSeat: settings.players ? bidderSeat : null,
       bid,
       shootMoon,
       rookHolderSeat: trackRookHolder ? rookHolderSeat : null,
@@ -110,20 +118,32 @@ export function EditRoundModal({
         </p>
 
         <p className="mt-4 font-body text-xs font-semibold uppercase tracking-wide text-ink/60">
-          Bidding team
+          {settings.players ? "Who won the bid?" : "Bidding team"}
         </p>
         <div className="mt-1.5 grid grid-cols-2 gap-2">
-          {(["US", "THEM"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setBidTeam(t)}
-              className={`truncate rounded-full py-2 font-body text-sm font-semibold ${
-                bidTeam === t ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
-              }`}
-            >
-              {teamLabel(t, settings)}
-            </button>
-          ))}
+          {settings.players
+            ? settings.players.map((name, seat) => (
+                <button
+                  key={seat}
+                  onClick={() => selectBidder(seat)}
+                  className={`truncate rounded-full py-2 font-body text-sm font-semibold ${
+                    bidderSeat === seat ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))
+            : (["US", "THEM"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setBidTeam(t)}
+                  className={`truncate rounded-full py-2 font-body text-sm font-semibold ${
+                    bidTeam === t ? "bg-ink text-paper" : "bg-white text-ink ring-1 ring-ink/20"
+                  }`}
+                >
+                  {teamLabel(t, settings)}
+                </button>
+              ))}
         </div>
 
         <p className="mt-4 font-body text-xs font-semibold uppercase tracking-wide text-ink/60">

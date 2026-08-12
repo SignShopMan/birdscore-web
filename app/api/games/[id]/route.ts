@@ -162,7 +162,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   const { data: rounds, error: roundsError } = await supabase
     .from("rounds")
     .select(
-      "id, round_number, row_type, us_score, them_score, trump, bid_team, bid, dealer_index, shoot_moon, label, rook_holder_player_id, created_at"
+      "id, round_number, row_type, us_score, them_score, trump, bid_team, bid, dealer_index, shoot_moon, label, rook_holder_player_id, bidder_player_id, created_at"
     )
     .eq("game_id", params.id)
     .order("created_at", { ascending: true });

@@ -13,7 +13,13 @@ interface LiveState {
   players: [string, string, string, string] | null;
   rounds: Round[];
   dealerIndex: number;
-  current: { bidTeam: Team; bid: number; trump: TrumpColor | null; shootMoon: boolean } | null;
+  current: {
+    bidTeam: Team;
+    bidderSeat: number | null;
+    bid: number;
+    trump: TrumpColor | null;
+    shootMoon: boolean;
+  } | null;
   gameOver: boolean;
   winner: Team | null;
 }
@@ -216,7 +222,11 @@ export default function WatchPage({ params }: { params: { code: string } }) {
           backgroundColor: current.trump ? TRUMP_HEX[current.trump] : "#1B2A3A",
         }}>
           <div className="font-body text-sm uppercase tracking-[0.3em] text-white">
-            {current.bidTeam === "US" ? usTeamName : themTeamName}
+            {current.bidderSeat != null && players
+              ? players[current.bidderSeat]
+              : current.bidTeam === "US"
+              ? usTeamName
+              : themTeamName}
             {current.trump ? ` \u00B7 ${current.trump} Trump` : " bidding\u2026"}
           </div>
           <div className="mt-2 font-score tabular-score text-7xl font-bold text-white">
