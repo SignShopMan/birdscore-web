@@ -182,10 +182,18 @@ function RoundRow({
           ) : (
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`} />
           )}
-          <span className="min-w-0 flex-1 truncate font-body text-sm text-ink/75">
+          <span
+            className={`min-w-0 flex-1 truncate font-body text-sm ${
+              !isAdj && round.bidTeam && (round.bidTeam === "US" ? round.usScore : round.themScore) < 0
+                ? "font-semibold text-trump-red"
+                : "text-ink/75"
+            }`}
+          >
             {isAdj
               ? round.label || "Adjustment"
-              : `${round.bidTeam === "US" ? usLabel : themLabel} bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
+              : `${round.bidTeam === "US" ? usLabel : themLabel} ${
+                  (round.bidTeam === "US" ? round.usScore : round.themScore) < 0 ? "went set" : "made it"
+                } \u00B7 bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
           </span>
           <span className="w-12 text-right font-score tabular-score text-lg font-semibold text-ink">
             {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}

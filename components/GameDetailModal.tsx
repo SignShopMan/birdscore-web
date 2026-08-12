@@ -133,6 +133,13 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
                     ? (new Date(r.createdAt).getTime() - new Date(prev.createdAt).getTime()) / 1000
                     : null;
                   const runningTotal = totalsAfterEachRound[i];
+                  // Authoritative from the engine itself (a negative bidder
+                  // score), not a raw score comparison — the actual
+                  // Rook-meaningful verdict, not just "which number is
+                  // bigger." Only the bidder's own score can ever go
+                  // negative, so this is exactly equivalent to checking
+                  // bidderSet directly without needing to re-derive it.
+                  const bidderSet = r.bidTeam ? (r.bidTeam === "US" ? r.usScore : r.themScore) < 0 : false;
                   return (
                     <li key={r.rowId} className="rounded-md bg-paper-dim p-3">
                       <div className="flex items-center justify-between">
@@ -153,16 +160,20 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
                           {formatScore(r.usScore, r.themScore)}
                         </p>
                       </div>
-                      {r.rowType === "Round" && (
-                        <p className="mt-0.5 flex items-center gap-1.5 font-body text-xs text-ink/60">
+                      {r.rowType === "Round" && r.bidTeam && (
+                        <p
+                          className={`mt-0.5 flex items-center gap-1.5 font-body text-xs font-semibold ${
+                            bidderSet ? "text-trump-red" : "text-ink"
+                          }`}
+                        >
                           {r.trump && (
                             <span
                               className={`h-2 w-2 shrink-0 rounded-full ${TRUMP_DOT_CLASS[r.trump as TrumpColor]}`}
                               aria-hidden
                             />
                           )}
-                          {r.bidTeam && teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
-                          bid {r.bid} &middot; {r.trump}
+                          {teamLabel(r.bidTeam, game ?? { usTeamName: "Us", themTeamName: "Them" })}{" "}
+                          {bidderSet ? "went set" : "made it"} &middot; bid {r.bid} &middot; {r.trump}
                           {r.shootMoon ? " \u00B7 Moon" : ""}
                         </p>
                       )}
