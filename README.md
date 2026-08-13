@@ -1243,7 +1243,7 @@ would mean redoing them if something in the foundation needs to change.
    - Settings → API → copy the Project URL, `anon` `public` key, and the
      `service_role` key (keep that last one secret — it bypasses RLS).
 2. **Stripe**: dashboard.stripe.com, test mode to start.
-   - Product catalog → create two products: one with a **one-time** $3.99
+   - Product catalog → create two products: one with a **one-time** $6.99
      price, one with a **recurring annual** $19.99 price. Copy each
      Price ID (starts `price_`, not the Product ID).
    - Developers → API keys → copy the secret key.

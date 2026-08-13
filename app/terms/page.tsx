@@ -18,7 +18,7 @@ export default function TermsPage() {
           <h2 className="font-display text-lg font-semibold text-parchment">The service</h2>
           <p className="mt-1">
             BirdScore is a scorekeeping tool for the card game Rook. The free tier is available
-            without an account. Paid tiers ($3.99 one time, $19.99/year) add saved history, named
+            without an account. Paid tiers ($6.99 one time, $19.99/year) add saved history, named
             players, and realtime hosting, as described in the app.
           </p>
         </section>
@@ -38,7 +38,7 @@ export default function TermsPage() {
         <section>
           <h2 className="font-display text-lg font-semibold text-parchment">Payments and refunds</h2>
           <p className="mt-1">
-            Payments are processed by Stripe. The $3.99 tier is a one-time purchase; the $19.99
+            Payments are processed by Stripe. The $6.99 tier is a one-time purchase; the $19.99
             tier renews annually unless cancelled. If something goes wrong with a purchase,
             contact us at the email below and we&rsquo;ll sort it out directly.
           </p>

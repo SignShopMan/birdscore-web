@@ -3,7 +3,7 @@ import { getStripe, STRIPE_PRICE_IDS } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Creates a Stripe Checkout session for the "plus" (one-time $3.99) or
+ * Creates a Stripe Checkout session for the "plus" (one-time $6.99) or
  * "pro" (annual $19.99, standalone — doesn't require plus first) tier.
  * Requires a signed-in Supabase user; the client should send them through
  * sign-in first if there's no session yet.

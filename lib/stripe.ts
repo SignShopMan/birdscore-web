@@ -17,11 +17,11 @@ export function getStripe(): Stripe {
 /**
  * Two independent Stripe Prices, matching the standalone-purchase decision:
  * PRO does not require PLUS to have been bought first — someone can jump
- * straight to $19.99/year without ever purchasing the $3.99 one-time price.
+ * straight to $19.99/year without ever purchasing the $6.99 one-time price.
  * Create both in the Stripe dashboard (test mode to start) and drop their
  * IDs into .env.local — see README's Phase 2 setup section.
  */
 export const STRIPE_PRICE_IDS = {
-  plus: process.env.STRIPE_PRICE_PLUS_ONE_TIME, // one-time, $3.99
+  plus: process.env.STRIPE_PRICE_PLUS_ONE_TIME, // one-time, $6.99
   pro: process.env.STRIPE_PRICE_PRO_ANNUAL, // recurring annual, $19.99
 } as const;

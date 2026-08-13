@@ -4,7 +4,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { canUseNamedPlayers } from "@/lib/entitlements";
 
 /**
- * Two modes, both $3.99 tier and up: simple custom team names (two text
+ * Two modes, both $6.99 tier and up: simple custom team names (two text
  * fields, unchanged from before), or full 4-player tracking — who deals
  * first, their partner, and the other pair — which is what actually
  * enables dealer names during play and, later, partner-pairing stats on
@@ -36,7 +36,7 @@ export function PlayerSetupCard({
   if (!entitled) {
     return (
       <p className="font-body text-xs text-ink/70">
-        Custom team names and named players are part of the $3.99 one-time tier — sign in from
+        Custom team names and named players are part of the $6.99 one-time tier — sign in from
         the menu to unlock them. Games play as &ldquo;Us&rdquo; and &ldquo;Them&rdquo; until then.
       </p>
     );

@@ -6,7 +6,7 @@ import { MainMenu } from "./MainMenu";
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What's free, and what costs money?",
-    a: "The full game — bidding, trump, scoring, adjustments — is free forever, no account needed. $3.99 one time adds saved game history and named players. $19.99/year adds realtime hosting (invite others to watch your game live) and deeper stats like who held the Rook and who dealt.",
+    a: "The full game — bidding, trump, scoring, adjustments — is free forever, no account needed. $6.99 one time adds saved game history and named players. $19.99/year adds realtime hosting (invite others to watch your game live) and deeper stats like who held the Rook and who dealt.",
   },
   {
     q: "How do I actually watch a game someone invited me to?",
@@ -22,10 +22,10 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What happens if my $19.99/year subscription lapses?",
-    a: "You keep everything the $3.99 one-time tier includes — saved history, named players — permanently. You only lose realtime hosting and the enhanced stats until you renew.",
+    a: "You keep everything the $6.99 one-time tier includes — saved history, named players — permanently. You only lose realtime hosting and the enhanced stats until you renew.",
   },
   {
-    q: "Do I need to buy the $3.99 tier before the $19.99/year one?",
+    q: "Do I need to buy the $6.99 tier before the $19.99/year one?",
     a: "No — $19.99/year includes everything on its own.",
   },
   {

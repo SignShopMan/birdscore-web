@@ -81,7 +81,7 @@ export function maxBidOnBoard(rounds: Round[]): number {
 export interface GameSettings {
   winningScore: number; // original default: 500
   maxPointsPerRound: number; // original default: 180 (options: 120/150/180/200/250)
-  // Custom team names — $3.99 tier and up (see canUseNamedPlayers in
+  // Custom team names — $6.99 tier and up (see canUseNamedPlayers in
   // lib/entitlements.ts). Always present with sensible defaults so every
   // display call site can use them unconditionally rather than checking
   // for undefined everywhere; the tier gate lives in the Settings UI (only
@@ -94,7 +94,7 @@ export interface GameSettings {
   // partners sitting across from each other, not next to each other:
   // seats 0+2 are one team, seats 1+3 are the other. null means not using
   // named players (the simple US/THEM-only flow, still the default and
-  // still fully supported). $3.99 tier and up, same gate as team names —
+  // still fully supported). $6.99 tier and up, same gate as team names —
   // when this is set, usTeamName/themTeamName get derived from the pairs
   // ("Jon & Ryan") rather than typed manually.
   players: [string, string, string, string] | null;

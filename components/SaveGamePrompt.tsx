@@ -92,7 +92,7 @@ export function SaveGamePrompt({
                   : "bg-white text-ink ring-ink/20"
               }`}
             >
-              <div className="font-body text-sm font-bold">$3.99 one time</div>
+              <div className="font-body text-sm font-bold">$6.99 one time</div>
               <div className="font-body text-[11px] opacity-80">History, named players</div>
             </button>
             <button
@@ -125,7 +125,7 @@ export function SaveGamePrompt({
             >
               {checkingOut
                 ? "Redirecting\u2026"
-                : `Continue \u2014 ${selected === "plus" ? "$3.99 one time" : "$19.99/yr"}`}
+                : `Continue \u2014 ${selected === "plus" ? "$6.99 one time" : "$19.99/yr"}`}
             </button>
           )}
 
