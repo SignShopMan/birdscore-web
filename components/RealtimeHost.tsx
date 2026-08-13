@@ -119,11 +119,16 @@ export function RealtimeHost() {
     }
 
     // Reconnects outright rather than trusting the old socket resumed on
-    // its own — see the reconnection note above.
+    // its own — see the reconnection note above. visibilitychange alone
+    // misses a real case: wifi/cellular dropping and coming back while
+    // the screen stays active and foregrounded the whole time — nothing
+    // ever un-hides the app, so that listener never fires. The 'online'
+    // event catches exactly that.
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") connect();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("online", connect);
 
     const heartbeat = setInterval(() => {
       if (payloadRef.current) {
@@ -137,6 +142,7 @@ export function RealtimeHost() {
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("online", connect);
       clearInterval(heartbeat);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

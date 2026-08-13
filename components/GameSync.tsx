@@ -58,8 +58,12 @@ export function GameSync() {
   } = useGameStore();
   const { userId, tier } = useAuthStore();
   const syncingRef = useRef(false);
+  // Always holds the current attempt, reassigned every render — lets the
+  // 'online' listener below call the up-to-date version without needing
+  // this whole dependency list a second time (see that effect).
+  const attemptSyncRef = useRef<() => void>(() => {});
 
-  useEffect(() => {
+  attemptSyncRef.current = () => {
     if (!hasHydrated || !userId || !canSaveHistory(tier)) return;
     if (!gameActive || !currentGameId) return;
     if (syncingRef.current) return;
@@ -100,12 +104,27 @@ export function GameSync() {
       }
     };
     run();
+  };
+
+  useEffect(() => {
+    attemptSyncRef.current();
     // setGameCreated/setSyncStatus/setJoinCode are stable — every other
     // dependency is a real trigger, including settings (team names/rules
     // can be edited mid-game via Settings "edit" mode and need to reach
     // the saved copy).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHydrated, userId, tier, gameActive, rounds, gameOver, winner, currentGameId, gameCreated, settings]);
+
+  // A failed sync otherwise stays failed forever unless something else
+  // happens to change rounds/settings again — which won't happen once a
+  // game's already over, exactly when losing the sync matters most
+  // (offline right at Game Over). Mounts once; always calls whatever the
+  // latest attempt is via the ref above, so this never goes stale.
+  useEffect(() => {
+    const onOnline = () => attemptSyncRef.current();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, []);
 
   return null;
 }

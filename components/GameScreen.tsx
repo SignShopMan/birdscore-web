@@ -175,7 +175,7 @@ export function GameScreen({
                since there are no individual seats to attribute a bid to. */}
         <section>
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-parchment/75">
-            {settings.players ? "Who won the bid?" : "Bidding team"}
+            {settings.players ? "Tap who passes" : "Bidding team"}
           </p>
           <div className="mt-2">
             {settings.players ? (

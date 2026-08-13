@@ -58,6 +58,16 @@ export function GameOverScreen({
           Nicely played — here&rsquo;s the final tally.
           {entitled && syncStatus === "synced" && " Saved to your history."}
           {entitled && syncStatus === "syncing" && " Saving\u2026"}
+          {/* Previously said nothing at all here on failure \u2014 silence read as
+              "nothing to report" rather than "this didn't save," exactly
+              the wrong impression to leave right when a finished game is
+              most at risk of being lost (offline, connection drop). */}
+          {entitled && syncStatus === "error" && (
+            <span className="text-trump-red">
+              {" "}
+              Couldn&rsquo;t save \u2014 will retry once you&rsquo;re back online.
+            </span>
+          )}
         </p>
 
         <div className="mt-8">

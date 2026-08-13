@@ -7,6 +7,7 @@ import { GameSync } from "@/components/GameSync";
 import { RealtimeHost } from "@/components/RealtimeHost";
 import { UpdateChecker } from "@/components/UpdateChecker";
 import { CapacitorInit } from "@/components/CapacitorInit";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className="font-body bg-felt text-parchment">
+        <OfflineBanner />
         <ThemeInit />
         <AuthInit />
         <PendingSaveSync />
