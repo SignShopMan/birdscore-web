@@ -235,11 +235,11 @@ function RoundRow({
             </span>
           )}
         </div>
-        <p className="pl-7 font-body text-[10px] text-ink/50">
+        <p className="mt-1 pl-7 font-body text-xs text-ink/50">
           Total: {formatScore(runningTotal.usTotal, runningTotal.themTotal)}
         </p>
         {showDealerRook && !isAdj && settings.players && round.dealerIndex != null && (
-          <p className="pl-7 font-body text-[10px] text-ink/50">
+          <p className="mt-0.5 pl-7 font-body text-xs text-ink/50">
             Dealer: {settings.players[round.dealerIndex]} ({SEAT_LABELS[round.dealerIndex]})
             {round.rookHolderSeat != null && (
               <> &middot; Rook: {settings.players[round.rookHolderSeat]}</>
@@ -466,7 +466,7 @@ export function Scoreboard({
             No rounds yet — score a round to start the tally.
           </p>
         ) : (
-          <ul className="space-y-0.5">
+          <ul className="space-y-2">
             <li className="flex items-center gap-2 px-2 pb-1 font-body text-[10px] uppercase tracking-wide text-ink/75">
               <span className="w-5 shrink-0">#</span>
               <span className="w-2.5 shrink-0" />
