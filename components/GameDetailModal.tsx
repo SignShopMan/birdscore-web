@@ -127,7 +127,7 @@ export function GameDetailModal({
     >
         <div className="shrink-0 border-b border-ink/10 p-5">
           <div className="flex items-center justify-between">
-            <p id="game-detail-title" className="font-body text-xs uppercase tracking-[0.3em] text-brass">
+            <p id="game-detail-title" className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">
               {game?.status === "cancelled" ? "Cancelled Game" : "Game Detail"}
             </p>
             <button

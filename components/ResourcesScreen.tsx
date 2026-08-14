@@ -42,7 +42,7 @@ export function ResourcesScreen({
       <header className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="font-body text-xs uppercase tracking-[0.3em] text-brass underline underline-offset-4"
+          className="font-body text-xs uppercase tracking-[0.3em] text-brass-text underline underline-offset-4"
         >
           &larr; Back
         </button>
@@ -56,15 +56,23 @@ export function ResourcesScreen({
         />
       </header>
       <h1 className="mt-1 font-display text-4xl font-semibold text-parchment">Resources</h1>
-      <p className="mt-2 font-body text-sm text-parchment/75">
-        Rook rules vary table to table — different win targets, different penalty amounts,
+      <p className="mt-2 font-body text-base leading-relaxed text-parchment/75">
+        Rook&reg; is a fast trick-taking card game for four players in two partnerships &mdash;
+        the same bidding-and-trump tension as bridge or spades, but with a deck built just for
+        it: four colors instead of suits, no face cards to learn, and one wild card (the Rook
+        itself) that beats everything. A hand wraps up in 15&ndash;20 minutes, it&rsquo;s easy to
+        pick up in a single game, and it&rsquo;s been a favorite around family tables for over a
+        century.
+      </p>
+      <p className="mt-3 font-body text-base leading-relaxed text-parchment/75">
+        Rules vary table to table &mdash; different win targets, different penalty amounts,
         sometimes different deck sizes. What&rsquo;s below is the common ground across most
         published rule sets. Where your table plays it differently, use custom winning scores
         and hand sizes in Settings, and the Penalty/Bonus button on the Scoreboard for anything
         below that isn&rsquo;t built in directly.
       </p>
 
-      <div className="mt-8 space-y-6 font-body text-sm leading-relaxed text-parchment/85">
+      <div className="mt-8 space-y-6 font-body text-base leading-relaxed text-parchment/85">
         <section>
           <h2 className="font-display text-lg font-semibold text-parchment">The Basics</h2>
           <div className="mt-2 space-y-3">
@@ -160,11 +168,17 @@ export function ResourcesScreen({
                 className="block rounded-card bg-paper p-3 shadow-card"
               >
                 <p className="font-body text-sm font-semibold text-ink">{link.title}</p>
-                <p className="mt-0.5 font-body text-xs text-ink/70">{link.note}</p>
+                <p className="mt-0.5 font-body text-sm text-ink/70">{link.note}</p>
               </a>
             ))}
           </div>
         </section>
+
+        <p className="font-body text-xs text-parchment/50">
+          Rook&reg; is a registered trademark of Hasbro, Inc. BirdScore is an independent
+          scorekeeping companion and isn&rsquo;t affiliated with, sponsored by, or endorsed by
+          Hasbro.
+        </p>
       </div>
     </div>
   );

@@ -22,6 +22,35 @@ environment I built this in.
 
 ## Changelog
 
+**Third-party usability pass: readability, contrast, and a Rook trademark
+notice** — feedback from someone with no prior knowledge of Rook or the
+app:
+
+- Font sizes bumped up a step in FAQ (question + answer) and Resources
+  (intro, rule text, link notes) — the smallest reading text in the app,
+  and specifically what she was straining to read.
+- Fixed a real contrast bug, not just a one-off: the constant `brass`
+  color (`#C9A227`) was only ever validated as a *background* (dark ink
+  text on top passes fine); used directly as *text* on the felt
+  background — the "← Back" links, section labels, dealer badges, etc.
+  across 18 files — it failed WCAG AA in every light-mode accent theme
+  (measured ratios 1.66–1.71 against a 4.5 floor), not just the
+  "gold/brass on gray" (Mono) case she happened to hit. Added a new
+  theme-reactive `brass-text` token (`app/globals.css`,
+  `tailwind.config.ts`) — dark mode unchanged, light mode a darker bronze
+  (`#6E5312`) that clears AA with margin — and swapped every `text-brass`
+  usage to it. New check added to `scripts/verify-contrast.ts` so this
+  class of bug (constant color validated as background, used as text)
+  gets caught automatically going forward.
+- Added a marketing-hook intro to the Resources page — what Rook actually
+  is and why it's fun — before the procedural rules, which previously
+  started cold with "Setup."
+- Added a Rook® trademark notice and non-affiliation disclaimer (Resources
+  page footer + a new Trademark section in Terms of Service): Rook is a
+  registered trademark of Hasbro, Inc. (Serial No. 71059489, filed 1911,
+  via its Parker Brothers acquisition); BirdScore is an independent
+  companion app, not affiliated with or endorsed by Hasbro.
+
 **"Save this game?" flashing on an already-saved game after signing back
 in** — a real timing bug, not something random despite being reported as
 intermittent:

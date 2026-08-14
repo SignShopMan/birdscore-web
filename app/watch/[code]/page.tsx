@@ -163,7 +163,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
   if (!state) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
-        <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
+        <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">
           {connected ? "Connected" : "Connecting\u2026"}
         </p>
         <h1 className="mt-2 font-display text-3xl font-semibold text-parchment">
@@ -188,7 +188,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 lg:max-w-lg lg:py-14">
-      <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
+      <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">
         {gameOver ? "Game Over" : "Watching Live"}
       </p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-parchment">

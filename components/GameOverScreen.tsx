@@ -48,7 +48,7 @@ export function GameOverScreen({
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 text-center lg:max-w-lg lg:py-14">
       <div>
         <div className="flex items-center justify-between">
-          <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">Game Over</p>
+          <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">Game Over</p>
           <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
         </div>
         <h1 className="mt-1 font-display text-5xl font-semibold text-parchment lg:text-6xl">

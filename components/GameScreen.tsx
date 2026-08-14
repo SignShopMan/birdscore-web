@@ -156,12 +156,12 @@ export function GameScreen({
         </span>
         <span className="flex items-center justify-between gap-3 font-score tabular-score text-lg font-bold text-parchment">
           <span
-            className={`truncate ${usTotal(rounds) > themTotal(rounds) ? "text-brass" : ""}`}
+            className={`truncate ${usTotal(rounds) > themTotal(rounds) ? "text-brass-text" : ""}`}
           >
             {settings.usTeamName} {usTotal(rounds)}
           </span>
           <span
-            className={`shrink-0 truncate ${themTotal(rounds) > usTotal(rounds) ? "text-brass" : ""}`}
+            className={`shrink-0 truncate ${themTotal(rounds) > usTotal(rounds) ? "text-brass-text" : ""}`}
           >
             {settings.themTeamName} {themTotal(rounds)}
           </span>
@@ -268,7 +268,7 @@ export function GameScreen({
         <button
           onClick={clearTrump}
           disabled={!locked}
-          className="flex-1 rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:bg-transparent disabled:text-parchment/60 disabled:ring-1 disabled:ring-parchment/20 enabled:bg-parchment/10 enabled:text-brass enabled:ring-2 enabled:ring-brass"
+          className="flex-1 rounded-full py-3 font-body text-sm font-semibold uppercase tracking-[0.15em] transition disabled:cursor-not-allowed disabled:bg-transparent disabled:text-parchment/60 disabled:ring-1 disabled:ring-parchment/20 enabled:bg-parchment/10 enabled:text-brass-text enabled:ring-2 enabled:ring-brass"
         >
           Edit Bid
         </button>

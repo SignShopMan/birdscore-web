@@ -37,7 +37,7 @@ export function NewGameScreen({
       <div>
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">New Game</p>
+            <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">New Game</p>
             <span className="rounded-full bg-parchment/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-parchment/75 ring-1 ring-parchment/20">
               Beta
             </span>
@@ -49,7 +49,7 @@ export function NewGameScreen({
           Ready to deal?{" "}
           <button
             onClick={onOpenResources}
-            className="text-brass underline underline-offset-4"
+            className="text-brass-text underline underline-offset-4"
           >
             New to Rook? See the rules
           </button>

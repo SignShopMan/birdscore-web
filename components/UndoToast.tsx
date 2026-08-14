@@ -33,7 +33,7 @@ export function UndoToast() {
           deleteRound(lastSavedRoundId);
           dismissUndo();
         }}
-        className="font-body text-xs font-semibold uppercase tracking-wide text-brass underline underline-offset-4"
+        className="font-body text-xs font-semibold uppercase tracking-wide text-brass-text underline underline-offset-4"
       >
         Undo
       </button>

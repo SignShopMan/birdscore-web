@@ -55,7 +55,7 @@ export function InviteScreen({ onClose }: { onClose: () => void }) {
       labelledBy="invite-title"
       panelClassName="w-full max-w-md rounded-t-card bg-paper p-6 text-center shadow-card sm:rounded-card"
     >
-      <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">Invite to Watch</p>
+      <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">Invite to Watch</p>
       <h2 id="invite-title" className="mt-1 font-display text-2xl font-semibold text-ink">
         No account needed
       </h2>

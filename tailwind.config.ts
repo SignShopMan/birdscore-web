@@ -15,6 +15,16 @@ const config: Config = {
         parchment: {
           DEFAULT: "rgb(var(--parchment) / <alpha-value>)",
         },
+        // Theme-reactive TEXT-only variant of brass — see the big comment
+        // in globals.css. brass itself (below) stays a fixed constant for
+        // backgrounds/rings/badges, which were already verified safe;
+        // this exists because plain brass as TEXT directly on the felt
+        // background fails contrast badly in every light-mode accent, not
+        // just one — text-brass-text is what every eyebrow label/"← Back"
+        // link now uses instead of text-brass.
+        "brass-text": {
+          DEFAULT: "rgb(var(--brass-text) / <alpha-value>)",
+        },
         // Constant across every theme: the literal scorepad paper surface.
         // A physical paper scorepad doesn't change color with room lighting,
         // and keeping it constant anchors the design across all theme choices.

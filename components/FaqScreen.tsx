@@ -51,7 +51,7 @@ function FaqItem({ q, a, id }: { q: string; a: string; id: string }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={answerId}
-          className="flex w-full items-center justify-between gap-3 text-left font-body text-sm font-semibold text-ink"
+          className="flex w-full items-center justify-between gap-3 text-left font-body text-base font-semibold text-ink"
         >
           {q}
           <span aria-hidden="true" className="shrink-0 text-ink/50">
@@ -60,7 +60,7 @@ function FaqItem({ q, a, id }: { q: string; a: string; id: string }) {
         </button>
       </h3>
       {open && (
-        <p id={answerId} className="mt-2 font-body text-xs text-ink/70">
+        <p id={answerId} className="mt-2 font-body text-sm leading-relaxed text-ink/70">
           {a}
         </p>
       )}
@@ -90,7 +90,7 @@ export function FaqScreen({
       <header className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="font-body text-xs uppercase tracking-[0.3em] text-brass underline underline-offset-4"
+          className="font-body text-xs uppercase tracking-[0.3em] text-brass-text underline underline-offset-4"
         >
           &larr; Back
         </button>

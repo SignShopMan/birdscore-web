@@ -108,7 +108,7 @@ export function SettingsScreen({
       <div>
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <p className="font-body text-xs uppercase tracking-[0.3em] text-brass">
+            <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">
               Game Settings
             </p>
             <BackendStatusBadge />

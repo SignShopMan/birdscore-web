@@ -43,7 +43,7 @@ export function AccountScreen({
       <header className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="font-body text-xs uppercase tracking-[0.3em] text-brass underline underline-offset-4"
+          className="font-body text-xs uppercase tracking-[0.3em] text-brass-text underline underline-offset-4"
         >
           &larr; Back
         </button>

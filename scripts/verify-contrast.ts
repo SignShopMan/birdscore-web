@@ -76,6 +76,20 @@ for (const t of THEMES) {
   check(`parchment on felt-dark (${t.name}, mobile sheet)`, t.parchment, t.feltDark, 4.5);
 }
 
+// brass-text — theme-reactive text variant added because the original
+// constant `brass` ([201,162,39]) was only ever validated as a *background*
+// (ink text on top passes fine). As direct text on felt it fails AA in
+// every light-mode accent (measured ratios 1.66-1.71 vs the 4.5 floor) —
+// dark mode keeps the original value (already passing), light mode uses a
+// darker bronze ([110,83,18]) computed to clear 4.5 with margin.
+const brassTextDark: RGB = [201, 162, 39];
+const brassTextLight: RGB = [110, 83, 18];
+console.log("\n--- brass-text: theme-reactive brass replacement, every mode×accent combo ---");
+for (const t of THEMES) {
+  const brassText = t.name.startsWith("dark") ? brassTextDark : brassTextLight;
+  check(`brass-text on felt (${t.name})`, brassText, t.felt, 4.5);
+}
+
 console.log("\n--- Invite banner: brass/20 tint over felt, parchment text ---");
 for (const t of THEMES) {
   const bg = blend([201, 162, 39], t.felt, 0.2);

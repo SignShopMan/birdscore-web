@@ -13,6 +13,20 @@
  * colors (see tailwind.config.ts) — the scorepad surface and the four trump
  * colors are constants, not preferences, since trump has to match the
  * physical Rook deck regardless of which theme someone's chosen.
+ *
+ * --brass-text is the one deliberate exception to "brass is a constant."
+ * `brass` itself stays fixed (bg-brass, ring-brass — ink-on-brass buttons/
+ * badges were already checked and pass everywhere). But text-brass used
+ * directly on the felt background (every screen's eyebrow label and
+ * "← Back" link) was never separately verified as TEXT, and the plain
+ * brass gold measures ~1.7:1 against every light-mode felt — barely more
+ * than no contrast at all, not just "not great" (a third-party tester
+ * caught this in Mono; the same bug is in Green and Blue too, just as
+ * bad). Mode-only (not accent-specific, same as parchment): dark mode
+ * keeps the original brass value since it already passes there (~5-6:1),
+ * light mode uses a darker bronze that keeps reading as "gold accent"
+ * while actually passing AA with real margin (~5:1) against all three
+ * light felts. See components/*.tsx's text-brass-text usages.
  */
 
 :root {
@@ -20,6 +34,7 @@
   --felt: 23 60 49;
   --felt-dark: 14 39 31;
   --parchment: 245 239 222;
+  --brass-text: 201 162 39;
   --felt-texture: 255 255 255;
 }
 
@@ -27,18 +42,21 @@
   --felt: 23 60 49;
   --felt-dark: 14 39 31;
   --parchment: 245 239 222;
+  --brass-text: 201 162 39;
   --felt-texture: 255 255 255;
 }
 [data-mode="dark"][data-accent="blue"] {
   --felt: 21 50 74;
   --felt-dark: 12 32 50;
   --parchment: 245 239 222;
+  --brass-text: 201 162 39;
   --felt-texture: 255 255 255;
 }
 [data-mode="dark"][data-accent="mono"] {
   --felt: 43 43 42;
   --felt-dark: 26 26 25;
   --parchment: 245 239 222;
+  --brass-text: 201 162 39;
   --felt-texture: 255 255 255;
 }
 
@@ -46,18 +64,21 @@
   --felt: 191 224 199;
   --felt-dark: 159 205 170;
   --parchment: 27 42 58;
+  --brass-text: 110 83 18;
   --felt-texture: 0 0 0;
 }
 [data-mode="light"][data-accent="blue"] {
   --felt: 191 217 240;
   --felt-dark: 156 194 232;
   --parchment: 27 42 58;
+  --brass-text: 110 83 18;
   --felt-texture: 0 0 0;
 }
 [data-mode="light"][data-accent="mono"] {
   --felt: 217 217 212;
   --felt-dark: 196 196 190;
   --parchment: 27 42 58;
+  --brass-text: 110 83 18;
   --felt-texture: 0 0 0;
 }
 

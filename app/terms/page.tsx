@@ -5,7 +5,7 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <div className="mx-auto min-h-dvh max-w-2xl px-5 py-12 lg:py-16">
-      <a href="/" className="font-body text-xs uppercase tracking-[0.3em] text-brass underline underline-offset-4">
+      <a href="/" className="font-body text-xs uppercase tracking-[0.3em] text-brass-text underline underline-offset-4">
         &larr; Back to BirdScore
       </a>
       <h1 className="mt-4 font-display text-3xl font-semibold text-parchment">Terms of Service</h1>
@@ -59,6 +59,16 @@ export default function TermsPage() {
             BirdScore is provided as-is, without warranty of any kind. We&rsquo;re not liable for
             disputes over game outcomes, lost data, or any damages arising from use of the app,
             to the maximum extent permitted by law.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-display text-lg font-semibold text-parchment">Trademark</h2>
+          <p className="mt-1">
+            Rook&reg; is a registered trademark of Hasbro, Inc. BirdScore is an independent
+            scorekeeping tool for the Rook card game. We are not affiliated with, sponsored by,
+            or endorsed by Hasbro, and references to Rook on this site are solely to describe
+            the game BirdScore is used to score.
           </p>
         </section>
 
