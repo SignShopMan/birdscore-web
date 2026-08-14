@@ -35,7 +35,7 @@ export function AccountScreen({
   onOpenResources: () => void;
   onBack: () => void;
 }) {
-  const { userId, email, tier, loading, signOut } = useAuthStore();
+  const { userId, email, tier, loading, refreshingProfile, signOut } = useAuthStore();
   const [devStatsOpen, setDevStatsOpen] = useState(false);
 
   return (
@@ -80,7 +80,11 @@ export function AccountScreen({
         )}
       </div>
 
-      {userId && <UpgradeCard tier={tier} />}
+      {/* refreshingProfile: same guard as GameOverScreen — tier briefly
+          sits at a stale value right after sign-in, which could otherwise
+          flash the wrong tier's upgrade options (e.g. re-offering Plus to
+          someone who already has it) until the real profile lands. */}
+      {userId && !refreshingProfile && <UpgradeCard tier={tier} />}
 
       <DevToolsCard />
 

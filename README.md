@@ -22,6 +22,30 @@ environment I built this in.
 
 ## Changelog
 
+**"Save this game?" flashing on an already-saved game after signing back
+in** — a real timing bug, not something random despite being reported as
+intermittent:
+
+- Root cause traced in `lib/auth-store.ts`: `signOut()` resets `tier` to
+  `"free"` immediately, and on the next sign-in `onAuthStateChange` sets
+  `userId`/`email` right away but the *real* tier only lands once the
+  async `refreshProfile()` call resolves. `tier` sits at its stale
+  previous value for that whole gap. A completed game reopens straight to
+  `GameOverScreen` on reload (existing resume behavior) — if that render
+  happens to land inside the gap, `canSaveHistory(tier)` reads `false` and
+  `SaveGamePrompt` renders, offering to save/upgrade a game that was
+  already synced to Supabase well before this particular sign-out ever
+  happened. Explains "intermittent" exactly: it depends on how fast the
+  Supabase round-trip resolves relative to whenever that screen happens to
+  render.
+- Fixed with a new `refreshingProfile` flag — true from the moment a
+  session appears until `refreshProfile()` actually resolves (wrapped in
+  try/finally so it clears even on a failed or empty fetch). Both
+  `GameOverScreen`'s `SaveGamePrompt` and `AccountScreen`'s `UpgradeCard`
+  (susceptible to the identical race — could flash the wrong tier's
+  upgrade options) now also check this before trusting `tier` means
+  "not entitled," instead of rendering nothing during the brief real gap.
+
 **Making browser checkout actually usable before this weekend's golf
 outing** — the API side (checkout session creation, webhook handling) was
 already built; nothing let anyone actually reach it proactively:

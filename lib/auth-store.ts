@@ -14,6 +14,16 @@ interface AuthState {
   // currently selected, not just the effective result.
   devTierOverride: Tier | null;
   loading: boolean;
+  // True from the moment a session appears (initial load or a fresh
+  // sign-in) until refreshProfile() actually resolves. `tier` itself
+  // can't be trusted as "this account isn't entitled" during that window
+  // — it's just sitting at its previous value (often the "free" default
+  // right after a sign-out) until the real profile row comes back. Screens
+  // that gate a real decision on tier (SaveGamePrompt, UpgradeCard) should
+  // check this too, not just `tier` alone — otherwise an already-entitled
+  // account signing back in can briefly render as "not entitled" and
+  // falsely offer to save/upgrade a game that was already synced.
+  refreshingProfile: boolean;
   magicLinkSent: boolean;
 
   init: () => void;
@@ -36,6 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   tier: "free",
   devTierOverride: null,
   loading: true,
+  refreshingProfile: false,
   magicLinkSent: false,
 
   init: () => {
@@ -50,7 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        set({ userId: session.user.id, email: session.user.email ?? null });
+        set({ userId: session.user.id, email: session.user.email ?? null, refreshingProfile: true });
         get().refreshProfile();
       }
       set({ loading: false });
@@ -58,10 +69,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        set({ userId: session.user.id, email: session.user.email ?? null });
+        set({
+          userId: session.user.id,
+          email: session.user.email ?? null,
+          refreshingProfile: true,
+        });
         get().refreshProfile();
       } else {
-        set({ userId: null, email: null, tier: "free", devTierOverride: null });
+        set({
+          userId: null,
+          email: null,
+          tier: "free",
+          devTierOverride: null,
+          refreshingProfile: false,
+        });
       }
     });
   },
@@ -96,22 +117,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { userId } = get();
     if (!userId) return;
     const supabase = createClient();
-    const { data } = await supabase
-      .from("profiles")
-      .select("tier, pro_current_period_end, email, dev_tier_override, created_at")
-      .eq("id", userId)
-      .single();
-    if (data) {
-      set({
-        tier: effectiveTier({
-          tier: data.tier,
-          proCurrentPeriodEnd: data.pro_current_period_end,
-          email: data.email,
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("tier, pro_current_period_end, email, dev_tier_override, created_at")
+        .eq("id", userId)
+        .single();
+      if (data) {
+        set({
+          tier: effectiveTier({
+            tier: data.tier,
+            proCurrentPeriodEnd: data.pro_current_period_end,
+            email: data.email,
+            devTierOverride: data.dev_tier_override,
+            createdAt: data.created_at,
+          }),
           devTierOverride: data.dev_tier_override,
-          createdAt: data.created_at,
-        }),
-        devTierOverride: data.dev_tier_override,
-      });
+        });
+      }
+    } finally {
+      // Cleared here regardless of success/failure/no-row — this is the
+      // signal that `tier` can now be trusted as the real answer, not the
+      // stale/default value it may have been sitting at during the fetch.
+      set({ refreshingProfile: false });
     }
   },
 

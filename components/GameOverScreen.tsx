@@ -28,7 +28,7 @@ export function GameOverScreen({
   onOpenResources: () => void;
 }) {
   const { settings, rounds, winner, updateRound, deleteRound, syncStatus } = useGameStore();
-  const { tier } = useAuthStore();
+  const { tier, refreshingProfile } = useAuthStore();
   const entitled = canSaveHistory(tier);
   const [nativeIOS, setNativeIOS] = useState(false);
   useEffect(() => setNativeIOS(isNativeIOS()), []);
@@ -97,7 +97,14 @@ export function GameOverScreen({
         />
       </div>
 
-      {!entitled && (
+      {/* refreshingProfile guards against the exact bug report this fixed:
+          right after signing back in, `tier` briefly sits at its previous
+          value (often the "free" default from signOut) until
+          refreshProfile() actually resolves. A completed, already-synced
+          game reopening straight to this screen on reload could render
+          in that gap and falsely offer to save/upgrade a game that was
+          never actually at risk. */}
+      {!entitled && !refreshingProfile && (
         <div className="mt-6 text-left">
           <SaveGamePrompt settings={settings} rounds={rounds} winner={winner} />
         </div>
