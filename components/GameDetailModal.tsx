@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import { canUseEnhancedStats } from "@/lib/entitlements";
 import { Round, TrumpColor, teamLabel, formatScore, runningTotals, TRUMP_DOT_CLASS } from "@/lib/rook-engine";
+import { generateGameNarrative, currentStreak, GameForStreak } from "@/lib/game-narrative";
 import { Modal } from "./Modal";
 
 interface GameDetail {
@@ -48,7 +49,19 @@ function formatElapsed(seconds: number): string {
  * anything baked into the saved game — matches how every other
  * entitlement in this app works (see lib/entitlements.ts).
  */
-export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: () => void }) {
+export function GameDetailModal({
+  gameId,
+  onClose,
+  allGames,
+}: {
+  gameId: string;
+  onClose: () => void;
+  // Used only to compute each partnership's win streak entering this
+  // game — optional since a caller without the full games list (there
+  // isn't one today, but nothing requires it) just gets a narrative
+  // without a streak clause rather than a crash.
+  allGames?: GameForStreak[];
+}) {
   const { tier } = useAuthStore();
   const showEnhanced = canUseEnhancedStats(tier);
   const [game, setGame] = useState<GameDetail | null>(null);
@@ -71,6 +84,39 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
 
   const usTotal = rounds?.reduce((sum, r) => sum + r.usScore, 0) ?? 0;
   const themTotal = rounds?.reduce((sum, r) => sum + r.themScore, 0) ?? 0;
+
+  // Sports-recap-style summary — only for a finished game with a real
+  // winner and at least a couple of rounds (a 1-round game has no "arc"
+  // worth narrating). Streak clauses need named players to know who's on
+  // which side across other games; without them the narrative still
+  // works, just without that detail.
+  const narrative =
+    game && game.status === "completed" && game.winner && rounds && rounds.length > 1
+      ? generateGameNarrative({
+          rounds,
+          usLabel: game.usTeamName,
+          themLabel: game.themTeamName,
+          winner: game.winner,
+          winnerStreak:
+            game.players && allGames
+              ? currentStreak(
+                  allGames,
+                  game.winner === "US" ? game.players[0] : game.players[1],
+                  game.winner === "US" ? game.players[2] : game.players[3],
+                  game.id
+                )
+              : 0,
+          loserStreak:
+            game.players && allGames
+              ? currentStreak(
+                  allGames,
+                  game.winner === "US" ? game.players[1] : game.players[0],
+                  game.winner === "US" ? game.players[3] : game.players[2],
+                  game.id
+                )
+              : 0,
+        })
+      : null;
 
   return (
     <Modal
@@ -108,6 +154,11 @@ export function GameDetailModal({ gameId, onClose }: { gameId: string; onClose: 
                   </span>
                 )}
               </p>
+              {narrative && (
+                <p className="mt-3 rounded-md bg-paper-dim p-3 font-body text-sm italic leading-relaxed text-ink/80">
+                  {narrative}
+                </p>
+              )}
               {!showEnhanced && game.players && (
                 <p className="mt-2 font-body text-xs text-ink/60">
                   Dealer and Rook-holder detail is part of the $19.99/yr tier.

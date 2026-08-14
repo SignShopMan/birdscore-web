@@ -728,7 +728,11 @@ export function HistoryScreen({
       </div>
 
       {detailGameId && (
-        <GameDetailModal gameId={detailGameId} onClose={() => setDetailGameId(null)} />
+        <GameDetailModal
+          gameId={detailGameId}
+          onClose={() => setDetailGameId(null)}
+          allGames={games ?? undefined}
+        />
       )}
 
       {confirming && (
