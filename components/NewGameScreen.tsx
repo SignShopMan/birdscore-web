@@ -33,7 +33,7 @@ export function NewGameScreen({
   const { settings, startGame } = useGameStore();
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-5 py-8 lg:max-w-lg lg:py-14">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-5 py-8 sm:max-w-lg md:max-w-xl lg:max-w-2xl lg:py-14">
       <div>
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">

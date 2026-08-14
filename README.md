@@ -22,6 +22,26 @@ environment I built this in.
 
 ## Changelog
 
+**Landscape phones were wasting half the screen** — same tester: rotated
+her phone expecting the extra width to get used, and it didn't. Every
+screen (NewGame, GameScreen, Settings, History, FAQ/Resources, GameOver,
+the /watch pages, etc.) centers its content in a fixed-width column that
+only widens past Tailwind's `lg` breakpoint (1024px) — a width almost no
+phone in landscape ever reaches, so rotating just centered the same
+448px-wide column in the middle of a much wider screen. Added progressive
+widening at the `sm`/`md` breakpoints (640/768px), which is where actual
+phone-landscape widths fall, so the column now visibly grows on rotation
+instead of only reacting to real desktop widths. Sized per screen type:
+text-heavy screens (FAQ, Account, GameOver) widen modestly to protect
+readability (very long lines are harder to read line-to-line); card/list
+screens (Settings, History) and the primary gameplay screen (GameScreen,
+the live /watch viewer) widen more aggressively since their content is
+buttons and cards, not paragraphs. Desktop (≥1024px) is unchanged — the
+existing two-column GameScreen+sidebar-Scoreboard layout in `app/page.tsx`
+still wins there. Scoped deliberately to widening the existing single
+column, not rebuilding GameScreen into a landscape split-pane — a bigger
+change reserved for later if this isn't enough.
+
 **Real text-size accessibility control, plus closing out the remaining
 Rook® gaps** — follow-up on the usability pass below, after feedback that
 a one-off font-size bump on two screens wasn't the real fix:

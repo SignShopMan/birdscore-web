@@ -512,7 +512,7 @@ export function HistoryScreen({
 
   if (!userId) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 lg:max-w-lg lg:py-14">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 sm:max-w-lg md:max-w-2xl lg:max-w-2xl lg:py-14">
         <header className="flex items-center justify-between">
           <button
             onClick={onBack}
@@ -534,7 +534,7 @@ export function HistoryScreen({
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 lg:max-w-lg lg:py-14">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 sm:max-w-lg md:max-w-2xl lg:max-w-2xl lg:py-14">
       <header className="flex items-center justify-between">
         <button
           onClick={onBack}

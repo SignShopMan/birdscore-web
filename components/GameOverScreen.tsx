@@ -45,7 +45,7 @@ export function GameOverScreen({
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 text-center lg:max-w-lg lg:py-14">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 text-center sm:max-w-lg md:max-w-xl lg:max-w-2xl lg:py-14">
       <div>
         <div className="flex items-center justify-between">
           <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">Game Over</p>

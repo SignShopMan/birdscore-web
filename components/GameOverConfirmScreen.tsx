@@ -32,7 +32,7 @@ export function GameOverConfirmScreen({
   onEdit: () => void;
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 py-8 text-center lg:max-w-lg">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 py-8 text-center sm:max-w-lg md:max-w-xl lg:max-w-2xl">
       <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">Game Over?</p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-parchment lg:text-4xl">
         {winner ? `${teamLabel(winner, settings)} win it` : "That's the game"}

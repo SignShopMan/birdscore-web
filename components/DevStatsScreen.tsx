@@ -159,7 +159,7 @@ export function DevStatsScreen({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-felt">
-      <div className="mx-auto max-w-lg px-5 py-8">
+      <div className="mx-auto max-w-lg px-5 py-8 sm:max-w-xl md:max-w-2xl">
         <div className="flex items-center justify-between">
           <button
             onClick={onClose}

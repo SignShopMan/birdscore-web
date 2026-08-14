@@ -27,7 +27,7 @@ export default function WatchLandingPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center sm:max-w-lg md:max-w-xl">
       <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">Watch Live</p>
       <h1 className="mt-1 font-display text-3xl font-semibold text-parchment">Enter a game code</h1>
       <p className="mt-2 font-body text-sm text-parchment/75">

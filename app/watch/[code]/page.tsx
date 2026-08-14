@@ -120,7 +120,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
 
   if (gameCheck === "invalid_format") {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center sm:max-w-lg md:max-w-xl">
         <p className="font-body text-xs uppercase tracking-[0.3em] text-trump-red">Invalid Code</p>
         <h1 className="mt-2 font-display text-3xl font-semibold text-parchment">
           That doesn&rsquo;t look like a real code
@@ -141,7 +141,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
 
   if (gameCheck === "not_found") {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center sm:max-w-lg md:max-w-xl">
         <p className="font-body text-xs uppercase tracking-[0.3em] text-trump-red">Game Not Found</p>
         <h1 className="mt-2 font-display text-3xl font-semibold text-parchment">
           That code isn&rsquo;t connected to a live game
@@ -162,7 +162,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
 
   if (!state) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center sm:max-w-lg md:max-w-xl">
         <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">
           {connected ? "Connected" : "Connecting\u2026"}
         </p>
@@ -187,7 +187,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
   const themTotal = rounds.reduce((sum, r) => sum + r.themScore, 0);
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 lg:max-w-lg lg:py-14">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8 sm:max-w-lg md:max-w-2xl lg:max-w-2xl lg:py-14">
       <p className="font-body text-xs uppercase tracking-[0.3em] text-brass-text">
         {gameOver ? "Game Over" : "Watching Live"}
       </p>

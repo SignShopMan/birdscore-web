@@ -74,7 +74,7 @@ export function GameScreen({
   }, [bidTeam]);
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 lg:max-w-xl lg:px-0">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6 sm:max-w-lg md:max-w-2xl lg:max-w-2xl lg:px-0">
       <header>
         <div className="flex items-center justify-between">
           <MainMenu onNewGame={onNewGame} onOpenSettings={onOpenSettings} onOpenAccount={onOpenAccount} onOpenHistory={onOpenHistory} onOpenFaq={onOpenFaq} onOpenResources={onOpenResources} />
