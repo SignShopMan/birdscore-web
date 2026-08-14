@@ -22,6 +22,31 @@ environment I built this in.
 
 ## Changelog
 
+**Real text-size accessibility control, plus closing out the remaining
+Rook® gaps** — follow-up on the usability pass below, after feedback that
+a one-off font-size bump on two screens wasn't the real fix:
+
+- Added a persistent app-wide text-size control (`lib/theme-store.ts`,
+  surfaced in Settings → Appearance next to Mode/Table felt): +/− buttons
+  step the `<html>` root font-size 80%–150% in 10% increments. Because
+  Tailwind's default scale (text-*, and most padding/gap/spacing
+  utilities) is rem-based, scaling the root scales the whole app
+  proportionally — the same mechanism as browser/OS zoom, just reachable
+  from inside the app and remembered like the theme is. This is the
+  durable WCAG 1.4.4 (Resize Text) fix; the earlier FAQ/Resources font
+  bump was a real improvement but only helped those two screens.
+  Pre-hydration script in `app/layout.tsx` applies the stored scale before
+  first paint, matching how theme mode/accent already avoid a flash.
+- Added the Rook® mark to every other visible first-mention of the game
+  name that was still missing it: page `<title>`/meta description/OG/
+  Twitter card (`app/layout.tsx`), the PWA manifest (`app/manifest.ts`),
+  the Privacy Policy and Terms of Service intro lines, the `/watch`
+  spectator page, and "New to Rook? See the rules" on the landing screen.
+  Left in-game terminology alone (Scoreboard's "Rook Holder" label, "Who
+  had the Rook?" prompts, etc.) — those are nominative references to the
+  specific card within rules text, not brand-name mentions, and marking
+  every occurrence would be visual noise without adding legal weight.
+
 **Third-party usability pass: readability, contrast, and a Rook trademark
 notice** — feedback from someone with no prior knowledge of Rook or the
 app:

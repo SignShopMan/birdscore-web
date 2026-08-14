@@ -195,7 +195,7 @@ export default function WatchPage({ params }: { params: { code: string } }) {
         {gameOver && winner ? `${winner === "US" ? usTeamName : themTeamName} wins` : "BirdScore"}
       </h1>
       <p className="mt-1 font-body text-xs text-parchment/60">
-        You&rsquo;re watching someone else&rsquo;s live Rook game — the score updates in real
+        You&rsquo;re watching someone else&rsquo;s live Rook&reg; game — the score updates in real
         time as they play.{" "}
         <a href="/" className="underline underline-offset-4">
           What&rsquo;s BirdScore?

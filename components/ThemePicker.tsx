@@ -1,6 +1,16 @@
 "use client";
 
-import { useThemeStore, resolveMode, THEME_PALETTE, ThemeAccent, ThemeMode } from "@/lib/theme-store";
+import {
+  useThemeStore,
+  resolveMode,
+  THEME_PALETTE,
+  ThemeAccent,
+  ThemeMode,
+  TEXT_SCALE_MIN,
+  TEXT_SCALE_MAX,
+  TEXT_SCALE_STEP,
+  TEXT_SCALE_DEFAULT,
+} from "@/lib/theme-store";
 
 const MODE_OPTIONS: { key: ThemeMode; label: string }[] = [
   { key: "system", label: "System" },
@@ -17,7 +27,7 @@ const ACCENT_OPTIONS: { key: ThemeAccent; label: string }[] = [
 /** No outer card here — SettingsScreen wraps this in a CollapsibleCard titled
  * "Appearance", so this only renders the interactive content. */
 export function ThemePicker() {
-  const { mode, accent, setMode, setAccent } = useThemeStore();
+  const { mode, accent, textScale, setMode, setAccent, setTextScale } = useThemeStore();
   // Swatches preview the felt color at whatever mode is actually resolved right
   // now (system resolves to the OS preference), so the preview never lies about
   // what picking it will actually look like.
@@ -65,6 +75,44 @@ export function ThemePicker() {
             {label}
           </button>
         ))}
+      </div>
+
+      <label className="mt-5 block font-body text-sm font-semibold text-ink">Text size</label>
+      <p className="mt-1 font-body text-xs text-ink/75">
+        Scales the whole app, not just this screen &mdash; carries over everywhere, remembered
+        like the rest of Appearance.
+      </p>
+      <div className="mt-2 flex items-center gap-3">
+        <button
+          onClick={() => setTextScale(textScale - TEXT_SCALE_STEP)}
+          disabled={textScale <= TEXT_SCALE_MIN}
+          aria-label="Decrease text size"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white font-body text-lg font-semibold text-ink ring-1 ring-ink/20 disabled:opacity-40"
+        >
+          &minus;
+        </button>
+        <span
+          className="w-14 text-center font-score tabular-score text-sm font-semibold text-ink"
+          aria-live="polite"
+        >
+          {textScale}%
+        </span>
+        <button
+          onClick={() => setTextScale(textScale + TEXT_SCALE_STEP)}
+          disabled={textScale >= TEXT_SCALE_MAX}
+          aria-label="Increase text size"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white font-body text-lg font-semibold text-ink ring-1 ring-ink/20 disabled:opacity-40"
+        >
+          +
+        </button>
+        {textScale !== TEXT_SCALE_DEFAULT && (
+          <button
+            onClick={() => setTextScale(TEXT_SCALE_DEFAULT)}
+            className="font-body text-xs text-ink/60 underline underline-offset-4"
+          >
+            Reset
+          </button>
+        )}
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ export default function TermsPage() {
         <section>
           <h2 className="font-display text-lg font-semibold text-parchment">The service</h2>
           <p className="mt-1">
-            BirdScore is a scorekeeping tool for the card game Rook. The free tier is available
+            BirdScore is a scorekeeping tool for the card game Rook&reg;. The free tier is available
             without an account. Paid tiers ($6.99 one time, $19.99/year) add saved history, named
             players, and realtime hosting, as described in the app.
           </p>

@@ -10,6 +10,7 @@ import { useThemeStore, resolveMode } from "@/lib/theme-store";
 export function ThemeInit() {
   const mode = useThemeStore((s) => s.mode);
   const accent = useThemeStore((s) => s.accent);
+  const textScale = useThemeStore((s) => s.textScale);
 
   useEffect(() => {
     const apply = () => {
@@ -24,6 +25,10 @@ export function ThemeInit() {
       return () => mq.removeEventListener("change", apply);
     }
   }, [mode, accent]);
+
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${textScale}%`;
+  }, [textScale]);
 
   return null;
 }

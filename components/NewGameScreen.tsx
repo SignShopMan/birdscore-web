@@ -51,7 +51,7 @@ export function NewGameScreen({
             onClick={onOpenResources}
             className="text-brass-text underline underline-offset-4"
           >
-            New to Rook? See the rules
+            New to Rook&reg;? See the rules
           </button>
         </p>
 

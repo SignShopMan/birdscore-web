@@ -13,7 +13,7 @@ export default function PrivacyPage() {
 
       <div className="mt-8 space-y-6 font-body text-sm leading-relaxed text-parchment/85">
         <p>
-          BirdScore is a Rook scorekeeping app. Here&rsquo;s what data it collects and what
+          BirdScore is a Rook&reg; scorekeeping app. Here&rsquo;s what data it collects and what
           happens to it.
         </p>
 

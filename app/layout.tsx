@@ -16,22 +16,22 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  title: "BirdScore — Rook Scorekeeper",
-  description: "Live bid and score tracking for Rook, tableside.",
+  title: "BirdScore — Rook® Scorekeeper",
+  description: "Live bid and score tracking for Rook®, tableside.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "BirdScore",
   },
   openGraph: {
-    title: "BirdScore — Rook Scorekeeper",
-    description: "Live bid and score tracking for Rook, tableside.",
+    title: "BirdScore — Rook® Scorekeeper",
+    description: "Live bid and score tracking for Rook®, tableside.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "BirdScore — Rook Scorekeeper",
-    description: "Live bid and score tracking for Rook, tableside.",
+    title: "BirdScore — Rook® Scorekeeper",
+    description: "Live bid and score tracking for Rook®, tableside.",
   },
 };
 
@@ -53,11 +53,13 @@ const THEME_INIT_SCRIPT = `
     var state = raw ? (JSON.parse(raw).state || {}) : {};
     var mode = state.mode || 'dark';
     var accent = state.accent || 'green';
+    var textScale = state.textScale || 100;
     var resolvedMode = mode === 'system'
       ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
       : mode;
     document.documentElement.setAttribute('data-mode', resolvedMode);
     document.documentElement.setAttribute('data-accent', accent);
+    document.documentElement.style.fontSize = textScale + '%';
   } catch (e) {
     document.documentElement.setAttribute('data-mode', 'dark');
     document.documentElement.setAttribute('data-accent', 'green');

@@ -10,9 +10,9 @@ import { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BirdScore — Rook Scorekeeper",
+    name: "BirdScore — Rook® Scorekeeper",
     short_name: "BirdScore",
-    description: "Live bid and score tracking for Rook, tableside.",
+    description: "Live bid and score tracking for Rook®, tableside.",
     start_url: "/",
     display: "standalone",
     background_color: "#173C31",
