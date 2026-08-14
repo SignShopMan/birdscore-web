@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
     metadata: { supabase_user_id: user.id, tier },
     success_url: `${origin}/?checkout=success`,
     cancel_url: `${origin}/?checkout=cancelled`,
+    // Lets someone type a promo code (e.g. a one-weekend discount) into
+    // Stripe's own hosted checkout page. Off by default — without this,
+    // a coupon/promotion code created in the dashboard has no UI for a
+    // customer to actually enter it, even though it exists and works.
+    allow_promotion_codes: true,
   });
 
   return NextResponse.json({ url: session.url });
