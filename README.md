@@ -22,6 +22,67 @@ environment I built this in.
 
 ## Changelog
 
+**Making browser checkout actually usable before this weekend's golf
+outing** — the API side (checkout session creation, webhook handling) was
+already built; nothing let anyone actually reach it proactively:
+
+- **No way to upgrade except finishing a full game first** —
+  `SaveGamePrompt.tsx` (Game Over, for a non-entitled account) was the
+  *only* purchase entry point in the entire app. New `UpgradeCard.tsx` on
+  the Account screen — same checkout call, reachable any time you're
+  signed in, tier-aware (hides "$6.99 one time" once you're already Plus,
+  hides entirely once you're Pro). Deliberately simpler than
+  SaveGamePrompt's version: no pending-save stash needed, since there's no
+  finished-but-unsaved game to protect across the Stripe redirect here.
+- **Stripe's own redirect back to the app was never acknowledged** —
+  `success_url`/`cancel_url` land on `/?checkout=success` or
+  `?checkout=cancelled`, and nothing anywhere read that param. Someone
+  completing a real payment got zero confirmation anything happened, and
+  the UI's cached tier wouldn't reflect the webhook's write until some
+  unrelated auth-state change happened to refetch it. New
+  `CheckoutResultBanner.tsx`, mounted globally: shows a real confirmation
+  either way, and forces `refreshProfile()` on success so the new tier is
+  visible immediately instead of eventually.
+- Confirmed the webhook's idempotency fix (from earlier this session)
+  survived the MacBook Pro merge intact, and confirmed both purchase
+  surfaces correctly stay off on native iOS (App Store guideline 3.1.1 —
+  not relevant to this weekend since only one account uses the native app).
+- **What still needs verifying in the Stripe/Vercel dashboards before this
+  is truly live** — code-side is done, but I can't see your actual
+  configured values from here: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+  `STRIPE_PRICE_PLUS_ONE_TIME`, `STRIPE_PRICE_PRO_ANNUAL`, and
+  `NEXT_PUBLIC_SITE_URL` all need to be set in Vercel's production
+  environment (not just `.env.local`, which never reaches the deployed
+  site), the two Prices need to actually exist in the Stripe dashboard
+  (Price IDs, not Product IDs), the webhook endpoint needs to be
+  registered at `https://therealbirdscore.com/api/stripe-webhook`
+  subscribed to `checkout.session.completed` and `invoice.paid`, and
+  **Stripe needs to be in Live mode, not Test mode**, or a friend's card
+  won't actually be charged.
+
+**Round 2 of beta-tester feedback: sign-in visibility, score-card
+truncation, and a mobile round-editing bug found along the way**:
+
+- **Sign-in status was invisible outside the menu** — `MainMenu.tsx`'s
+  trigger button now carries a small always-on dot (green when signed in,
+  muted when not), so "am I signed in" doesn't need a tap to check.
+- **Long team names truncated in the score cards** ("Kevin &…") — the
+  Leading/Won badge shared one row with the team name in `ScoreTotals.tsx`
+  and left it no room. Badge moved to its own corner tag; the name gets
+  the full card width and can wrap to a second line instead of being cut
+  off.
+- **Round descriptions in the live Scoreboard truncated too, with visible
+  empty space to the right** — traced the empty space to a real bug, not
+  just a display quirk: the edit/delete buttons in `Scoreboard.tsx`'s
+  round row only ever appeared on `:hover`/`:focus-within`, which a touch
+  screen can't trigger below the `sm:` breakpoint — so on a phone they
+  silently reserved ~90px of row width while staying permanently
+  invisible, which also meant **editing or deleting a round was
+  effectively broken on mobile**, not just visually wasteful. Buttons are
+  now always visible (restores that functionality); the description text
+  also no longer truncates, wrapping to a second line instead so nothing
+  is ever cut off regardless of available width.
+
 **History lifecycle redesign: Cancel vs Hide vs Delete, plus pagination**
 (the swipe-action rework from earlier this session conflated two different
 concepts under one "Cancel," and offered no way to tidy up a long list

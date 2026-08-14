@@ -43,10 +43,22 @@ export function MainMenu({
     <div className="relative inline-block">
       <button
         onClick={() => setOpen(true)}
-        aria-label="Open menu"
-        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-parchment/10 text-parchment ring-1 ring-parchment/20"
+        aria-label={
+          userId ? `Open menu — signed in as ${email}` : "Open menu — not signed in"
+        }
+        className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-parchment/10 text-parchment ring-1 ring-parchment/20"
       >
         <MenuIcon />
+        {/* Beta feedback: sign-in status was only ever visible after
+            opening the menu — a small always-on dot here (not text, so it
+            doesn't clutter every screen this mounts on) answers "am I
+            signed in" at a glance instead of requiring a tap first. */}
+        <span
+          aria-hidden="true"
+          className={`absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-felt ${
+            userId ? "bg-trump-green" : "bg-parchment/30"
+          }`}
+        />
       </button>
 
       {open && (

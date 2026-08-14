@@ -173,17 +173,30 @@ function RoundRow({
   return (
     <>
       <li className="group rounded-md px-2 py-2 hover:bg-white/50">
-        <div className="flex items-center gap-2">
-          <span className="w-5 shrink-0 font-score text-xs text-ink/75">
+        {/* items-start (not items-center) + no truncate on the description
+            below \u2014 beta feedback was real text getting cut off ("Jon
+            mad\u2026") with visible empty space to its right. That empty space
+            was the edit/delete buttons: they only ever became visible on
+            :hover/:focus-within, which a touch screen can't trigger at
+            all below the sm: breakpoint, so on a phone they silently ate
+            ~90px of row width while staying permanently invisible \u2014
+            actually blocking round editing on mobile entirely, not just
+            wasting space. Now always visible (restores that
+            functionality) and the description wraps instead of
+            truncating, so nothing is ever cut off regardless of width. */}
+        <div className="flex items-start gap-2">
+          <span className="mt-0.5 w-5 shrink-0 font-score text-xs text-ink/75">
             {isAdj ? "\u00B1" : round.round}
           </span>
           {isAdj ? (
-            <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-ink" />
+            <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-sm bg-ink" />
           ) : (
-            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`} />
+            <span
+              className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${TRUMP_DOT_CLASS[round.trump as TrumpColor]}`}
+            />
           )}
           <span
-            className={`min-w-0 flex-1 truncate font-body text-sm ${
+            className={`min-w-0 flex-1 font-body text-sm ${
               !isAdj && round.bidTeam && (round.bidTeam === "US" ? round.usScore : round.themScore) < 0
                 ? "font-semibold text-trump-red"
                 : "text-ink/75"
@@ -201,14 +214,14 @@ function RoundRow({
                   (round.bidTeam === "US" ? round.usScore : round.themScore) < 0 ? "went set" : "made it"
                 } \u00B7 bid ${round.bid} \u00B7 ${round.trump}${round.shootMoon ? " \u00B7 Moon" : ""}`}
           </span>
-          <span className="w-12 text-right font-score tabular-score text-lg font-semibold text-ink">
+          <span className="w-12 shrink-0 text-right font-score tabular-score text-lg font-semibold text-ink">
             {isAdj && round.usScore === 0 ? "\u2013" : round.usScore}
           </span>
-          <span className="w-12 text-right font-score tabular-score text-lg font-semibold text-ink">
+          <span className="w-12 shrink-0 text-right font-score tabular-score text-lg font-semibold text-ink">
             {isAdj && round.themScore === 0 ? "\u2013" : round.themScore}
           </span>
           {!readOnly && (
-            <span className="ml-1 flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 sm:opacity-100 sm:group-hover:opacity-100">
+            <span className="ml-1 flex shrink-0 gap-0.5">
               <button
                 onClick={() => {
                   if (isAdj) {

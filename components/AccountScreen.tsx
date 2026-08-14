@@ -7,6 +7,7 @@ import { SignInForm } from "./SignInForm";
 import { MainMenu } from "./MainMenu";
 import { DevToolsCard } from "./DevToolsCard";
 import { DevStatsScreen } from "./DevStatsScreen";
+import { UpgradeCard } from "./UpgradeCard";
 
 const TIER_LABEL: Record<string, string> = {
   free: "Free",
@@ -78,6 +79,8 @@ export function AccountScreen({
           </div>
         )}
       </div>
+
+      {userId && <UpgradeCard tier={tier} />}
 
       <DevToolsCard />
 

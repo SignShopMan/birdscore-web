@@ -8,6 +8,7 @@ import { RealtimeHost } from "@/components/RealtimeHost";
 import { UpdateChecker } from "@/components/UpdateChecker";
 import { CapacitorInit } from "@/components/CapacitorInit";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { CheckoutResultBanner } from "@/components/CheckoutResultBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GameSync />
         <RealtimeHost />
         <UpdateChecker />
+        <CheckoutResultBanner />
         <CapacitorInit />
         {children}
       </body>
